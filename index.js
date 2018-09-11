@@ -43,6 +43,7 @@ for(let i = 0; i < args.length; i++) {
 	}
 }
 
+log("start");
 (async () => {
 	try{
 		const browser = await puppeteer.launch({
@@ -163,6 +164,6 @@ for(let i = 0; i < args.length; i++) {
 		log("Done!");
 		//await browser.close();
 	}catch(e){
-		console.log(e);
+		log(e);
 	}
 })();
