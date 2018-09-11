@@ -56,7 +56,9 @@ log("start");
 				"--enable-local-file-accesses",
 				"--allow-file-access-from-files",
 				"--disable-web-security",
-				"--reduce-security-for-testing"
+				"--reduce-security-for-testing",
+				"--no-sandbox",
+				"--disable-setuid-sandbox"
 			]
 		});
 		const page = (await browser.pages())[0];
