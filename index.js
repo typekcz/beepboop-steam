@@ -2,7 +2,7 @@ var http = require('http');
 const puppeteer = require('puppeteer');
 
 http.createServer(async function (req, res) {
-	const browser = await puppeteer.launch();
+	const browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']});
 	const page = await browser.newPage();
 	await page.goto('https://google.com');
 	let buf = await page.screenshot({type: "jpeg"});
