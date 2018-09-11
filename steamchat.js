@@ -24,6 +24,7 @@ class SteamChat {
 			window.audio = new Audio();
 			window.audio.controls = true;
 			window.audio.muted = true;
+			window.audio.loop = true;
 			window.audio.crossOrigin = "annonymous";
 			window.audio.oncanplay = ()=>{
 				window.addStream(audio.captureStream());

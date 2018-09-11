@@ -95,7 +95,7 @@ log("start");
 		await steamchat.initAudio();
 		await new Promise((res) => { setTimeout(res, 1000) });
 		await steamchat.joinVoiceChannel(groupName, channelName);
-		await steamchat.playUrl("https://d3cj65qhk7sagp.cloudfront.net/tracks/Origins/Faux+Tales+-+Origins.mp3");
+		await steamchat.playUrl("http://bot.kotrzena.eu/engineerremix.mp3");
 		
 		/*var stdin = process.openStdin();
 
