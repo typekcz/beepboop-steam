@@ -2,6 +2,12 @@ const puppeteer = require("puppeteer");
 const SteamChat = require("./steamchat");
 const http = require('http');
 
+var strlog = "";
+function log(text){
+	console.log(text);
+	strlog += text + "\r\n";
+}
+
 http.createServer(async function (req, res) {
 	res.write('hello');
 	res.end();
@@ -54,15 +60,15 @@ for(let i = 0; i < args.length; i++) {
 		});
 		const page = (await browser.pages())[0];
 		
-		page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+		page.on('console', msg => log('PAGE LOG:' + msg.text()));
 		page.on('pageerror', error => {
-			console.log(error.message());
+			log(error.message());
 		});
 		/*page.on('response', response => {
-			console.log(response.status(), response.url);
+			log(response.status(), response.url);
 		});*/
 		page.on('requestfailed', request => {
-			console.log(request.failure().errorText, request.url);
+			log(request.failure().errorText, request.url);
 		});
 		
 		await page.setBypassCSP(true);
@@ -78,7 +84,7 @@ for(let i = 0; i < args.length; i++) {
 				}, steamUserName, steamPassword);
 				await navigationPromise;
 			} catch(e){
-				console.log(e);
+				log(e);
 			}
 		}
 		
@@ -154,7 +160,7 @@ for(let i = 0; i < args.length; i++) {
 			}, 1000);
 		}, groupName, channelName);*/
 
-		console.log("Done!");
+		log("Done!");
 		//await browser.close();
 	}catch(e){
 		console.log(e);
