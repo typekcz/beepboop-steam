@@ -95,7 +95,7 @@ log("start");
 		await steamchat.initAudio();
 		await new Promise((res) => { setTimeout(res, 1000) });
 		await steamchat.joinVoiceChannel(groupName, channelName);
-		await steamchat.playUrl("http://bot.kotrzena.eu/engineerremix.mp3");
+		await steamchat.playUrl("https://kotrzena.eu/engineerremix.mp3");
 		
 		/*var stdin = process.openStdin();
 
