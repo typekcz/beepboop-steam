@@ -9,7 +9,7 @@ function log(text){
 }
 
 http.createServer(async function (req, res) {
-	res.write('hello');
+	res.write(strlog);
 	res.end();
 }).listen(process.env.PORT || 8080); //the server object listens on port 8080
 
