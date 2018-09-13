@@ -1,6 +1,8 @@
 const puppeteer = require("puppeteer");
 const SteamChat = require("./steamchat");
-const http = require('http');
+const fs = require("fs");
+const express = require("express");
+const bodyParser = require("body-parser");
 
 var strlog = "";
 function log(text){
@@ -8,17 +10,30 @@ function log(text){
 	strlog += text + "\r\n";
 }
 
-http.createServer(async function (req, res) {
+let webApp = express();
+webApp.use(express.static("web"));
+webApp.use(bodyParser.json());
+webApp.get("/log", (req, res) => {
+	res.set("Content-Type", "text/plain");
+	res.send(strlog);
+	res.end();
+});
+webApp.listen(process.env.PORT || 8080);
+
+/*http.createServer(async function (req, res) {
 	res.write(strlog);
 	res.end();
-}).listen(process.env.PORT || 8080); //the server object listens on port 8080
+}).listen(process.env.PORT || 8080);*/
 
 const args = process.argv.slice(2);
 
-let steamUserName = null;
-let steamPassword = null;
-let groupName = null;
-let channelName = null;
+// Configuration
+let config = JSON.parse(fs.readFileSync("config.json", "utf8"));
+
+let steamUserName = config.steamUserName;
+let steamPassword = config.steamPassword;
+let groupName = config.groupName;
+let channelName = config.channelName;
 
 if(typeof(process.env.STEAM_USER) !== "undefined")
 	steamUserName = process.env.STEAM_USER;
@@ -47,7 +62,7 @@ log("start");
 (async () => {
 	try{
 		const browser = await puppeteer.launch({
-			headless: true,
+			headless: false,
 			args: [
 				"--disable-client-side-phishing-detection",
 				"--disable-sync",
@@ -63,27 +78,28 @@ log("start");
 		});
 		const page = (await browser.pages())[0];
 		
-		page.on('console', msg => log('PAGE LOG:' + msg.text()));
-		page.on('pageerror', error => {
+		page.on("console", msg => log("PAGE LOG:" + msg.text()));
+		page.on("pageerror", error => {
 			log(error.message());
 		});
 		/*page.on('response', response => {
 			log(response.status(), response.url);
 		});*/
-		page.on('requestfailed', request => {
+		page.on("requestfailed", request => {
 			log(request.failure().errorText, request.url);
 		});
 		
 		await page.setBypassCSP(true);
 		await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
-		await page.goto("https://steamcommunity.com/chat", {waitUntil : "networkidle0"});
+		await page.goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
 		if(page.url().includes("login")){
+			log("login");
 			try {
 				let navigationPromise = page.waitForNavigation({waitUntil : "networkidle0"});
 				await page.evaluate((user, pass) => {
-					document.querySelector('#steamAccountName').value = user;
-					document.querySelector('#steamPassword').value = pass;
-					document.querySelector('#SteamLogin').click();
+					document.querySelector("#steamAccountName").value = user;
+					document.querySelector("#steamPassword").value = pass;
+					document.querySelector("#SteamLogin").click();
 				}, steamUserName, steamPassword);
 				await navigationPromise;
 			} catch(e){
@@ -93,10 +109,19 @@ log("start");
 		
 		let steamchat = new SteamChat(page);
 		await steamchat.initAudio();
-		await new Promise((res) => { setTimeout(res, 1000) });
+		await new Promise((res) => { setTimeout(res, 1000); });
 		await steamchat.joinVoiceChannel(groupName, channelName);
-		await steamchat.playUrl("https://kotrzena.eu/engineerremix.mp3");
-		
+		await steamchat.playSoundUrl("https://kotrzena.eu/engineerremix.mp3");
+
+		webApp.post("/api/playSoundUrl", (req, res) => {
+			if(req.body && req.body.url){
+				steamchat.playSoundUrl(req.body.url);
+			} else {
+				res.status(400);
+			}
+			res.end();
+		});
+
 		/*var stdin = process.openStdin();
 
 		stdin.addListener("data", async function(d) {

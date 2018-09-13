@@ -15,11 +15,11 @@ class SteamChat {
 				let audioSource = window.audioContext.createMediaStreamSource(stream);
 				audioSource.connect(window.mixedAudio);
 			}
-			window.addStream = addStream
+			window.addStream = addStream;
 
-			navigator.getUserMedia = function(options, success, failure){
+			navigator.getUserMedia = function(options, success){
 				success(window.mixedAudio.stream);
-			}
+			};
 			
 			window.audio = new Audio();
 			window.audio.controls = true;
@@ -27,10 +27,32 @@ class SteamChat {
 			window.audio.loop = true;
 			window.audio.crossOrigin = "annonymous";
 			window.audio.oncanplay = ()=>{
-				window.addStream(audio.captureStream());
+				window.addStream(window.audio.captureStream());
 				window.audio.play();
-			}
+			};
 		});
+	}
+
+	getGroups(){
+		return this.page.evaluate(() => {
+			let groupNames = document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem .chatRoomName");
+			return Array.prototype.map.call(groupNames, (e) => {return e.innerText;});
+		});
+	}
+
+	getVoiceChannels(group){
+		return this.page.evaluate((group) => {
+			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
+				if(g.querySelector(".chatRoomName").innerText == group){
+					let voiceRooms = g.querySelector(".ChatRoomListGroupItemChatRooms").firstChild;
+					if(voiceRooms.children.length == 0)
+						g.querySelector(".openGroupButton").click();
+					let channelNames = g.querySelectorAll(".chatRoomVoiceChannel .chatRoomVoiceChannelName");
+					return Array.prototype.map.call(channelNames, (e) => {return e.innerText;});
+				}
+			}
+			return [];
+		}, group);
 	}
 	
 	joinVoiceChannel(group, channel){
@@ -52,10 +74,18 @@ class SteamChat {
 		}, group, channel);
 	}
 	
-	playUrl(url){
+	playSoundUrl(url){
 		return this.page.evaluate((url) => {
 			window.audio.src = url;
+			return true;
 		}, url);
+	}
+
+	stopSound(){
+		return this.page.evaluate(() => {
+			window.audio.stop();
+			return true;
+		});
 	}
 }
 
