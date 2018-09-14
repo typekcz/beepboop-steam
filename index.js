@@ -1,29 +1,14 @@
 const puppeteer = require("puppeteer");
-const SteamChat = require("./steamchat");
 const fs = require("fs");
-const express = require("express");
-const bodyParser = require("body-parser");
+const SteamChat = require("./steamchat");
+const WebApp = require("./webapp");
 
-var strlog = "";
+let webApp = new WebApp(process.env.PORT || 8080);
+
 function log(text){
 	console.log(text);
-	strlog += text + "\r\n";
+	webApp.appendToLog(text);
 }
-
-let webApp = express();
-webApp.use(express.static("web"));
-webApp.use(bodyParser.json());
-webApp.get("/log", (req, res) => {
-	res.set("Content-Type", "text/plain");
-	res.send(strlog);
-	res.end();
-});
-webApp.listen(process.env.PORT || 8080);
-
-/*http.createServer(async function (req, res) {
-	res.write(strlog);
-	res.end();
-}).listen(process.env.PORT || 8080);*/
 
 const args = process.argv.slice(2);
 
@@ -114,80 +99,7 @@ log("start");
 		await steamchat.joinVoiceChannel(groupName, channelName);
 		await steamchat.playSoundUrl("https://kotrzena.eu/engineerremix.mp3");
 
-		webApp.post("/api/playSoundUrl", (req, res) => {
-			if(req.body && req.body.url){
-				steamchat.playSoundUrl(req.body.url);
-			} else {
-				res.status(400);
-			}
-			res.end();
-		});
-
-		/*var stdin = process.openStdin();
-
-		stdin.addListener("data", async function(d) {
-			console.log(await page.evaluate((str) => {
-				return eval(str);
-			}, d.toString().trim()));
-		});*/
-		
-		
-		/*await page.evaluate((groupName, channelName) => {
-			var audioContext = new AudioContext();
-			var mixedAudio = audioContext.createMediaStreamDestination();
-
-			function addStream(stream){
-				console.log(stream);
-				var audioSource = audioContext.createMediaStreamSource(stream);
-				audioSource.connect(mixedAudio);
-			}
-
-			navigator.getUserMedia = function(options, success, failure){
-				success(mixedAudio.stream);
-			}
-
-			document.getElementById("friendslist-container").style.width = "calc(100% - 150px)";
-			var beepboop = document.createElement("DIV");
-			beepboop.style.width = "150px";
-			beepboop.style.position = "absolute";
-			beepboop.style.right = "0";
-			beepboop.style.top = "0";
-			beepboop.style.bottom = "0";
-			document.body.appendChild(beepboop);
-
-			var file = document.createElement("INPUT");
-			file.type = "file";
-			file.onchange = () => {
-				audio.src = URL.createObjectURL(file.files[0]);
-			}
-			beepboop.appendChild(file);
-
-			var audio = document.createElement("AUDIO");
-			audio.setAttribute("controls","");
-			audio.muted = true;
-			audio.oncanplay = ()=>{
-				addStream(audio.captureStream());
-				audio.play();
-			}
-			beepboop.appendChild(audio);
-
-			setTimeout(()=>{
-				for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
-					if(g.querySelector(".chatRoomName").innerText == groupName){
-						let voiceRooms = g.querySelector(".ChatRoomListGroupItemChatRooms").firstChild;
-						if(voiceRooms.children.length == 0)
-							g.querySelector(".openGroupButton").click();
-						for(let ch of g.querySelectorAll(".chatRoomVoiceChannel")){
-							if(ch.querySelector(".chatRoomVoiceChannelName").innerText == channelName){
-								ch.click();
-								break;
-							}
-						}
-						break;
-					}
-				}
-			}, 1000);
-		}, groupName, channelName);*/
+		webApp.startRestApi(steamchat);
 
 		log("Done!");
 		//await browser.close();
