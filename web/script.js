@@ -33,7 +33,7 @@ async function listSounds(){
 			throw new TypeError("Received data aren't Array.");
 		let soundsElement = document.getElementById("sounds");
 		for(let sound of sounds){
-			let btn = new HTMLButtonElement();
+			let btn = document.createElement("button");
 			btn.innerText = sound;
 			btn.addEventListener("click", async (e) => {
 				let res = await fetch("/api/playSound", {

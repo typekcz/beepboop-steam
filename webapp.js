@@ -38,7 +38,7 @@ class WebApp {
 
 		this.expressApp.post("/api/playSound", (req, res) => {
 			if(req.body && req.body.sound){
-				steamchat.playSoundUrl("localhost:" + this.port + "/" + req.body.sound);
+				steamchat.playSoundUrl("http://localhost:" + this.port + "/sounds/" + req.body.sound);
 			} else {
 				res.status(400);
 			}

@@ -10,10 +10,13 @@ class SteamChat {
 		return this.page.evaluate(() => {
 			window.audioContext = new AudioContext();
 			window.mixedAudio = window.audioContext.createMediaStreamDestination();
+			window.gainNode = window.audioContext.createGain();
+			window.gainNode.gain.value = 0.3;
+			window.gainNode.connect(window.mixedAudio);
 
 			function addStream(stream){
 				let audioSource = window.audioContext.createMediaStreamSource(stream);
-				audioSource.connect(window.mixedAudio);
+				audioSource.connect(window.gainNode);
 			}
 			window.addStream = addStream;
 
@@ -24,7 +27,6 @@ class SteamChat {
 			window.audio = new Audio();
 			window.audio.controls = true;
 			window.audio.muted = true;
-			window.audio.loop = true;
 			window.audio.crossOrigin = "annonymous";
 			window.audio.oncanplay = ()=>{
 				window.addStream(window.audio.captureStream());
