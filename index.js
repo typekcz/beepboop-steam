@@ -10,8 +10,15 @@ class Main {
 			[--config <json> | -c <json>]
 			[--config-file <path> | -C <path>]
 		Default config file is config.json.`;
-		let configFile = "config.json";
+		let configFile = process.env.CONFIGFILE | "config.json";
 		let config = null;
+		if(process.env.CONFIG){
+			try {
+				config = JSON.parse(process.env.CONFIG);
+			} catch(error){
+				console.log(error);
+			}
+		}
 
 		for(let i = 2; i < args.length; i++) {
 			let arg = args[i];
