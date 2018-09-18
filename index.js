@@ -37,17 +37,21 @@ class Main {
 		}
 		if(!config)
 			try {
-				config = JSON.parse(fs.readFileSync(configFile, "utf8"));
+				if(typeof(configFile) === "string" && fs.statSync(configFile).isFile())
+					config = JSON.parse(fs.readFileSync(configFile, "utf8"));
 			} catch(error){
-				console.log(error);
-				console.error(helpString);
+				console.error(error);
+				console.log(helpString);
 				process.exit(1);
 			}
 		if(!config){
-			console.error("Invalid config");
-			console.error(helpString);
-			process.exit(1);
+			config = {};
 		}
+
+		config.steamUserName = config.steamUserName || process.env.STEAMUSERNAME;
+		config.steamPassword = config.steamPassword || process.env.STEAMPASSWORD;
+		config.groupName = config.groupName || process.env.GROUPNAME;
+		config.channelName = config.channelName || process.env.CHANNELNAME;
 
 		let webApp = new WebApp(config.port || process.env.PORT || 8080);
 
