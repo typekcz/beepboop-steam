@@ -3,106 +3,118 @@ const fs = require("fs");
 const SteamChat = require("./steamchat");
 const WebApp = require("./webapp");
 
-let webApp = new WebApp(process.env.PORT || 8080);
+class Main {
+	static async main(args){
+		const helpString = 
+		`Usage:
+			[--config <json> | -c <json>]
+			[--config-file <path> | -C <path>]
+		Default config file is config.json.`;
+		let configFile = "config.json";
+		let config = null;
 
-function log(text){
-	console.log(text);
-	webApp.appendToLog(text);
-}
-
-const args = process.argv.slice(2);
-
-// Configuration
-let config = JSON.parse(fs.readFileSync("config.json", "utf8"));
-
-let steamUserName = config.steamUserName;
-let steamPassword = config.steamPassword;
-let groupName = config.groupName;
-let channelName = config.channelName;
-
-if(typeof(process.env.STEAM_USER) !== "undefined")
-	steamUserName = process.env.STEAM_USER;
-if(typeof(process.env.STEAM_PASSWORD) !== "undefined")
-	steamPassword = process.env.STEAM_PASSWORD;
-if(typeof(process.env.GROUP_NAME) !== "undefined")
-	groupName = process.env.GROUP_NAME;
-if(typeof(process.env.CHANNEL_NAME) !== "undefined")
-	channelName = process.env.CHANNEL_NAME;
-
-for(let i = 0; i < args.length; i++) {
-	let arg = args[i];
-	
-	if((arg == "--steamuser" || arg == "-u") && args.length >= i){
-		steamUserName = args[++i];
-	} else if((arg == "--steampassword" || arg == "-p") && args.length >= i){
-		steamPassword = args[++i];
-	} else if((arg == "--groupname" || arg == "-g") && args.length >= i){
-		groupName = args[++i];
-	} else if((arg == "--channelname" || arg == "-c") && args.length >= i){
-		channelName = args[++i];
-	}
-}
-
-log("start");
-(async () => {
-	try{
-		const browser = await puppeteer.launch({
-			headless: true,
-			args: [
-				"--disable-client-side-phishing-detection",
-				"--disable-sync",
-				"--use-fake-ui-for-media-stream",
-				"--use-fake-device-for-media-stream",
-				"--enable-local-file-accesses",
-				"--allow-file-access-from-files",
-				"--disable-web-security",
-				"--reduce-security-for-testing",
-				"--no-sandbox",
-				"--disable-setuid-sandbox"
-			]
-		});
-		const page = (await browser.pages())[0];
-		
-		page.on("console", msg => log("PAGE LOG:" + msg.text()));
-		page.on("pageerror", error => {
-			log(error.message());
-		});
-		/*page.on('response', response => {
-			log(response.status(), response.url);
-		});*/
-		page.on("requestfailed", request => {
-			log(request.failure().errorText, request.url);
-		});
-		
-		await page.setBypassCSP(true);
-		// Steam won't accept HeadlessChrome
-		await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
-		await page.goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
-		if(page.url().includes("login")){
-			log("login");
-			try {
-				let navigationPromise = page.waitForNavigation({waitUntil : "networkidle0"});
-				await page.evaluate((user, pass) => {
-					document.querySelector("#steamAccountName").value = user;
-					document.querySelector("#steamPassword").value = pass;
-					document.querySelector("#SteamLogin").click();
-				}, steamUserName, steamPassword);
-				await navigationPromise;
-			} catch(e){
-				log(e);
+		for(let i = 2; i < args.length; i++) {
+			let arg = args[i];
+			
+			if((arg == "--config" || arg == "-c") && args.length >= i){
+				try {
+					config = JSON.parse(args[++i]);
+				} catch(error){
+					console.log(error);
+				}
+			} else if((arg == "--config-file" || arg == "-C") && args.length >= i){
+				configFile = args[++i];
+			} else {
+				console.error("Unknown parameter \"" + arg + "\"");
 			}
 		}
-		
-		let steamchat = new SteamChat(page);
-		await steamchat.initAudio();
-		await new Promise((res) => { setTimeout(res, 1000); });
-		await steamchat.joinVoiceChannel(groupName, channelName);
+		if(!config)
+			try {
+				config = JSON.parse(fs.readFileSync(configFile, "utf8"));
+			} catch(error){
+				console.log(error);
+				console.error(helpString);
+				process.exit(1);
+			}
+		if(!config){
+			console.error("Invalid config");
+			console.error(helpString);
+			process.exit(1);
+		}
 
-		webApp.startRestApi(steamchat);
+		let webApp = new WebApp(config.port || process.env.PORT || 8080);
 
-		log("Done!");
-		//await browser.close();
-	}catch(e){
-		log(e);
+		this.hook_stream(process.stdout, (str) => webApp.appendToLog(str));
+		this.hook_stream(process.stderr, (str) => webApp.appendToLog(str));
+
+		console.log("Start:");
+
+		try {
+			const browser = await puppeteer.launch({
+				headless: true,
+				args: [
+					"--disable-client-side-phishing-detection",
+					"--disable-sync",
+					"--use-fake-ui-for-media-stream",
+					"--use-fake-device-for-media-stream",
+					"--enable-local-file-accesses",
+					"--allow-file-access-from-files",
+					"--disable-web-security",
+					"--reduce-security-for-testing",
+					"--no-sandbox",
+					"--disable-setuid-sandbox"
+				]
+			});
+			const page = (await browser.pages())[0];
+			
+			page.on("console", msg => console.log("Page log: " + msg.text()) );
+			page.on("pageerror", error => console.log(error.message()) );
+			page.on("requestfailed", request => console.log(request.failure().errorText, request.url) );
+			
+			await page.setBypassCSP(true);
+			// Steam won't accept HeadlessChrome
+			await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
+			await page.goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
+			if(page.url().includes("login")){
+				console.log("login");
+				try {
+					let navigationPromise = page.waitForNavigation({waitUntil : "networkidle0"});
+					await page.evaluate((user, pass) => {
+						document.querySelector("#steamAccountName").value = user;
+						document.querySelector("#steamPassword").value = pass;
+						document.querySelector("#SteamLogin").click();
+					}, config.steamUserName, config.steamPassword);
+					await navigationPromise;
+				} catch(error){
+					console.log(error);
+				}
+			}
+			
+			let steamchat = new SteamChat(page);
+			await steamchat.initAudio();
+			await new Promise((res) => { setTimeout(res, 1000); });
+			await steamchat.joinVoiceChannel(config.groupName, config.channelName);
+	
+			webApp.startRestApi(steamchat);
+	
+			console.log("Web UI ready.");
+			//await browser.close();
+		} catch(error){
+			console.error(error);
+		}
 	}
-})();
+	
+	// Credit: https://gist.github.com/pguillory/729616/32aa9dd5b5881f6f2719db835424a7cb96dfdfd6
+	static hook_stream(stream, callback) {
+		let old_write = stream.write;
+	
+		stream.write = (function(write) {
+			return function(string, encoding, fd) {
+				write.apply(stream, arguments)
+				callback(string, encoding, fd)
+			}
+		})(stream.write);
+	}
+}
+
+Main.main(process.argv);

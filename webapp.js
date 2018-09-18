@@ -8,14 +8,16 @@ class WebApp {
 	constructor(port){
 		this.port = port;
 		this.expressApp = express();
-		this.log = "";
+		this.log = [];
 
 		this.expressApp.use(bodyParser.json());
 		this.expressApp.use(express.static(webDir));
 
 		this.expressApp.get("/log", (req, res) => {
 			res.set("Content-Type", "text/plain");
-			res.send(this.log);
+			for(let line of this.log){
+				res.write(line);
+			}
 			res.end();
 		});
 
@@ -23,7 +25,7 @@ class WebApp {
 	}
 
 	appendToLog(text){
-		this.log += (text + "\r\n");
+		this.log.push(text);
 	}
 
 	startRestApi(steamchat){
