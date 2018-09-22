@@ -5,6 +5,10 @@ class SteamChat {
 	constructor(page){
 		this.page = page;
 	}
+
+	getPage(){
+		return this.page;
+	}
 	
 	initAudio(){
 		return this.page.evaluate(() => {

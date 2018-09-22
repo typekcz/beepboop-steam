@@ -1,0 +1,215 @@
+:root {
+	--bg-color: #292929;
+	--secondary-bg-color: #393939;
+	--txt-color: #ffffff;
+	--main-color: #ff8400;
+	--shadow-color: #000000;
+	--line-color: #909090;
+}
+
+body {
+	background-color: var(--bg-color);
+	color: var(--txt-color);
+	font-family: sans-serif;
+}
+
+.left {
+	float: left;
+}
+
+.right {
+	float: right;
+}
+
+.clear {
+	clear: both;
+}
+
+.b {
+	font-weight: bold;
+}
+
+.i {
+	font-style: italic;
+}
+
+.u {
+	text-decoration: underline;
+}
+
+.none {
+	display: none;
+}
+
+input[type="text"],input[type="password"],textarea, select {
+	font-family: sans-serif;
+	background-color: var(--secondary-bg-color);
+	border: 0;
+	border-left: 1px solid var(--main-color);
+	border-bottom: 1px solid var(--main-color);
+	padding: 5px;
+	margin: 2px;
+	color: var(--txt-color);
+	text-shadow: 1px 1px 1px var(--shadow-color);
+	background:
+		linear-gradient(225deg, transparent 5px, var(--secondary-bg-color) 5px);
+}
+
+input[type="submit"], input[type="button"], button {
+	background-color: var(--main-color);
+	border: 0;
+	color: var(--txt-color);
+	text-shadow: 1px 1px 1px var(--shadow-color);
+	padding: 5px 10px;
+	margin: 2px;
+	background:
+		linear-gradient(45deg, transparent 6px, var(--main-color) 6px),
+		linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
+	background-position: bottom left, bottom right;
+	background-size: 52% 100%;
+	background-repeat: no-repeat;
+}
+
+input[type="text"]+input[type="submit"] {
+	left: -11px;
+}
+
+/*  RADIO  */
+.radio input[type="radio"] + label:before {
+	content: '';
+	float: left;
+	border: 1px solid var(--line-color);
+	transform: rotate(45deg);
+	display: block;
+	width: 10px;
+	height: 10px;
+	margin-top: 4px;
+	margin-right: 5px;
+}
+
+.radio input[type="radio"] + label:hover:before {
+	border-color: var(--main-color);
+}
+
+.radio input[type="radio"]:checked + label:before {
+	background-color: var(--main-color);
+	background:
+		linear-gradient(left, var(--main-color) 0%, var(--main-color) 100%);
+	background-size: 50% 50%;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.radio input[type="radio"] {
+	display: none;
+}
+
+/*  CHECKBOX  */
+.check input[type="checkbox"] + label:before {
+	content: '';
+	float: left;
+	border: 1px solid var(--line-color);
+	display: block;
+	width: 12px;
+	height: 12px;
+	margin-top: 4px;
+	margin-right: 5px;
+}
+
+.check input[type="checkbox"] + label:hover:before {
+	border-color: var(--main-color);
+}
+
+.check input[type="checkbox"]:checked + label:before {
+	background-color: var(--main-color);
+	background:
+		linear-gradient(left, var(--main-color) 0%, var(--main-color) 100%);
+	background-size: 10px 10px;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.check input[type="checkbox"] {
+	display: none;
+}
+
+/*  TOGGLE  */
+.toggle input[type="checkbox"] + label div {
+	display: inline-block;
+	width: 30px;
+	height: 18px;
+	background-color: var(--main-color);
+	position: relative;
+	left: -60px;
+	top: 2.5px;
+	transition: all 0.2s;
+	background:
+		linear-gradient(45deg, transparent 6px, var(--main-color) 6px),
+		linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
+	background-position: bottom left, bottom right;
+	background-size: 52% 100%;
+	background-repeat: no-repeat;
+}
+
+.toggle input[type="checkbox"]:checked + label div {
+	left: -30px;
+	transition: all 0.2s;
+}
+
+.toggle input[type="checkbox"] + label mark {
+	color: var(--txt-color);
+	text-shadow: 1px 1px 1px var(--shadow-color);
+	display: inline-block;
+	width: 30px;
+	line-height: 20px;
+	text-align: center;
+	background: none;
+}
+
+.toggle input[type="checkbox"] + label span {
+	display: inline-block;
+	width: 60px;
+	background:
+		linear-gradient(45deg, transparent 6px, var(--secondary-bg-color) 6px),
+		linear-gradient(225deg, transparent 6px, var(--secondary-bg-color) 6px);
+	background-position: bottom left, bottom right;
+	background-size: 52% 100%;
+	background-repeat: no-repeat;
+}
+
+.toggle input[type="checkbox"] {
+	display: none;
+}
+
+fieldset {
+	border: 1px solid var(--main-color);
+	display: inline-block;
+	padding: 5px;
+	margin: 2px;
+	margin-top: 12px;
+}
+
+fieldset:after {
+	background: linear-gradient(225deg, var(--bg-color) 6px, var(--main-color) 5px, var(--bg-color) 8px);
+	content: '';
+	width: 10px;
+	height: 10px;
+	display: block;
+	position: relative;
+	top: 6px;
+	right: 6px;
+	clear: both;
+}
+
+legend {
+	background-color: var(--main-color);
+	text-shadow: 1px 1px 1px var(--shadow-color);
+	width: 100%;
+	float: left;
+	position: relative;
+	left: -6px;
+	top: -15px;
+	padding: 6px;
+	background: var(--main-color);
+	background: linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
+}

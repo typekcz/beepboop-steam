@@ -5,12 +5,22 @@ const WebApp = require("./webapp");
 
 class Main {
 	static async main(args){
+		process.on("unhandledRejection", (error, p) => {
+			console.error("Unhandled Promise Rejection", p, error);
+		});
+	
+		process.on("SIGINT", process.exit);
+		process.on("SIGUSR1", process.exit);
+		process.on("SIGUSR2", process.exit);
+
 		const helpString = 
 		`Usage:
 			[--config <json> | -c <json>]
 			[--config-file <path> | -C <path>]
-		Default config file is config.json.`;
-		let configFile = process.env.CONFIGFILE | "config.json";
+		Default config file is config.json. 
+		Required values are steamUserName, steamPassword, groupName, channelName.
+		These can also be set by enviroment variables with capitalised names.`;
+		let configFile = process.env.CONFIGFILE || "config.json";
 		let config = null;
 		if(process.env.CONFIG){
 			try {
@@ -20,6 +30,7 @@ class Main {
 			}
 		}
 
+		// Handle parameters
 		for(let i = 2; i < args.length; i++) {
 			let arg = args[i];
 			
@@ -35,6 +46,8 @@ class Main {
 				console.error("Unknown parameter \"" + arg + "\"");
 			}
 		}
+
+		// Load config file
 		if(!config)
 			try {
 				if(typeof(configFile) === "string" && fs.statSync(configFile).isFile())
@@ -48,11 +61,31 @@ class Main {
 			config = {};
 		}
 
-		config.steamUserName = config.steamUserName || process.env.STEAMUSERNAME;
-		config.steamPassword = config.steamPassword || process.env.STEAMPASSWORD;
-		config.groupName = config.groupName || process.env.GROUPNAME;
-		config.channelName = config.channelName || process.env.CHANNELNAME;
+		// Use environment variables
+		config.steamUserName =  process.env.STEAMUSERNAME || config.steamUserName;
+		config.steamPassword =  process.env.STEAMPASSWORD || config.steamPassword;
+		config.groupName = process.env.GROUPNAME || config.groupName;
+		config.channelName = process.env.CHANNELNAME || config.channelName;
 
+		// Check if all required values are defined
+		if(!config.steamUserName){
+			console.log("Missing steamUserName in the configuration.");
+			process.exit(1);
+		}
+		if(!config.steamPassword){
+			console.log("Missing steamPassword in the configuration.");
+			process.exit(1);
+		}
+		if(!config.groupName){
+			console.log("Missing groupName in the configuration.");
+			process.exit(1);
+		}
+		if(!config.channelName){
+			console.log("Missing channelName in the configuration.");
+			process.exit(1);
+		}
+
+		// Start
 		let webApp = new WebApp(config.port || process.env.PORT || 8080);
 
 		this.hook_stream(process.stdout, (str) => webApp.appendToLog(str));
@@ -62,7 +95,7 @@ class Main {
 
 		try {
 			const browser = await puppeteer.launch({
-				headless: true,
+				headless: false,
 				args: [
 					"--disable-client-side-phishing-detection",
 					"--disable-sync",
@@ -79,8 +112,8 @@ class Main {
 			const page = (await browser.pages())[0];
 			
 			page.on("console", msg => console.log("Page log: " + msg.text()) );
-			page.on("pageerror", error => console.log(error.message()) );
-			page.on("requestfailed", request => console.log(request.failure().errorText, request.url) );
+			page.on("pageerror", error => console.log("Page error: " + error.message) );
+			page.on("requestfailed", request => console.log("Page request failed: " + request.failure().errorText, request.url) );
 			
 			await page.setBypassCSP(true);
 			// Steam won't accept HeadlessChrome
@@ -101,9 +134,9 @@ class Main {
 				}
 			}
 			
+			await new Promise((res) => { setTimeout(res, 1000); });
 			let steamchat = new SteamChat(page);
 			await steamchat.initAudio();
-			await new Promise((res) => { setTimeout(res, 1000); });
 			await steamchat.joinVoiceChannel(config.groupName, config.channelName);
 	
 			webApp.startRestApi(steamchat);

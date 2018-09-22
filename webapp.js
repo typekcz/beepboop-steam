@@ -29,6 +29,14 @@ class WebApp {
 	}
 
 	startRestApi(steamchat){
+		// Debug screenshot of page
+		this.expressApp.get("/screen", async (req, res) => {
+			let image = steamchat.getPage().screenshot({type: "png"});
+			res.set("Content-Type", "image/png");
+			res.write(await image);
+			res.end();
+		});
+
 		this.expressApp.post("/api/playSoundUrl", (req, res) => {
 			if(req.body && req.body.url){
 				steamchat.playSoundUrl(req.body.url);
