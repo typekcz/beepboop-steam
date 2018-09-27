@@ -8,17 +8,21 @@ function registerAsyncSubmitEvents(){
 		form.addEventListener("submit", async (event) => {
 			event.preventDefault();
 			let form = event.target;
-			let data = {};
-			for(let input of form){
-				if(input.name)
-					data[input.name] = input.value;
-			}
+			let data = new FormData(form);
+			/*for(let input of form){
+				if(input.name){
+					if(input.type == "file")
+						data.append(input.name, input.files);
+					else
+						data.append(input.name, input.value);
+				}
+			}*/
 			let res = await fetch(form.action, {
 				method: form.method,
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify(data)
+				/*headers: {
+					"Content-Type": "multipart/form-data"
+				},*/
+				body: data
 			});
 			console.log(res);
 		});

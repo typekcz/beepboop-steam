@@ -2,6 +2,8 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const SteamChat = require("./steamchat");
 const WebApp = require("./webapp");
+const pgp = require('pg-promise')();
+const SoundsDBGW = require("./soundsdbgw");
 
 class Main {
 	static async main(args){
@@ -18,8 +20,7 @@ class Main {
 			[--config <json> | -c <json>]
 			[--config-file <path> | -C <path>]
 		Default config file is config.json. 
-		Required values are steamUserName, steamPassword, groupName, channelName.
-		These can also be set by enviroment variables with capitalised names.`;
+		Required values are steam.userName, steam.password, steam.groupName, steam.channelName.`;
 		let configFile = process.env.CONFIGFILE || "config.json";
 		let config = null;
 		if(process.env.CONFIG){
@@ -50,7 +51,7 @@ class Main {
 		// Load config file
 		if(!config)
 			try {
-				if(typeof(configFile) === "string" && fs.statSync(configFile).isFile())
+				if(typeof(configFile) === "string" && fs.existsSync(configFile) && fs.statSync(configFile).isFile())
 					config = JSON.parse(fs.readFileSync(configFile, "utf8"));
 			} catch(error){
 				console.error(error);
@@ -61,32 +62,29 @@ class Main {
 			config = {};
 		}
 
-		// Use environment variables
-		config.steamUserName =  process.env.STEAMUSERNAME || config.steamUserName;
-		config.steamPassword =  process.env.STEAMPASSWORD || config.steamPassword;
-		config.groupName = process.env.GROUPNAME || config.groupName;
-		config.channelName = process.env.CHANNELNAME || config.channelName;
-
 		// Check if all required values are defined
-		if(!config.steamUserName){
-			console.log("Missing steamUserName in the configuration.");
+		if(!config.steam.userName){
+			console.log("Missing steam.userName in the configuration.");
 			process.exit(1);
 		}
-		if(!config.steamPassword){
-			console.log("Missing steamPassword in the configuration.");
+		if(!config.steam.password){
+			console.log("Missing steam.password in the configuration.");
 			process.exit(1);
 		}
-		if(!config.groupName){
-			console.log("Missing groupName in the configuration.");
+		if(!config.steam.groupName){
+			console.log("Missing steam.groupName in the configuration.");
 			process.exit(1);
 		}
-		if(!config.channelName){
-			console.log("Missing channelName in the configuration.");
+		if(!config.steam.channelName){
+			console.log("Missing steam.channelName in the configuration.");
 			process.exit(1);
 		}
 
 		// Start
 		let webApp = new WebApp(config.port || process.env.PORT || 8080);
+		const db = pgp(config.db.connection);
+		const soundsDbGw = new SoundsDBGW(db);
+		soundsDbGw.init();
 
 		this.hook_stream(process.stdout, (str) => webApp.appendToLog(str));
 		this.hook_stream(process.stderr, (str) => webApp.appendToLog(str));
@@ -95,7 +93,7 @@ class Main {
 
 		try {
 			const browser = await puppeteer.launch({
-				headless: false,
+				headless: true,
 				args: [
 					"--disable-client-side-phishing-detection",
 					"--disable-sync",
@@ -127,7 +125,7 @@ class Main {
 						document.querySelector("#steamAccountName").value = user;
 						document.querySelector("#steamPassword").value = pass;
 						document.querySelector("#SteamLogin").click();
-					}, config.steamUserName, config.steamPassword);
+					}, config.steam.userName, config.steam.password);
 					await navigationPromise;
 				} catch(error){
 					console.log(error);
@@ -137,9 +135,9 @@ class Main {
 			await new Promise((res) => { setTimeout(res, 1000); });
 			let steamchat = new SteamChat(page);
 			await steamchat.initAudio();
-			await steamchat.joinVoiceChannel(config.groupName, config.channelName);
+			await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName);
 	
-			webApp.startRestApi(steamchat);
+			webApp.startRestApi(steamchat, soundsDbGw);
 	
 			console.log("Web UI ready.");
 			//await browser.close();

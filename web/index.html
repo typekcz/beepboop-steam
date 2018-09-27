@@ -5,6 +5,11 @@
 		<link rel="stylesheet" type="text/css" href="gui.css">
 	</head>
 	<body>
+		<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit>
+			<input type="text" name="name">
+			<input type="file" name="sound">
+			<input type="submit">
+		</form>
 		<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
 			<fieldset>
 				<legend>Play URL</legend>

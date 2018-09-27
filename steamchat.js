@@ -4,6 +4,10 @@ class SteamChat {
 	 */
 	constructor(page){
 		this.page = page;
+
+		this.activityInterval = setInterval(() => {
+			this.page.mouse.move(Math.random()*100, Math.random()*100);
+		},60000);
 	}
 
 	getPage(){
