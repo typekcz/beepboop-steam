@@ -9,20 +9,13 @@ function registerAsyncSubmitEvents(){
 			event.preventDefault();
 			let form = event.target;
 			let data = new FormData(form);
-			/*for(let input of form){
-				if(input.name){
-					if(input.type == "file")
-						data.append(input.name, input.files);
-					else
-						data.append(input.name, input.value);
-				}
-			}*/
+			let headers = {};
+			if(form.getAttribute("data-session") != null)
+				headers.Session = localStorage.getItem("authId");
 			let res = await fetch(form.action, {
 				method: form.method,
-				/*headers: {
-					"Content-Type": "multipart/form-data"
-				},*/
-				body: data
+				body: data,
+				headers
 			});
 			console.log(res);
 		});
@@ -40,12 +33,8 @@ async function listSounds(){
 			let btn = document.createElement("button");
 			btn.innerText = sound;
 			btn.addEventListener("click", async (e) => {
-				let res = await fetch("/api/playSound", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json"
-					},
-					body: JSON.stringify({sound: sound})
+				let res = await fetch("/api/sounds/" + encodeURIComponent(sound) + "/play", {
+					method: "POST"
 				});
 				console.log(res);
 			});

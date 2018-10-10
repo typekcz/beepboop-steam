@@ -1,15 +1,30 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const fileUpload = require('express-fileupload');
+const openid = require('openid');
 const fs = require("fs");
+const generateUid = require("uid-safe");
 
 const webDir = "./web";
+const steamOpenId = "https://steamcommunity.com/openid";
+const allowedMime = [
+	"audio/webm",
+	"audio/ogg",
+	"video/ogg",
+	"application/ogg",
+	"audio/mpeg"
+];
 
 class WebApp {
-	constructor(port){
+	constructor(baseUrl, port){
+		if(!baseUrl.endsWith("/"))
+			baseUrl += "/";
+		this.baseUrl = baseUrl;
 		this.port = port;
 		this.expressApp = express();
 		this.log = [];
+
+		this.sessions = new Map();
 
 		this.expressApp.use(bodyParser.json());
 		this.expressApp.use(fileUpload());
@@ -51,23 +66,29 @@ class WebApp {
 		this.expressApp.post("/api/uploadSound", async (req, res) => {
 			try {
 				if(req.body && req.body.name && req.files){
-					await soundsDbGw.insert(req.body.name, req.files.sound.data, req.files.sound.mimetype);
+					let steamid = this.sessions.get(req.get("Session"));
+					if(!steamid)
+						return res.status(401).end();
+					let groupId = await steamchat.getGroupIdByName(steamchat.groupName);
+					if(!groupId)
+						return res.status(500).end();
+					let members = await steamchat.getGroupMembers(groupId);
+					let member = members.find((m) => m.steamid64 == steamid);
+					if(!member)
+						return res.status(403).end();
+				
+					if(allowedMime.includes(req.files.sound.mimetype)){
+						await soundsDbGw.insert(req.body.name, req.files.sound.data, req.files.sound.mimetype);
+					} else 
+						res.status(415).send("Unsupported Media Type").end();
 				} else {
 					res.status(400);
 				}
 				res.end();
 			} catch(e) {
-				res.status(500).send(e).end();
+				console.log(e);
+				res.status(500).json(e).end();
 			}
-		});
-
-		this.expressApp.post("/api/playSound", (req, res) => {
-			if(req.body && req.body.sound){
-				steamchat.playSoundUrl("http://localhost:" + this.port + "/sounds/" + req.body.sound);
-			} else {
-				res.status(400);
-			}
-			res.end();
 		});
 
 		this.expressApp.get("/api/sounds", async (req, res) => {
@@ -94,6 +115,45 @@ class WebApp {
 			} catch(e){
 				res.status(500).send(e).end();
 			}
+		});
+
+		this.expressApp.post("/api/sounds/:soundName/play", (req, res) => {
+			steamchat.playSoundUrl("http://localhost:" + this.port + "/api/sounds/" + req.params.soundName);
+		});
+	}
+
+	startSteamLoginApi(){
+		this.relyingParty = new openid.RelyingParty(
+			this.baseUrl + "api/steam/verify", // Verification URL (yours)
+			this.baseUrl, 	// Realm (optional, specifies realm for OpenID authentication)
+			true, 		// Use stateless verification
+			true, 		// Strict mode
+			[]			// List of extensions to enable and include
+		);
+
+		this.expressApp.get('/api/steam/authenticate', (req, res) => {
+			this.relyingParty.authenticate(steamOpenId, false, (error, authUrl) => {
+				if(error){
+					res.json(error);
+					return;
+				}
+				res.redirect(authUrl);
+			});
+		});
+
+		this.expressApp.get("/api/steam/verify", (req, res) => {
+			this.relyingParty.verifyAssertion(req, async (error, result) => {
+				if(error){
+					res.json(error);
+					return;
+				}
+				let uid = await generateUid(18);
+				this.sessions.set(uid, result.claimedIdentifier.substr(steamOpenId.length + 4)); // 4 == "/id/".length
+				res.write(`<!DOCTYPE HTML><html><head>
+					<script>localStorage.setItem("authId", ${JSON.stringify(uid)});close();</script>
+				</head></html>`);
+				res.end();
+			});
 		});
 	}
 }

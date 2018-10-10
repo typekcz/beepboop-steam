@@ -5,7 +5,8 @@
 		<link rel="stylesheet" type="text/css" href="gui.css">
 	</head>
 	<body>
-		<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit>
+		<a href="/api/steam/authenticate" target="_blank"><img src="img/steamlogin.png" alt="Steam Login"></a>
+		<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
 			<input type="text" name="name">
 			<input type="file" name="sound">
 			<input type="submit">

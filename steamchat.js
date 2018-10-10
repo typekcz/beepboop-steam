@@ -2,8 +2,10 @@ class SteamChat {
 	/**
 	 * @param {Page} page - Puppeteer page
 	 */
-	constructor(page){
+	constructor(page, soundsBaseUrl){
 		this.page = page;
+		this.soundsBaseUrl = soundsBaseUrl;
+		this.groupName = null;
 
 		this.activityInterval = setInterval(() => {
 			this.page.mouse.move(Math.random()*100, Math.random()*100);
@@ -64,9 +66,51 @@ class SteamChat {
 			return [];
 		}, group);
 	}
+
+	async openGroup(group){
+		await this.page.evaluate((groupName) => {
+			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
+				let chatGroup = g.querySelector(".chatRoomName");
+				if(chatGroup.innerText == groupName){
+					chatGroup.click();
+				}
+			}
+		}, group);
+		await this.page.waitForSelector("div.chatDialogs div.chatWindow.MultiUserChar.namedGroup");
+	}
+
+	async getGroupIdByName(name){
+		return await this.page.evaluate((name) => {
+			for(var g of g_FriendsUIApp.ChatStore.m_mapChatGroups.values()){
+				if(g.name == name){
+					return g.GetGroupID();
+				}
+			}
+			return null;
+		}, name);
+	}
+
+	async getGroupMembers(groupId){
+		// Group has to be opened for this to work!
+		return await this.page.evaluate((groupId) => {
+			let members = [];
+			for(let f of g_FriendsUIApp.GroupMemberStore.GetGroupMemberList(groupId)[0].m_rgMembers)
+				members.push({
+					name: f.display_name,
+					steamid64: f.steamid64
+				});
+			return members;
+		}, groupId.toString());
+	}
 	
-	joinVoiceChannel(group, channel){
-		return this.page.evaluate((groupName, channelName) => {
+	async joinVoiceChannel(group, channel){
+		this.groupName = group;
+		this.openGroup(group);
+		await this.page.exposeFunction("userJoined", (user) => {
+			console.log("user joined:", user);
+			this.playSound(user);
+		});
+		await this.page.evaluate((groupName, channelName) => {
 			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
 				if(g.querySelector(".chatRoomName").innerText == groupName){
 					let voiceRooms = g.querySelector(".ChatRoomListGroupItemChatRooms").firstChild;
@@ -78,13 +122,30 @@ class SteamChat {
 							break;
 						}
 					}
+
+					setTimeout(() => {
+						let usersList = g.querySelector(".VoiceChannelParticipants").firstElementChild;
+						window.mutationObserver = new MutationObserver((mutRecords) => {
+							for(let mutRecord of mutRecords){
+								for(let addedNode of mutRecord.addedNodes){
+									window.userJoined(addedNode.querySelector(".playerName").innerText);
+								}
+							}
+						});
+						window.mutationObserver.observe(usersList, {childList: true});
+					}, 1000);
 					break;
 				}
 			}
 		}, group, channel);
 	}
+
+	playSound(soundName){
+		this.playSoundUrl(this.soundsBaseUrl + soundName);
+	}
 	
 	playSoundUrl(url){
+		console.log("playUrl", url);
 		return this.page.evaluate((url) => {
 			window.audio.src = url;
 			return true;

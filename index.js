@@ -81,7 +81,8 @@ class Main {
 		}
 
 		// Start
-		let webApp = new WebApp(config.port || process.env.PORT || 8080);
+		let port = config.port || process.env.PORT || 8080;
+		let webApp = new WebApp(config.baseUrl, port);
 		const db = pgp(config.db.connection);
 		const soundsDbGw = new SoundsDBGW(db);
 		soundsDbGw.init();
@@ -133,11 +134,12 @@ class Main {
 			}
 			
 			await new Promise((res) => { setTimeout(res, 1000); });
-			let steamchat = new SteamChat(page);
+			let steamchat = new SteamChat(page, "http://localhost:" + port + "/api/sounds/");
 			await steamchat.initAudio();
 			await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName);
 	
 			webApp.startRestApi(steamchat, soundsDbGw);
+			webApp.startSteamLoginApi();
 	
 			console.log("Web UI ready.");
 			//await browser.close();
