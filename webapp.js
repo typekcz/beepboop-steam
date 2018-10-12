@@ -42,7 +42,7 @@ class WebApp {
 	}
 
 	appendToLog(text){
-		this.log.push(text);
+		this.log.push("[" + (new Date()).toLocaleString("en-GB") + "] " + text);
 	}
 
 	startRestApi(steamchat, soundsDbGw){
