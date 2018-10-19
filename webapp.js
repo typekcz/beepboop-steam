@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const fileUpload = require('express-fileupload');
-const openid = require('openid');
+const fileUpload = require("express-fileupload");
+const openid = require("openid");
 const fs = require("fs");
 const generateUid = require("uid-safe");
 
@@ -68,21 +68,21 @@ class WebApp {
 				if(req.body && req.body.name && req.files){
 					let steamid = this.sessions.get(req.get("Session"));
 					if(!steamid)
-						return res.status(401).end();
+						return res.status(401).send("Not logged in.").end();
 					let groupId = await steamchat.getGroupIdByName(steamchat.groupName);
 					if(!groupId)
 						return res.status(500).end();
 					let members = await steamchat.getGroupMembers(groupId);
 					let member = members.find((m) => m.steamid64 == steamid);
 					if(!member)
-						return res.status(403).end();
+						return res.status(403).send("Not member of group.").end();
 				
 					if(allowedMime.includes(req.files.sound.mimetype)){
 						await soundsDbGw.insert(req.body.name, req.files.sound.data, req.files.sound.mimetype);
 					} else 
-						res.status(415).send("Unsupported Media Type").end();
+						res.status(415).send("Unsupported Media Type.").end();
 				} else {
-					res.status(400);
+					res.status(400).send("Missing data.");
 				}
 				res.end();
 			} catch(e) {
@@ -119,6 +119,13 @@ class WebApp {
 
 		this.expressApp.post("/api/sounds/:soundName/play", (req, res) => {
 			steamchat.playSoundUrl("http://localhost:" + this.port + "/api/sounds/" + req.params.soundName);
+			res.end();
+		});
+
+		this.expressApp.get("/api/members", async (req, res) => {
+			let groupId = await steamchat.getGroupIdByName(steamchat.groupName);
+			res.json(await steamchat.getGroupMembers(groupId));
+			res.end();
 		});
 	}
 
@@ -131,7 +138,7 @@ class WebApp {
 			[]			// List of extensions to enable and include
 		);
 
-		this.expressApp.get('/api/steam/authenticate', (req, res) => {
+		this.expressApp.get("/api/steam/authenticate", (req, res) => {
 			this.relyingParty.authenticate(steamOpenId, false, (error, authUrl) => {
 				if(error){
 					res.json(error);
@@ -154,6 +161,25 @@ class WebApp {
 				</head></html>`);
 				res.end();
 			});
+		});
+
+		this.expressApp.get("/api/steam/check", (req, res) => {
+			console.log("steam check", req);
+			if(this.sessions.has(req.get("Session")))
+				res.status(200);
+			else
+				res.status(401);
+			res.end();
+		});
+
+		this.expressApp.get("/api/steam/logout", (req, res) => {
+			if(this.sessions.delete(req.get("Session"))){
+				res.header("content-type", "text/javascript");
+				res.write(`localStorage.removeItem("authId");
+					window.dispatchEvent(new StorageEvent('storage', {key: 'authId'}));`);
+			} else
+				res.status(200);
+			res.end();
 		});
 	}
 }

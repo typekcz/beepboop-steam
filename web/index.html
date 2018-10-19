@@ -3,14 +3,22 @@
 	<head>
 		<script src="script.js"></script>
 		<link rel="stylesheet" type="text/css" href="gui.css">
+		<link rel="stylesheet" type="text/css" href="behavior.css">
 	</head>
 	<body>
-		<a href="/api/steam/authenticate" target="_blank"><img src="img/steamlogin.png" alt="Steam Login"></a>
-		<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
-			<input type="text" name="name">
-			<input type="file" name="sound">
-			<input type="submit">
-		</form>
+		<div class="when-notlogged">
+			<a href="/api/steam/authenticate" target="_blank"><img src="img/steamlogin.png" alt="Steam Login"></a>
+		</div>
+		<div class="when-logged">
+			<form action="/api/steam/logout" method="get" data-asyncSubmit data-session>
+				<input type="submit" value="Steam Logout">
+			</form>
+			<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
+				<input type="text" name="name" placeholder="Name">
+				<input type="file" name="sound">
+				<input type="submit">
+			</form>
+		</div>
 		<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
 			<fieldset>
 				<legend>Play URL</legend>

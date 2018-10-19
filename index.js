@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const SteamChat = require("./steamchat");
 const WebApp = require("./webapp");
-const pgp = require('pg-promise')();
+const pgp = require("pg-promise")();
 const SoundsDBGW = require("./soundsdbgw");
 
 class Main {
@@ -133,9 +133,9 @@ class Main {
 				}
 			}
 			
-			await new Promise((res) => { setTimeout(res, 1000); });
+			//await new Promise((res) => { setTimeout(res, 1000); });
 			let steamchat = new SteamChat(page, "http://localhost:" + port + "/api/sounds/");
-			await steamchat.initAudio();
+			await steamchat.init();
 			await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName);
 	
 			webApp.startRestApi(steamchat, soundsDbGw);
@@ -150,13 +150,11 @@ class Main {
 	
 	// Credit: https://gist.github.com/pguillory/729616/32aa9dd5b5881f6f2719db835424a7cb96dfdfd6
 	static hook_stream(stream, callback) {
-		let old_write = stream.write;
-	
 		stream.write = (function(write) {
 			return function(string, encoding, fd) {
-				write.apply(stream, arguments)
-				callback(string, encoding, fd)
-			}
+				write.apply(stream, arguments);
+				callback(string, encoding, fd);
+			};
 		})(stream.write);
 	}
 }

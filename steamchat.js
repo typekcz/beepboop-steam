@@ -15,6 +15,11 @@ class SteamChat {
 	getPage(){
 		return this.page;
 	}
+
+	async init(){
+		await this.page.waitForSelector(".throbberContainer-exit-done");
+		await this.initAudio();
+	}
 	
 	initAudio(){
 		return this.page.evaluate(() => {
@@ -76,7 +81,7 @@ class SteamChat {
 				}
 			}
 		}, group);
-		await this.page.waitForSelector("div.chatDialogs div.chatWindow.MultiUserChar.namedGroup");
+		await this.page.waitForSelector("div.chatDialogs div.chatWindow.MultiUserChat.namedGroup");
 	}
 
 	async getGroupIdByName(name){

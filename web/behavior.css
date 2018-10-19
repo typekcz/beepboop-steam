@@ -1,0 +1,15 @@
+.when-logged {
+	display: none;
+}
+
+.when-notlogged {
+	display: block;
+}
+
+.logged .when-logged {
+	display: block;
+}
+
+.logged .when-notlogged {
+	display: none;
+}
