@@ -6,6 +6,7 @@ class SteamChat {
 		this.page = page;
 		this.soundsBaseUrl = soundsBaseUrl;
 		this.groupName = null;
+		this.joinedUsers = [];
 
 		this.activityInterval = setInterval(() => {
 			this.page.mouse.move(Math.random()*100, Math.random()*100);
@@ -17,7 +18,11 @@ class SteamChat {
 	}
 
 	async init(){
-		await this.page.waitForSelector(".throbberContainer-exit-done");
+		try {
+			await this.page.waitForSelector(".main_throbberContainer-exit-done_3UAKh");
+		} catch(e){
+			console.log(e);
+		}
 		await this.initAudio();
 	}
 	
@@ -111,9 +116,16 @@ class SteamChat {
 	async joinVoiceChannel(group, channel){
 		this.groupName = group;
 		this.openGroup(group);
-		await this.page.exposeFunction("userJoined", (user) => {
-			console.log("user joined:", user);
-			this.playSound(user);
+		await this.page.exposeFunction("joinedUsersChanged", (users) => {
+			for(let user of users){
+				if(this.joinedUsers.indexOf(user) >= 0)
+					continue;
+				else {
+					console.log("user joined:", user);
+					this.playSound(user);
+				}
+			}
+			this.joinedUsers = users;
 		});
 		await this.page.evaluate((groupName, channelName) => {
 			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
@@ -128,14 +140,13 @@ class SteamChat {
 						}
 					}
 
+					// Join observer
 					setTimeout(() => {
 						let usersList = g.querySelector(".VoiceChannelParticipants").firstElementChild;
 						window.mutationObserver = new MutationObserver((mutRecords) => {
-							for(let mutRecord of mutRecords){
-								for(let addedNode of mutRecord.addedNodes){
-									window.userJoined(addedNode.querySelector(".playerName").innerText);
-								}
-							}
+							window.joinedUsersChanged(
+								Array.from(usersList.querySelectorAll(".playerName")).map(e => e.innerText)
+							);
 						});
 						window.mutationObserver.observe(usersList, {childList: true});
 					}, 1000);
