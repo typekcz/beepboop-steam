@@ -24,6 +24,35 @@ class SteamChat {
 			console.log(e);
 		}
 		await this.initAudio();
+
+		this.myName = await this.page.evaluate(() => {
+			return document.querySelector(".currentUserContainer .playerName").innerText;
+		});
+
+		await this.page.exposeFunction("handleMessage", (group, message) => {
+			this.handleMessage(group, message);
+		});
+
+		await this.page.exposeFunction("findChatRoom", (message) => {
+			return this.findChatRoom(message);
+		});
+
+		await this.page.evaluate(() => {
+			window.Notification = function(text, options){
+				setTimeout(function(){
+					handleMessage(text, options.body);
+				}, 500);
+
+				this.addEventListener = function(type, handler){
+					if(type == "click"){
+						handler();
+					}
+				};
+				this.close = function(){};
+			};
+			window.Notification.permission = "granted";
+			window.Notification.requestPermission = function(e){e("granted")};
+		});
 	}
 	
 	initAudio(){
@@ -53,6 +82,84 @@ class SteamChat {
 				window.audio.play();
 			};
 		});
+	}
+
+	async handleMessage(groupName, message){
+		const unknownMessages = [
+			"the fuck you want?",
+			"I'm not fluent in meatbag language",
+			"fuck you too"
+		];
+		const errorMessages = [
+			"nope",
+			"418 I'm a teapot",
+			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉"
+		];
+		// g_FriendsUIApp.ChatStore.m_mapChatGroups.get("21961").m_mapRooms.get("84836").SendChatMessage("beep?","beep?","beep?","beep?")
+		message = /.*: "(.*)"/.exec(message)[1];
+		if(message.startsWith("@" + this.myName + " ")){
+			let command = message.substring(this.myName.length + 2).split(" ");
+			try {
+				switch(command[0].toLowerCase()){
+					case "play":
+						await this.playSound(command[1]);
+						break;
+					case "playurl":
+						await this.playSoundUrl(command[1]);
+						break;
+					case "beep":
+					case "beep?":
+						await this.sendMessage(groupName, "boop");
+						break;
+					case "eval":
+						await this.sendMessage(groupName, JSON.stringify(eval(command[1])));
+						break;
+					default:
+						await this.sendMessage(groupName, unknownMessages[Math.round(Math.random()*unknownMessages.length - 1)]);
+						break;
+				}
+			} catch(e){
+				await this.sendMessage(groupName, unknownMessages[Math.round(Math.random()*errorMessages.length - 1)]);
+			}
+		}
+	}
+
+	async sendMessage(groupName, message){
+		let room = await this.findChatRoom(groupName).room;
+
+		await this.page.evaluate((room, message) => {
+			g_FriendsUIApp.ChatStore.FindChatRoom("2358679", "7133824").SendChatMessage(message);
+		}, room, message);
+	}
+
+	findChatRoom(groupName){
+		return this.page.evaluate((groupName) => {
+			let groupId = null;
+			let group = null;
+			for(g of g_FriendsUIApp.ChatStore.m_mapChatGroups){
+				if(g[1].name == groupName){
+					groupId = g[0];
+					group = g[1];
+					break;
+				}
+			}
+			if(group == null)
+				return null;
+
+			let lastMention = 0;
+			let roomId = null;
+			let room = null;
+			for(let r of group.m_mapRooms){
+				if(r[1].m_rtLastMention > lastMention){
+					lastMention = r[1].m_rtLastMention;
+					roomId = r[0];
+					room = r[1];
+				}
+			}
+			return {
+				groupId, roomId
+			}
+		}, groupName);
 	}
 
 	getGroups(){
@@ -117,6 +224,14 @@ class SteamChat {
 		this.groupName = group;
 		this.openGroup(group);
 		await this.page.exposeFunction("joinedUsersChanged", (users) => {
+			for(let user of this.joinedUsers){
+				if(users.indexOf(user) >= 0)
+					continue;
+				else {
+					console.log("user left:", user);
+					//this.playSound(user);
+				}
+			}
 			for(let user of users){
 				if(this.joinedUsers.indexOf(user) >= 0)
 					continue;
