@@ -94,7 +94,7 @@ class Main {
 
 		try {
 			const browser = await puppeteer.launch({
-				headless: false,
+				headless: true,
 				args: [
 					"--disable-client-side-phishing-detection",
 					"--disable-sync",
