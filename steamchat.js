@@ -1,3 +1,5 @@
+const {VM} = require('vm2');
+
 class SteamChat {
 	/**
 	 * @param {Page} page - Puppeteer page
@@ -9,7 +11,7 @@ class SteamChat {
 		this.joinedUsers = [];
 
 		this.activityInterval = setInterval(() => {
-			this.page.mouse.move(Math.random()*100, Math.random()*100);
+			this.page.mouse.move(Math.random()*100, Math.random()*100+300);
 		},60000);
 	}
 
@@ -26,11 +28,12 @@ class SteamChat {
 		await this.initAudio();
 
 		this.myName = await this.page.evaluate(() => {
+			document.hasFocus = function(){return false;};
 			return document.querySelector(".currentUserContainer .playerName").innerText;
 		});
 
 		await this.page.exposeFunction("handleMessage", (group, message) => {
-			this.handleMessage(group, message);
+			return this.handleMessage(group, message);
 		});
 
 		await this.page.exposeFunction("findChatRoom", (message) => {
@@ -39,13 +42,13 @@ class SteamChat {
 
 		await this.page.evaluate(() => {
 			window.Notification = function(text, options){
-				setTimeout(function(){
-					handleMessage(text, options.body);
-				}, 500);
+				this.text = text;
+				this.options = options;
 
-				this.addEventListener = function(type, handler){
+				this.addEventListener = async function(type, handler){
 					if(type == "click"){
 						handler();
+						handleMessage(this.text, this.options.body);
 					}
 				};
 				this.close = function(){};
@@ -85,6 +88,7 @@ class SteamChat {
 	}
 
 	async handleMessage(groupName, message){
+		console.log("handlemessage", groupName, message);
 		const unknownMessages = [
 			"the fuck you want?",
 			"I'm not fluent in meatbag language",
@@ -97,6 +101,7 @@ class SteamChat {
 		];
 		// g_FriendsUIApp.ChatStore.m_mapChatGroups.get("21961").m_mapRooms.get("84836").SendChatMessage("beep?","beep?","beep?","beep?")
 		message = /.*: "(.*)"/.exec(message)[1];
+		let response = null;
 		if(message.startsWith("@" + this.myName + " ")){
 			let command = message.substring(this.myName.length + 2).split(" ");
 			try {
@@ -107,36 +112,51 @@ class SteamChat {
 					case "playurl":
 						await this.playSoundUrl(command[1]);
 						break;
+					case "stop":
+						await this.stopSound();
+						break;
 					case "beep":
 					case "beep?":
-						await this.sendMessage(groupName, "boop");
+						response = "boop";
 						break;
 					case "eval":
-						await this.sendMessage(groupName, JSON.stringify(eval(command[1])));
+						const vm = new VM({
+							wrapper: "none"
+						});
+						let result = vm.run(command.splice(1).join(" "));
+						response = "/code " + JSON.stringify(result);
 						break;
 					default:
-						await this.sendMessage(groupName, unknownMessages[Math.round(Math.random()*unknownMessages.length - 1)]);
+						response = unknownMessages[Math.round(Math.random()*unknownMessages.length - 1)];
 						break;
 				}
 			} catch(e){
-				await this.sendMessage(groupName, unknownMessages[Math.round(Math.random()*errorMessages.length - 1)]);
+				console.log("command error", e.message);
+				response = errorMessages[Math.round(Math.random()*errorMessages.length - 1)];
 			}
+		}
+		if(response !== null){
+			console.log(response);
+			await this.page.type(".chatTextarea", response);
+			await this.page.click(".chatSubmitButton");
 		}
 	}
 
 	async sendMessage(groupName, message){
-		let room = await this.findChatRoom(groupName).room;
-
-		await this.page.evaluate((room, message) => {
-			g_FriendsUIApp.ChatStore.FindChatRoom("2358679", "7133824").SendChatMessage(message);
-		}, room, message);
+		let chat = await this.findChatRoom(groupName);
+		console.log(chat);
+		await this.page.evaluate((chat, message) => {
+			g_FriendsUIApp.ChatStore.FindChatRoom(chat.groupId, chat.roomId).SendChatMessage(message);
+		}, chat, message);
 	}
 
 	findChatRoom(groupName){
+		console.log("findChatRoom", groupName);
 		return this.page.evaluate((groupName) => {
 			let groupId = null;
 			let group = null;
 			for(g of g_FriendsUIApp.ChatStore.m_mapChatGroups){
+				console.log(g[1].name);
 				if(g[1].name == groupName){
 					groupId = g[0];
 					group = g[1];
@@ -190,6 +210,7 @@ class SteamChat {
 				let chatGroup = g.querySelector(".chatRoomName");
 				if(chatGroup.innerText == groupName){
 					chatGroup.click();
+					document.activeElement.blur();
 				}
 			}
 		}, group);

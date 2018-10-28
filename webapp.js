@@ -47,6 +47,7 @@ class WebApp {
 
 	startRestApi(steamchat, soundsDbGw){
 		// Debug screenshot of page
+		steamchat.getPage().setViewport({width: 1024, height: 900});
 		this.expressApp.get("/screen", async (req, res) => {
 			let image = steamchat.getPage().screenshot({type: "png"});
 			res.set("Content-Type", "image/png");
