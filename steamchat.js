@@ -137,7 +137,7 @@ class SteamChat {
 		}
 		if(response !== null){
 			console.log(response);
-			await this.page.type(".chatTextarea", response);
+			await this.page.type(".chatentry_chatTextarea_1jyF1", response);
 			await this.page.click(".chatSubmitButton");
 		}
 	}
