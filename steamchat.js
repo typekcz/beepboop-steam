@@ -1,4 +1,5 @@
 const {VM} = require('vm2');
+const https = require('https');
 
 class SteamChat {
 	/**
@@ -103,14 +104,23 @@ class SteamChat {
 		message = /.*: "(.*)"/.exec(message)[1];
 		let response = null;
 		if(message.startsWith("@" + this.myName + " ")){
-			let command = message.substring(this.myName.length + 2).split(" ");
+			message = message.substring(this.myName.length + 2);
+			let index = message.indexOf(" ");
+			if(index < 0)
+				index = message.length;
+			let command = message.substr(0, index);
+			let arg = message.substr(index + 1);
+			console.log(">" + message + "<", ">" + command + "<", ">" + arg + "<");
 			try {
-				switch(command[0].toLowerCase()){
+				switch(command.toLowerCase()){
 					case "play":
-						await this.playSound(command[1]);
+						await this.playSound(arg);
 						break;
 					case "playurl":
-						await this.playSoundUrl(command[1]);
+						await this.playSoundUrl(arg);
+						break;
+					case "instant":
+						await this.playInstant(arg);
 						break;
 					case "stop":
 						await this.stopSound();
@@ -123,7 +133,7 @@ class SteamChat {
 						const vm = new VM({
 							wrapper: "none"
 						});
-						let result = vm.run(command.splice(1).join(" "));
+						let result = vm.run(arg);
 						response = "/code " + JSON.stringify(result);
 						break;
 					default:
@@ -132,9 +142,10 @@ class SteamChat {
 				}
 			} catch(e){
 				console.log("command error", e.message);
-				response = errorMessages[Math.round(Math.random()*errorMessages.length - 1)];
+				response = errorMessages[Math.round(Math.random()*errorMessages.length - 1)] + "\n" + e.message;
 			}
 		}
+		console.log("response", response);
 		if(response !== null){
 			console.log(response);
 			await this.page.type(".chatentry_chatTextarea_1jyF1", response);
@@ -306,8 +317,34 @@ class SteamChat {
 
 	stopSound(){
 		return this.page.evaluate(() => {
-			window.audio.stop();
+			window.audio.pause();
 			return true;
+		});
+	}
+
+	playInstant(search){
+		return new Promise((resolve, reject) => {
+			let url = "https://www.myinstants.com/search/?name=" + encodeURIComponent(search);
+			console.log("instant search url", url);
+			https.get(url, (resp) => {
+				let data = "";
+
+				resp.on('data', (chunk) => {
+					data += chunk;
+				});
+
+				resp.on('end', () => {
+					let search_regex = /<div class="small-button" onmousedown="play\('([\w\.\/\-_%]*)'\)/;
+					let regex_result = search_regex.exec(data);
+					if(regex_result == null)
+						return reject(new Error("No instant found."));
+					this.playSoundUrl("https://www.myinstants.com" + regex_result[1]);
+					resolve();
+				});
+			}).on("error", (err) => {
+				console.log("Error: " + err.message);
+				reject(err);
+			});
 		});
 	}
 }
