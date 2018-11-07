@@ -22,7 +22,7 @@ class SteamChat {
 
 	async init(){
 		try {
-			await this.page.waitForSelector(".main_throbberContainer-exit-done_3UAKh");
+			await this.page.waitForSelector(".main_throbberContainer-exit-active_24VO6");
 		} catch(e){
 			console.log(e);
 		}
@@ -98,7 +98,8 @@ class SteamChat {
 		const errorMessages = [
 			"nope",
 			"418 I'm a teapot",
-			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉"
+			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉",
+			"/me is currently unavailable"
 		];
 		// g_FriendsUIApp.ChatStore.m_mapChatGroups.get("21961").m_mapRooms.get("84836").SendChatMessage("beep?","beep?","beep?","beep?")
 		message = /.*: "(.*)"/.exec(message)[1];
@@ -148,8 +149,8 @@ class SteamChat {
 		console.log("response", response);
 		if(response !== null){
 			console.log(response);
-			await this.page.type(".chatentry_chatTextarea_1jyF1", response);
-			await this.page.click(".chatSubmitButton");
+			await this.page.type("textarea", response);
+			await this.page.click("textarea + button");
 		}
 	}
 
