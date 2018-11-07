@@ -138,12 +138,12 @@ class SteamChat {
 						response = "/code " + JSON.stringify(result);
 						break;
 					default:
-						response = unknownMessages[Math.round(Math.random()*unknownMessages.length - 1)];
+						response = unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))];
 						break;
 				}
 			} catch(e){
 				console.log("command error", e.message);
-				response = errorMessages[Math.round(Math.random()*errorMessages.length - 1)] + "\n" + e.message;
+				response = errorMessages[Math.round(Math.random()*(errorMessages.length - 1))] + "\n" + e.message;
 			}
 		}
 		console.log("response", response);
