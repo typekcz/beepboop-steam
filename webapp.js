@@ -128,6 +128,34 @@ class WebApp {
 			res.json(await steamchat.getGroupMembers(groupId));
 			res.end();
 		});
+
+		this.expressApp.post("/api/user/sounds/:type/:soundName", async (req, res) => {
+			if(req.body && req.params.soundName && req.params.type){
+				let steamid = this.sessions.get(req.get("Session"));
+				if(!steamid)
+					return res.status(401).send("Not logged in.").end();
+				let type = soundsDbGw.SoundType[req.params.type.toUpperCase()];
+				if(typeof(type) === "undefined")
+					return res.status(400).send("Unknown type.").end();
+				soundsDbGw.insertUserSound(steamid, req.params.soundName, type);
+			}
+			res.status(200);
+			res.end();
+		});
+
+		this.expressApp.delete("/api/user/sounds/:type/:soundName", async (req, res) => {
+			if(req.body && req.params.soundName && req.params.type){
+				let steamid = this.sessions.get(req.get("Session"));
+				if(!steamid)
+					return res.status(401).send("Not logged in.").end();
+				let type = soundsDbGw.SoundType[req.params.type.toUpperCase()];
+				if(typeof(type) === "undefined")
+					return res.status(400).send("Unknown type.").end();
+				soundsDbGw.deleteUserSound(steamid, req.params.soundName, type);
+			}
+			res.status(200);
+			res.end();
+		});
 	}
 
 	startSteamLoginApi(){
@@ -165,7 +193,6 @@ class WebApp {
 		});
 
 		this.expressApp.get("/api/steam/check", (req, res) => {
-			console.log("steam check", req);
 			if(this.sessions.has(req.get("Session")))
 				res.status(200);
 			else

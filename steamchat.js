@@ -5,9 +5,10 @@ class SteamChat {
 	/**
 	 * @param {Page} page - Puppeteer page
 	 */
-	constructor(page, soundsBaseUrl){
+	constructor(page, soundsBaseUrl, soundsDbGw){
 		this.page = page;
 		this.soundsBaseUrl = soundsBaseUrl;
+		this.soundsDbGw = soundsDbGw;
 		this.groupName = null;
 		this.joinedUsers = [];
 
@@ -111,7 +112,6 @@ class SteamChat {
 				index = message.length;
 			let command = message.substr(0, index);
 			let arg = message.substr(index + 1);
-			console.log(">" + message + "<", ">" + command + "<", ">" + arg + "<");
 			try {
 				switch(command.toLowerCase()){
 					case "play":
@@ -148,7 +148,6 @@ class SteamChat {
 		}
 		console.log("response", response);
 		if(response !== null){
-			console.log(response);
 			await this.page.type("textarea", response);
 			await this.page.click("textarea + button");
 		}
@@ -156,19 +155,16 @@ class SteamChat {
 
 	async sendMessage(groupName, message){
 		let chat = await this.findChatRoom(groupName);
-		console.log(chat);
 		await this.page.evaluate((chat, message) => {
 			g_FriendsUIApp.ChatStore.FindChatRoom(chat.groupId, chat.roomId).SendChatMessage(message);
 		}, chat, message);
 	}
 
 	findChatRoom(groupName){
-		console.log("findChatRoom", groupName);
 		return this.page.evaluate((groupName) => {
 			let groupId = null;
 			let group = null;
 			for(g of g_FriendsUIApp.ChatStore.m_mapChatGroups){
-				console.log(g[1].name);
 				if(g[1].name == groupName){
 					groupId = g[0];
 					group = g[1];
@@ -252,28 +248,51 @@ class SteamChat {
 			return members;
 		}, groupId.toString());
 	}
+
+	async getVoiceChannelUsers(){
+		return await this.page.evaluate(() => {
+			let users = [];
+			let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat();
+			for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
+				users.push(m.persona.m_steamid.m_ulSteamID.toString());
+			return users;
+		});
+	}
+
+	async voiceChannelUsersChanged(){
+		let users = await this.getVoiceChannelUsers();
+		for(let user of this.joinedUsers){
+			if(users.indexOf(user) >= 0)
+				continue;
+			else {
+				console.log("user left:", user);
+				let sound = await this.soundsDbGw.selectRandomUserSound(user, this.soundsDbGw.SoundType.LEAVE);
+				if(sound != null)
+					this.playSound(sound);
+				else
+					console.log("No sound.");
+			}
+		}
+		for(let user of users){
+			if(this.joinedUsers.indexOf(user) >= 0)
+				continue;
+			else {
+				console.log("user joined:", user);
+				let sound = await this.soundsDbGw.selectRandomUserSound(user, this.soundsDbGw.SoundType.WELCOME);
+				if(sound != null)
+					this.playSound(sound);
+				else
+					console.log("No sound.");
+			}
+		}
+		this.joinedUsers = users;
+	}
 	
 	async joinVoiceChannel(group, channel){
 		this.groupName = group;
 		this.openGroup(group);
-		await this.page.exposeFunction("joinedUsersChanged", (users) => {
-			for(let user of this.joinedUsers){
-				if(users.indexOf(user) >= 0)
-					continue;
-				else {
-					console.log("user left:", user);
-					//this.playSound(user);
-				}
-			}
-			for(let user of users){
-				if(this.joinedUsers.indexOf(user) >= 0)
-					continue;
-				else {
-					console.log("user joined:", user);
-					this.playSound(user);
-				}
-			}
-			this.joinedUsers = users;
+		await this.page.exposeFunction("joinedUsersChanged", async () => {
+			this.voiceChannelUsersChanged();
 		});
 		await this.page.evaluate((groupName, channelName) => {
 			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
@@ -292,9 +311,7 @@ class SteamChat {
 					setTimeout(() => {
 						let usersList = g.querySelector(".VoiceChannelParticipants").firstElementChild;
 						window.mutationObserver = new MutationObserver((mutRecords) => {
-							window.joinedUsersChanged(
-								Array.from(usersList.querySelectorAll(".playerName")).map(e => e.innerText)
-							);
+							window.joinedUsersChanged();
 						});
 						window.mutationObserver.observe(usersList, {childList: true});
 					}, 1000);

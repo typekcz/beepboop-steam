@@ -14,6 +14,50 @@ window.addEventListener("load", async () => {
 	}
 	listSounds();
 	registerAsyncSubmitEvents();
+
+	let soundContextMenu = new ContextMenu(".soundContextMenu", [
+		{
+			name: "Add to welcome sounds", 
+			fn: (target) => {
+				fetch("/api/user/sounds/welcome/" + target.innerText, {
+					method: "post",
+					headers: {
+						Session: localStorage.getItem("authId")
+					}
+				});
+			}
+		}, {
+			name: "Remove from welcome sounds", 
+			fn: (target) => {
+				fetch("/api/user/sounds/welcome/" + target.innerText, {
+					method: "delete",
+					headers: {
+						Session: localStorage.getItem("authId")
+					}
+				});
+			}
+		}, {
+			name: "Add to leave sounds", 
+			fn: (target) => {
+				fetch("/api/user/sounds/leave/" + target.innerText, {
+					method: "post",
+					headers: {
+						Session: localStorage.getItem("authId")
+					}
+				});
+			}
+		}, {
+			name: "Remove from leave sounds", 
+			fn: (target) => {
+				fetch("/api/user/sounds/leave/" + target.innerText, {
+					method: "delete",
+					headers: {
+						Session: localStorage.getItem("authId")
+					}
+				});
+			}
+		}
+	]);
 });
 
 window.addEventListener("storage", (e) => {
@@ -39,12 +83,13 @@ function registerAsyncSubmitEvents(){
 			if(form.getAttribute("data-session") != null)
 				options.headers = {Session: localStorage.getItem("authId")};
 			let res = await fetch(form.action, options);
+			console.log(res);
+			let contentType = res.headers.get("content-type");
 			if(!res.ok){
 				alert(await res.text());
-			} else if(res.headers.get("content-type").indexOf("application/json") !== -1){
+			} else if(contentType != null && contentType.indexOf("application/json") !== -1){
 				eval(await res.text());
 			}
-			console.log(res);
 		});
 	}
 }
@@ -58,6 +103,7 @@ async function listSounds(){
 		let soundsElement = document.getElementById("sounds");
 		for(let sound of sounds){
 			let btn = document.createElement("button");
+			btn.classList.add("soundContextMenu");
 			btn.innerText = sound;
 			btn.addEventListener("click", async () => {
 				let res = await fetch("/api/sounds/" + encodeURIComponent(sound) + "/play", {

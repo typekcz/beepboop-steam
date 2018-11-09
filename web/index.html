@@ -1,9 +1,11 @@
 <!DOCTYPE HTML> 
 <html>
 	<head>
-		<script src="script.js"></script>
-		<link rel="stylesheet" type="text/css" href="gui.css">
-		<link rel="stylesheet" type="text/css" href="behavior.css">
+		<script src="js/context-menu.js"></script>
+		<script src="js/script.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/gui.css">
+		<link rel="stylesheet" type="text/css" href="css/behavior.css">
+		<link rel="stylesheet" type="text/css" href="css/contextMenu.css">
 	</head>
 	<body>
 		<div class="when-notlogged">
@@ -13,11 +15,14 @@
 			<form action="/api/steam/logout" method="get" data-asyncSubmit data-session>
 				<input type="submit" value="Steam Logout">
 			</form>
-			<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
-				<input type="text" name="name" placeholder="Name">
-				<input type="file" name="sound">
-				<input type="submit">
-			</form>
+			<fieldset>
+				<legend>Upload Sound</legend>
+				<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
+					<input type="text" name="name" placeholder="Name">
+					<input type="file" name="sound">
+					<input type="submit">
+				</form>
+			</fieldset>
 		</div>
 		<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
 			<fieldset>

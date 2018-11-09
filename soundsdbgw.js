@@ -1,3 +1,8 @@
+const SoundType = {
+	WELCOME: 1,
+	LEAVE: 2
+}
+
 class SoundsDBGW {
 	/**
 	 * @param {pgPromise.IMain} db
@@ -7,21 +12,22 @@ class SoundsDBGW {
 	}
 
 	async init(){
-		let res = await this.db.result(
-			`SELECT 1
-			FROM   information_schema.tables 
-			WHERE  table_schema = 'public'
-				AND    table_name = 'sound'`
+		await this.db.none(
+			`CREATE TABLE IF NOT EXISTS sound(
+				name	varchar(50) PRIMARY KEY,
+				data	bytea NOT NULL,
+				mime	varchar(255) NOT NULL
+			)`
 		);
-		if(res.rowCount != 1){
-			await this.db.none(
-				`CREATE TABLE sound(
-					name	varchar(50) PRIMARY KEY,
-					data	bytea NOT NULL,
-					mime	varchar(255) NOT NULL
-				)`
-			);
-		}
+		await this.db.none(
+			`CREATE TABLE IF NOT EXISTS user_sound(
+				steamid	varchar(50),
+				name	varchar(50),
+				type	smallint,
+				PRIMARY KEY(steamid, name, type),
+				FOREIGN KEY(name) REFERENCES sound(name)
+			)`
+		);
 	}
 
 	/**
@@ -57,6 +63,42 @@ class SoundsDBGW {
 			return null;
 		}
 	}
+
+	async selectRandomUserSound(steamid, type){
+		try {
+			let sound = await this.db.oneOrNone(
+				`SELECT sound.name FROM user_sound INNER JOIN sound ON user_sound.name = sound.name 
+				WHERE steamid = $1 AND type = $2
+				ORDER BY random() LIMIT 1`,
+				[steamid, type]
+			);
+			return (sound == null ? null : sound.name);
+		} catch(e){
+			console.error(e);
+			return null;
+		}
+	}
+
+	async insertUserSound(steamid, sound, type){
+		try {
+			await this.db.none("INSERT INTO user_sound(steamid, name, type) VALUES($1, $2, $3)", [steamid, sound, type]);
+			return true;
+		} catch(e){
+			console.error(e);
+			return false;
+		}
+	}
+
+	async deleteUserSound(steamid, sound, type){
+		try {
+			await this.db.none("DELETE FROM user_sound WHERE steamid = $1 AND name = $2 AND type = $3", [steamid, sound, type]);
+			return true;
+		} catch(e){
+			console.error(e);
+			return false;
+		}
+	}
 }
 
+SoundsDBGW.prototype.SoundType = SoundsDBGW.SoundType = SoundType;
 module.exports = SoundsDBGW;
