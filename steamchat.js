@@ -303,7 +303,9 @@ class SteamChat {
 					break;
 				}
 			}
-
+		}, groupId, channel);
+		await this.page.waitForSelector(".ActiveVoiceChannel .VoiceChannelParticipants");
+		await this.page.evaluate(() => {
 			// Join observer
 			setTimeout(() => {
 				let usersList = document.querySelector(".ActiveVoiceChannel .VoiceChannelParticipants").firstElementChild;
@@ -312,7 +314,7 @@ class SteamChat {
 				});
 				window.mutationObserver.observe(usersList, {childList: true});
 			}, 1000);
-		}, groupId, channel);
+		});
 	}
 
 	playSound(soundName){
