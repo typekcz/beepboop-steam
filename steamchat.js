@@ -213,16 +213,16 @@ class SteamChat {
 	}
 
 	async openGroup(group){
-		await this.page.evaluate((groupName) => {
-			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
-				let chatGroup = g.querySelector(".chatRoomName");
-				if(chatGroup.innerText == groupName){
-					chatGroup.click();
-					document.activeElement.blur();
-				}
-			}
-		}, group);
-		await this.page.waitForSelector("div.chatDialogs div.chatWindow.MultiUserChat.namedGroup");
+		let groupId = await this.getGroupIdByName(group);
+		await this.page.evaluate((groupId) => {
+			let group = g_FriendsUIApp.ChatStore.GetChatRoomGroup(groupId);
+			g_FriendsUIApp.UIStore.ShowAndOrActivateChatRoomGroup(group.chatRoomList[0], group, true);
+		}, groupId);
+		try {
+			await this.page.waitForSelector("div.chatDialogs div.chatWindow.MultiUserChat.namedGroup");
+		} catch(e){
+			console.log(e);
+		}
 	}
 
 	async getGroupIdByName(name){
@@ -294,31 +294,25 @@ class SteamChat {
 		await this.page.exposeFunction("joinedUsersChanged", async () => {
 			this.voiceChannelUsersChanged();
 		});
-		await this.page.evaluate((groupName, channelName) => {
-			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
-				if(g.querySelector(".chatRoomName").innerText == groupName){
-					let voiceRooms = g.querySelector(".ChatRoomListGroupItemChatRooms").firstChild;
-					if(voiceRooms.children.length == 0)
-						g.querySelector(".openGroupButton").click();
-					for(let ch of g.querySelectorAll(".chatRoomVoiceChannel")){
-						if(ch.querySelector(".chatRoomVoiceChannelName").innerText == channelName){
-							ch.click();
-							break;
-						}
-					}
-
-					// Join observer
-					setTimeout(() => {
-						let usersList = g.querySelector(".VoiceChannelParticipants").firstElementChild;
-						window.mutationObserver = new MutationObserver((mutRecords) => {
-							window.joinedUsersChanged();
-						});
-						window.mutationObserver.observe(usersList, {childList: true});
-					}, 1000);
+		let groupId = await this.getGroupIdByName(group);
+		await this.page.evaluate((groupId, channelName) => {
+			let group = g_FriendsUIApp.ChatStore.GetChatRoomGroup(groupId);
+			for(let voiceChannel of group.voiceRoomList){
+				if(voiceChannel.name == channelName){
+					voiceChannel.StartVoiceChat();
 					break;
 				}
 			}
-		}, group, channel);
+
+			// Join observer
+			setTimeout(() => {
+				let usersList = document.querySelector(".ActiveVoiceChannel .VoiceChannelParticipants").firstElementChild;
+				window.mutationObserver = new MutationObserver((mutRecords) => {
+					window.joinedUsersChanged();
+				});
+				window.mutationObserver.observe(usersList, {childList: true});
+			}, 1000);
+		}, groupId, channel);
 	}
 
 	playSound(soundName){
