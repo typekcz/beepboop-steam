@@ -4,6 +4,7 @@ const fileUpload = require("express-fileupload");
 const openid = require("openid");
 const fs = require("fs");
 const generateUid = require("uid-safe");
+const ytdl = require("ytdl-core");
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";
@@ -62,6 +63,15 @@ class WebApp {
 				res.status(400);
 			}
 			res.end();
+		});
+
+		this.expressApp.get("/api/yt", (req, res) => {
+			if(req.query.url){
+				ytdl(req.query.url).pipe(res.writable);
+			} else {
+				res.status(400);
+				res.end();
+			}
 		});
 
 		this.expressApp.post("/api/uploadSound", async (req, res) => {
