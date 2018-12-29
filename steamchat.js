@@ -57,6 +57,11 @@ class SteamChat {
 			};
 			window.Notification.permission = "granted";
 			window.Notification.requestPermission = function(e){e("granted")};
+
+			// Voice settings
+			g_FriendsUIApp.VoiceStore.SetUseEchoCancellation(false);
+			g_FriendsUIApp.VoiceStore.SetUseAutoGainControl(false);
+			g_FriendsUIApp.VoiceStore.SetUseNoiseCancellation(false);
 		});
 	}
 	
@@ -86,6 +91,14 @@ class SteamChat {
 				window.addStream(window.audio.captureStream());
 				window.audio.play();
 			};
+
+			window.say = function(text){
+				let utter = new SpeechSynthesisUtterance(text);
+				utter.voice = window.speechSynthesis.getVoices();
+				utter.rate = 1.3;
+				utter.pitch = 0.3;
+				window.speechSynthesis.speak(utter);
+			}
 		});
 	}
 
