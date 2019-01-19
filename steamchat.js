@@ -5,9 +5,10 @@ class SteamChat {
 	/**
 	 * @param {Page} page - Puppeteer page
 	 */
-	constructor(page, soundsBaseUrl, soundsDbGw){
+	constructor(page, soundsBaseUrl, youtubeBaseUrl, soundsDbGw){
 		this.page = page;
 		this.soundsBaseUrl = soundsBaseUrl;
+		this.youtubeBaseUrl = youtubeBaseUrl;
 		this.soundsDbGw = soundsDbGw;
 		this.groupName = null;
 		this.joinedUsers = [];
@@ -123,7 +124,7 @@ class SteamChat {
 			let index = message.indexOf(" ");
 			if(index < 0)
 				index = message.length;
-			let command = message.substr(0, index);
+			let command = message.substr(0, index).trim();
 			let arg = message.substr(index + 1);
 			try {
 				switch(command.toLowerCase()){
@@ -335,7 +336,12 @@ class SteamChat {
 	}
 	
 	playSoundUrl(url){
+		const ytRegEx = /^(https?:)?(\/\/)?(www.)?(youtube.com|youtu.be)\//;
 		console.log("playUrl", url);
+		if(ytRegEx.test(url)){
+			console.log("youtube detected");
+			url = this.youtubeBaseUrl + encodeURIComponent(url);
+		}
 		return this.page.evaluate((url) => {
 			window.audio.src = url;
 			return true;
@@ -351,6 +357,10 @@ class SteamChat {
 
 	playInstant(search){
 		return new Promise((resolve, reject) => {
+			const instantRegEx = /^(.*?)(#(\d))?$/;
+			let reRes = instantRegEx.exec(search);
+			search = reRes[1];
+			let number = reRes[3] || 1;
 			let url = "https://www.myinstants.com/search/?name=" + encodeURIComponent(search);
 			console.log("instant search url", url);
 			https.get(url, (resp) => {
@@ -361,8 +371,11 @@ class SteamChat {
 				});
 
 				resp.on('end', () => {
-					let search_regex = /<div class="small-button" onmousedown="play\('([\w\.\/\-_%]*)'\)/;
-					let regex_result = search_regex.exec(data);
+					let search_regex = /<div class="small-button" onmousedown="play\('([\w\.\/\-_%]*)'\)/g;
+					let regex_result;
+					for(let i = 0; i < number; i++){
+						regex_result = search_regex.exec(data);
+					}
 					if(regex_result == null)
 						return reject(new Error("No instant found."));
 					this.playSoundUrl("https://www.myinstants.com" + regex_result[1]);

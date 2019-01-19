@@ -134,7 +134,7 @@ class Main {
 			}
 			
 			//await new Promise((res) => { setTimeout(res, 1000); });
-			let steamchat = new SteamChat(page, "http://localhost:" + port + "/api/sounds/", soundsDbGw);
+			let steamchat = new SteamChat(page, "http://localhost:" + port + "/api/sounds/", "http://localhost:" + port + "/api/yt?url=", soundsDbGw);
 			await steamchat.init(config.volume || 0.3);
 			await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName);
 	

@@ -65,9 +65,18 @@ class WebApp {
 			res.end();
 		});
 
+		this.expressApp.post("/api/playInstant", (req, res) => {
+			if(req.body && req.body.name){
+				steamchat.playInstant(req.body.name);
+			} else {
+				res.status(400);
+			}
+			res.end();
+		});
+
 		this.expressApp.get("/api/yt", (req, res) => {
 			if(req.query.url){
-				ytdl(req.query.url).pipe(res.writable);
+				ytdl(req.query.url, {quality: "highestaudio"}).pipe(res);
 			} else {
 				res.status(400);
 				res.end();
