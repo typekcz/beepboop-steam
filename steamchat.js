@@ -1,6 +1,18 @@
 const {VM} = require('vm2');
 const https = require('https');
 
+const selectors = {
+	loading: ".main_throbberContainer-exit-active_24VO6",
+	loggedUsername: ".personanameandstatus_playerName_1uxaf",
+	groupList: ".ChatRoomList .ChatRoomListGroupItem",
+	groupListItem: ".chatRoomName",
+	groupListItemChatroomList: ".ChatRoomListGroupItemChatRooms",
+	groupListItemOpenBtn: ".openGroupButton",
+	groupListItemVoiceChannel: ".chatRoomVoiceChannel .chatRoomVoiceChannelName",
+	groupChatTab: "div.chatDialogs div.chatWindow.MultiUserChat.namedGroup",
+	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants"
+};
+
 class SteamChat {
 	/**
 	 * @param {Page} page - Puppeteer page
@@ -24,16 +36,16 @@ class SteamChat {
 
 	async init(){
 		try {
-			await this.page.waitForSelector(".main_throbberContainer-exit-active_24VO6");
+			await this.page.waitForSelector(selectors.loading);
 		} catch(e){
 			console.log(e);
 		}
 		await this.initAudio();
 
-		this.myName = await this.page.evaluate(() => {
+		this.myName = await this.page.evaluate((selectors) => {
 			document.hasFocus = function(){return false;};
-			return document.querySelector(".currentUserContainer .playerName").innerText;
-		});
+			return document.querySelector(selectors.loggedUsername).innerText;
+		}, selectors);
 
 		await this.page.exposeFunction("handleMessage", (group, message) => {
 			return this.handleMessage(group, message);
@@ -205,25 +217,25 @@ class SteamChat {
 	}
 
 	getGroups(){
-		return this.page.evaluate(() => {
-			let groupNames = document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem .chatRoomName");
+		return this.page.evaluate((selectors) => {
+			let groupNames = document.querySelectorAll(selectors.groupList + " " + selectors.groupListItem);
 			return Array.prototype.map.call(groupNames, (e) => {return e.innerText;});
-		});
+		}, selectors);
 	}
 
 	getVoiceChannels(group){
-		return this.page.evaluate((group) => {
-			for(let g of document.querySelectorAll(".ChatRoomList .ChatRoomListGroupItem")){
-				if(g.querySelector(".chatRoomName").innerText == group){
-					let voiceRooms = g.querySelector(".ChatRoomListGroupItemChatRooms").firstChild;
+		return this.page.evaluate((group, selectors) => {
+			for(let g of document.querySelectorAll(selectors.groupList)){
+				if(g.querySelector(selectors.groupListItem).innerText == group){
+					let voiceRooms = g.querySelector(selectors.groupListItemChatroomList).firstChild;
 					if(voiceRooms.children.length == 0)
-						g.querySelector(".openGroupButton").click();
-					let channelNames = g.querySelectorAll(".chatRoomVoiceChannel .chatRoomVoiceChannelName");
+						g.querySelector(selectors.groupListItemOpenBtn).click();
+					let channelNames = g.querySelectorAll(selectors.groupListItemVoiceChannel);
 					return Array.prototype.map.call(channelNames, (e) => {return e.innerText;});
 				}
 			}
 			return [];
-		}, group);
+		}, group, selectors);
 	}
 
 	async openGroup(group){
@@ -233,7 +245,7 @@ class SteamChat {
 			g_FriendsUIApp.UIStore.ShowAndOrActivateChatRoomGroup(group.chatRoomList[0], group, true);
 		}, groupId);
 		try {
-			await this.page.waitForSelector("div.chatDialogs div.chatWindow.MultiUserChat.namedGroup");
+			await this.page.waitForSelector(selectors.groupChatTab);
 		} catch(e){
 			console.log(e);
 		}
@@ -254,11 +266,13 @@ class SteamChat {
 		// Group has to be opened for this to work!
 		return await this.page.evaluate((groupId) => {
 			let members = [];
-			for(let f of g_FriendsUIApp.GroupMemberStore.GetGroupMemberList(groupId)[0].m_rgMembers)
-				members.push({
-					name: f.display_name,
-					steamid64: f.steamid64
-				});
+			for(let bucket of g_FriendsUIApp.GroupMemberStore.GetGroupMemberList(groupId)){
+				for(let f of bucket.m_rgMembers)
+					members.push({
+						name: f.display_name,
+						steamid64: f.steamid64
+					});
+			}
 			return members;
 		}, groupId.toString());
 	}
@@ -318,17 +332,17 @@ class SteamChat {
 				}
 			}
 		}, groupId, channel);
-		await this.page.waitForSelector(".ActiveVoiceChannel .VoiceChannelParticipants");
-		await this.page.evaluate(() => {
+		await this.page.waitForSelector(selectors.voiceChannelUsers);
+		await this.page.evaluate((selectors) => {
 			// Join observer
 			setTimeout(() => {
-				let usersList = document.querySelector(".ActiveVoiceChannel .VoiceChannelParticipants").firstElementChild;
+				let usersList = document.querySelector(selectors.voiceChannelUsers).firstElementChild;
 				window.mutationObserver = new MutationObserver((mutRecords) => {
 					window.joinedUsersChanged();
 				});
 				window.mutationObserver.observe(usersList, {childList: true});
 			}, 1000);
-		});
+		}, selectors);
 	}
 
 	playSound(soundName){
