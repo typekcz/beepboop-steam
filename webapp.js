@@ -13,7 +13,8 @@ const allowedMime = [
 	"audio/ogg",
 	"video/ogg",
 	"application/ogg",
-	"audio/mpeg"
+	"audio/mpeg",
+	"audio/mp3"
 ];
 
 class WebApp {
