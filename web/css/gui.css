@@ -77,7 +77,8 @@ select option {
 	background-color: var(--secondary-bg-color);
 }
 
-input[type="submit"], input[type="button"], button {
+input[type="submit"], input[type="button"], button, .button {
+	display: inline-block;
 	font-size: 16px;
 	background-color: var(--main-color);
 	border: 0;
