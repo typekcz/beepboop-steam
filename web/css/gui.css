@@ -11,6 +11,7 @@ body {
 	background-color: var(--bg-color);
 	color: var(--txt-color);
 	font-family: sans-serif;
+	margin: 10px;
 }
 
 .left {
@@ -41,6 +42,22 @@ body {
 	display: none;
 }
 
+nav {
+	background-color: var(--main-color);
+	text-shadow: 1px 1px 1px var(--shadow-color);
+	margin: -10px;
+	margin-bottom: 10px;
+	padding: 0 15px;
+	line-height: 30px
+}
+
+nav a {
+	color: var(--txt-color);
+	text-decoration: none;
+	font-variant: small-caps;
+	padding: 0 5px;
+}
+
 input[type="text"],input[type="password"],textarea, select {
 	font-family: sans-serif;
 	background-color: var(--secondary-bg-color);
@@ -53,6 +70,10 @@ input[type="text"],input[type="password"],textarea, select {
 	text-shadow: 1px 1px 1px var(--shadow-color);
 	background:
 		linear-gradient(225deg, transparent 5px, var(--secondary-bg-color) 5px);
+}
+
+select option {
+	background-color: var(--secondary-bg-color);
 }
 
 input[type="submit"], input[type="button"], button {
@@ -212,4 +233,53 @@ legend {
 	padding: 6px;
 	background: var(--main-color);
 	background: linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
+}
+
+meter {
+	width: 100%;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+}
+
+meter::-webkit-meter-optimum-value {
+	background-color: var(--secondary-bg-color);
+}
+
+meter::-moz-meter-optimum-value {
+	background-color: var(--secondary-bg-color);
+}
+
+meter::-webkit-meter-bar{
+	background: none;
+	background-color: var(--main-color);
+}
+
+meter::-moz-meter-bar {
+	background: none;
+	background-color: var(--main-color);
+}
+
+.center-screen {
+	position:absolute;
+	top:50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+fieldset.center-screen:after {
+	top: 6.3px;	/* Added 0.3px as workaround when height is odd */
+	right: 6.3px;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table td, table th {
+	padding: 2px 5px;
+	border: 1px solid var(--main-color);
+}
+
+table th {
+  background-color: var(--main-color);
 }
