@@ -64,6 +64,20 @@ class SoundsDBGW {
 		}
 	}
 
+	async selectUserSounds(steamid, type){
+		try {
+			let sound = await this.db.oneOrNone(
+				`SELECT sound.name FROM user_sound INNER JOIN sound ON user_sound.name = sound.name 
+				WHERE steamid = $1 AND type = $2`,
+				[steamid, type]
+			);
+			return (sound == null ? null : sound.name);
+		} catch(e){
+			console.error(e);
+			return null;
+		}
+	}
+
 	async selectRandomUserSound(steamid, type){
 		try {
 			let sound = await this.db.oneOrNone(

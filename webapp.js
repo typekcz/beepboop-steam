@@ -57,6 +57,12 @@ class WebApp {
 			res.end();
 		});
 
+		this.expressApp.get("/html", async (req, res) => {
+			let html = await steamchat.getPage().evaluate(() => document.documentElement.outerHTML);
+			res.write(await image);
+			res.end();
+		});
+
 		this.expressApp.post("/api/playSoundUrl", (req, res) => {
 			if(req.body && req.body.url){
 				steamchat.playSoundUrl(req.body.url);

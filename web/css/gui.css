@@ -6,11 +6,12 @@
 	--shadow-color: #000000;
 	--line-color: #909090;
 }
-
 body {
 	background-color: var(--bg-color);
 	color: var(--txt-color);
 	font-family: sans-serif;
+	margin: 10px;
+	font-size: 16px;
 }
 
 .left {
@@ -41,7 +42,24 @@ body {
 	display: none;
 }
 
+nav {
+	background-color: var(--main-color);
+	text-shadow: 1px 1px 1px var(--shadow-color);
+	margin: -10px;
+	margin-bottom: 10px;
+	padding: 0 15px;
+	line-height: 30px
+}
+
+nav a {
+	color: var(--txt-color);
+	text-decoration: none;
+	font-variant: small-caps;
+	padding: 0 5px;
+}
+
 input[type="text"],input[type="password"],textarea, select {
+	font-size: 16px;
 	font-family: sans-serif;
 	background-color: var(--secondary-bg-color);
 	border: 0;
@@ -55,7 +73,12 @@ input[type="text"],input[type="password"],textarea, select {
 		linear-gradient(225deg, transparent 5px, var(--secondary-bg-color) 5px);
 }
 
+select option {
+	background-color: var(--secondary-bg-color);
+}
+
 input[type="submit"], input[type="button"], button {
+	font-size: 16px;
 	background-color: var(--main-color);
 	border: 0;
 	color: var(--txt-color);
@@ -94,7 +117,7 @@ input[type="text"]+input[type="submit"] {
 .radio input[type="radio"]:checked + label:before {
 	background-color: var(--main-color);
 	background:
-		linear-gradient(left, var(--main-color) 0%, var(--main-color) 100%);
+		linear-gradient(0deg, var(--main-color) 0%, var(--main-color) 100%);
 	background-size: 50% 50%;
 	background-repeat: no-repeat;
 	background-position: center center;
@@ -212,4 +235,69 @@ legend {
 	padding: 6px;
 	background: var(--main-color);
 	background: linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
+}
+
+meter {
+	width: 100%;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+}
+
+meter::-webkit-meter-optimum-value {
+	background-color: var(--secondary-bg-color);
+}
+
+meter::-moz-meter-optimum-value {
+	background-color: var(--secondary-bg-color);
+}
+
+meter::-webkit-meter-bar{
+	background: none;
+	background-color: var(--main-color);
+}
+
+meter::-moz-meter-bar {
+	background: none;
+	background-color: var(--main-color);
+}
+
+.center-screen {
+	position:absolute;
+	top:50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+fieldset.center-screen:after {
+	top: 6.3px;	/* Added 0.3px as workaround when height is odd */
+	right: 6.3px;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table td, table th {
+	padding: 2px 5px;
+	border: 1px solid var(--main-color);
+}
+
+table th {
+  background-color: var(--main-color);
+}
+
+.tag {
+	display: inline-flex;
+	line-height: 30px;
+	background-color: var(--main-color);
+	border-radius: 15px;
+	padding: 0 12px;
+}
+
+.tag button {
+	background: none;
+	padding: 0 8px;
+	margin: 0;
+	margin-right: -12px;
+	font-size: 12px;
 }
