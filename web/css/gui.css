@@ -6,12 +6,12 @@
 	--shadow-color: #000000;
 	--line-color: #909090;
 }
-
 body {
 	background-color: var(--bg-color);
 	color: var(--txt-color);
 	font-family: sans-serif;
 	margin: 10px;
+	font-size: 16px;
 }
 
 .left {
@@ -59,6 +59,7 @@ nav a {
 }
 
 input[type="text"],input[type="password"],textarea, select {
+	font-size: 16px;
 	font-family: sans-serif;
 	background-color: var(--secondary-bg-color);
 	border: 0;
@@ -76,7 +77,9 @@ select option {
 	background-color: var(--secondary-bg-color);
 }
 
-input[type="submit"], input[type="button"], button {
+input[type="submit"], input[type="button"], button, .button {
+	display: inline-block;
+	font-size: 16px;
 	background-color: var(--main-color);
 	border: 0;
 	color: var(--txt-color);
@@ -115,7 +118,7 @@ input[type="text"]+input[type="submit"] {
 .radio input[type="radio"]:checked + label:before {
 	background-color: var(--main-color);
 	background:
-		linear-gradient(left, var(--main-color) 0%, var(--main-color) 100%);
+		linear-gradient(0deg, var(--main-color) 0%, var(--main-color) 100%);
 	background-size: 50% 50%;
 	background-repeat: no-repeat;
 	background-position: center center;
@@ -282,4 +285,20 @@ table td, table th {
 
 table th {
   background-color: var(--main-color);
+}
+
+.tag {
+	display: inline-flex;
+	line-height: 30px;
+	background-color: var(--main-color);
+	border-radius: 15px;
+	padding: 0 12px;
+}
+
+.tag button {
+	background: none;
+	padding: 0 8px;
+	margin: 0;
+	margin-right: -12px;
+	font-size: 12px;
 }

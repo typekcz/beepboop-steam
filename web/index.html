@@ -23,6 +23,16 @@
 					<input type="submit">
 				</form>
 			</fieldset>
+			<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'welcome')">
+				<legend>My welcome sounds</legend>
+				<div id="welcomeSounds"></div>
+				<small>Drag sound button here.</small>
+			</fieldset>
+			<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'leave')">
+				<legend>My leave sounds</legend>
+				<div id="leaveSounds"></div>
+				<small>Drag sound button here.</small>
+			</fieldset>
 		</div>
 		<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
 			<fieldset>

@@ -57,6 +57,12 @@ class WebApp {
 			res.end();
 		});
 
+		this.expressApp.get("/html", async (req, res) => {
+			let html = await steamchat.getPage().evaluate(() => document.documentElement.outerHTML);
+			res.write(await image);
+			res.end();
+		});
+
 		this.expressApp.post("/api/playSoundUrl", (req, res) => {
 			if(req.body && req.body.url){
 				steamchat.playSoundUrl(req.body.url);
@@ -149,6 +155,19 @@ class WebApp {
 			res.end();
 		});
 
+		this.expressApp.get("/api/user/sounds/:type", async (req, res) => {
+			if(req.params.type){
+				let steamid = this.sessions.get(req.get("Session"));
+				if(!steamid)
+					return res.status(401).send("Not logged in.").end();
+				let type = soundsDbGw.SoundType[req.params.type.toUpperCase()];
+				if(typeof(type) === "undefined")
+					return res.status(400).send("Unknown type.").end();
+				res.json(await soundsDbGw.selectUserSounds(steamid, type));
+				res.end();
+			}
+		});
+
 		this.expressApp.post("/api/user/sounds/:type/:soundName", async (req, res) => {
 			if(req.body && req.params.soundName && req.params.type){
 				let steamid = this.sessions.get(req.get("Session"));
@@ -157,9 +176,11 @@ class WebApp {
 				let type = soundsDbGw.SoundType[req.params.type.toUpperCase()];
 				if(typeof(type) === "undefined")
 					return res.status(400).send("Unknown type.").end();
-				soundsDbGw.insertUserSound(steamid, req.params.soundName, type);
+				if(await soundsDbGw.insertUserSound(steamid, req.params.soundName, type))
+					res.status(201);
+				else
+					res.status(200);
 			}
-			res.status(200);
 			res.end();
 		});
 

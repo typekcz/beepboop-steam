@@ -10,6 +10,8 @@ window.addEventListener("load", async () => {
 			localStorage.removeItem("authId");
 		} else {
 			document.body.classList.toggle("logged", true);
+			listUserSounds("welcome");
+			listUserSounds("leave");
 		}
 	}
 	listSounds();
@@ -64,6 +66,10 @@ window.addEventListener("storage", (e) => {
 	if(e.key == "authId"){
 		if(e.newValue){
 			document.body.classList.toggle("logged", true);
+			document.getElementById("welcomeSounds").innerHTML = "";
+			document.getElementById("leaveSounds").innerHTML = "";
+			listUserSounds("welcome");
+			listUserSounds("leave");
 		} else {
 			document.body.classList.toggle("logged", false);
 		}
@@ -94,6 +100,20 @@ function registerAsyncSubmitEvents(){
 	}
 }
 
+function soundDragStart(event){
+	event.dataTransfer.setData("sound", event.target.innerText);
+}
+
+function allowDrop(event){
+	event.preventDefault();
+}
+
+function soundDragDrop(event, type){
+	event.preventDefault();
+	let sound = event.dataTransfer.getData("sound");
+	addUserSound(sound, type);
+}
+
 async function listSounds(){
 	try {
 		let res = await fetch("/api/sounds");
@@ -102,7 +122,10 @@ async function listSounds(){
 			throw new TypeError("Received data aren't Array.");
 		let soundsElement = document.getElementById("sounds");
 		for(let sound of sounds){
-			let btn = document.createElement("button");
+			let btn = document.createElement("div");
+			btn.className = "button";
+			btn.draggable = true;
+			btn.ondragstart = soundDragStart;
 			btn.classList.add("soundContextMenu");
 			btn.innerText = sound;
 			btn.addEventListener("click", async () => {
@@ -116,4 +139,50 @@ async function listSounds(){
 	} catch(e){
 		console.log(e);
 	}
+}
+
+async function addUserSound(sound, type, sendToServer = true){
+	if(sendToServer){
+		let res = await fetch("/api/user/sounds/"+type+"/" + sound, {
+			method: "post",
+			headers: {
+				Session: localStorage.getItem("authId")
+			}
+		});
+		if(res.status != 201)
+			return;
+	}
+	let element = document.getElementById(type+"Sounds");
+	let span = document.createElement("span");
+	span.className = "tag";
+	span.innerText = sound;
+	span.innerHTML += `<button type="button" onclick="removeUserSound(this, '`+type+`')">🗙</button>`;
+	element.appendChild(span);
+}
+
+async function listUserSounds(type){
+	try {
+		let res = await fetch("/api/user/sounds/"+type+"/", {
+			headers: {
+				Session: localStorage.getItem("authId")
+			}
+		});
+		let sounds = await res.json();
+		for(let sound of sounds){
+			addUserSound(sound, type, false);
+		}
+	} catch(e){
+		console.log(e);
+	}
+}
+
+function removeUserSound(button, type){
+	let sound = button.previousSibling.textContent;
+	fetch("/api/user/sounds/"+type+"/" + sound, {
+		method: "delete",
+		headers: {
+			Session: localStorage.getItem("authId")
+		}
+	});
+	button.parentElement.parentElement.removeChild(button.parentElement);
 }
