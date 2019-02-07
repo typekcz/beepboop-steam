@@ -32,6 +32,13 @@ class WebApp {
 		this.expressApp.use(fileUpload());
 		this.expressApp.use(express.static(webDir));
 
+		this.browserScripts = "";
+		this.expressApp.get("/api/browserScripts", (req, res) => {
+			res.type("text/javascript");
+			res.write(this.browserScripts);
+			res.end();
+		});
+
 		this.expressApp.get("/log", (req, res) => {
 			res.set("Content-Type", "text/plain");
 			for(let line of this.log){
@@ -47,6 +54,10 @@ class WebApp {
 		this.log.push("[" + (new Date()).toLocaleString("en-GB") + "] " + text);
 	}
 
+	addBrowserScript(func){
+		this.browserScripts += "("+func.toString()+")();";
+	}
+
 	startRestApi(steamchat, soundsDbGw){
 		// Debug screenshot of page
 		steamchat.getPage().setViewport({width: 1024, height: 900});
@@ -58,23 +69,23 @@ class WebApp {
 		});
 
 		this.expressApp.get("/html", async (req, res) => {
-			let html = await steamchat.getPage().evaluate(() => document.documentElement.outerHTML);
-			res.write(await image);
+			let html = `<!DOCTYPE html>
+				<html class="responsive web_chat_frame fullheight">
+				<head>
+				<meta name="theme-color" content="#171a21">
+				<link href="https://steamcommunity-a.akamaihd.net/public/shared/css/motiva_sans.css?v=FAK4O46_mOLB" rel="stylesheet" type="text/css" >
+				<link href="https://steamcommunity-a.akamaihd.net/public/shared/css/shared_global.css?v=5OoDLCYZma2O" rel="stylesheet" type="text/css" >
+				<link href="https://steamcommunity-a.akamaihd.net/public/css/webui/friends.css?v=vCn_VIISkvcx" rel="stylesheet" type="text/css" >
+				</head>`;
+			html += await steamchat.getPage().evaluate(() => document.body.outerHTML);
+			html += `</html>`;
+			res.write(html);
 			res.end();
 		});
 
 		this.expressApp.post("/api/playSoundUrl", (req, res) => {
 			if(req.body && req.body.url){
 				steamchat.playSoundUrl(req.body.url);
-			} else {
-				res.status(400);
-			}
-			res.end();
-		});
-
-		this.expressApp.post("/api/playInstant", (req, res) => {
-			if(req.body && req.body.name){
-				steamchat.playInstant(req.body.name);
 			} else {
 				res.status(400);
 			}

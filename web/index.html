@@ -1,8 +1,8 @@
 <!DOCTYPE HTML> 
 <html>
 	<head>
-		<script src="js/context-menu.js"></script>
 		<script src="js/script.js"></script>
+		<script src="api/browserScripts"></script>
 		<link rel="stylesheet" type="text/css" href="css/gui.css">
 		<link rel="stylesheet" type="text/css" href="css/behavior.css">
 		<link rel="stylesheet" type="text/css" href="css/contextMenu.css">
@@ -34,20 +34,15 @@
 				<small>Drag sound button here.</small>
 			</fieldset>
 		</div>
-		<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
-			<fieldset>
-				<legend>Play URL</legend>
-				<input type="text" name="url">
-				<input type="submit" value="Play">
-			</fieldset>
-		</form>
-		<form action="/api/playInstant" method="post" data-asyncSubmit>
-			<fieldset>
-				<legend>Play Instant</legend>
-				<input type="text" name="name">
-				<input type="submit" value="Play">
-			</fieldset>
-		</form>
+		<div id="controls">
+			<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
+				<fieldset>
+					<legend>Play URL</legend>
+					<input type="text" name="url">
+					<input type="submit" value="Play">
+				</fieldset>
+			</form>
+		</div>
 		<fieldset>
 			<legend>Play sound</legend>
 			<div id="sounds"></div>

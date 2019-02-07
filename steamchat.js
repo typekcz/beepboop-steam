@@ -1,5 +1,6 @@
 const {VM} = require('vm2');
 const https = require('https');
+const EventEmitter = require('events');
 
 const selectors = {
 	loading: ".main_throbberContainer-exit-active_24VO6",
@@ -13,11 +14,35 @@ const selectors = {
 	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants"
 };
 
-class SteamChat {
+class ChatCommandEvent {
+	constructor(steamChat, groupName, command, message, argument){
+		this.steamChat = steamChat;
+		this.groupName = groupName;
+		this.command = command;
+		this.message = message;
+		this.argument = argument;
+		this.handled = false;
+	}
+
+	sendResponse(response){
+		this.handled = true;
+		return (async () => {
+			await this.steamChat.getPage().type("textarea", response);
+			await this.steamChat.getPage().click("textarea + button");
+		})();
+	}
+
+	setAsHandled(){
+		this.handled = true;
+	}
+}
+
+class SteamChat extends EventEmitter {
 	/**
 	 * @param {Page} page - Puppeteer page
 	 */
 	constructor(page, soundsBaseUrl, youtubeBaseUrl, soundsDbGw){
+		super();
 		this.page = page;
 		this.soundsBaseUrl = soundsBaseUrl;
 		this.youtubeBaseUrl = youtubeBaseUrl;
@@ -116,7 +141,6 @@ class SteamChat {
 	}
 
 	async handleMessage(groupName, message){
-		console.log("handlemessage", groupName, message);
 		const unknownMessages = [
 			"the fuck you want?",
 			"I'm not fluent in meatbag language",
@@ -132,6 +156,7 @@ class SteamChat {
 		message = /.*: "(.*)"/.exec(message)[1];
 		let response = null;
 		if(message.startsWith("@" + this.myName + " ")){
+			console.log("handlemessage", groupName, message);
 			message = message.substring(this.myName.length + 2);
 			let index = message.indexOf(" ");
 			if(index < 0)
@@ -145,9 +170,6 @@ class SteamChat {
 						break;
 					case "playurl":
 						await this.playSoundUrl(arg);
-						break;
-					case "instant":
-						await this.playInstant(arg);
 						break;
 					case "stop":
 						await this.stopSound();
@@ -164,7 +186,14 @@ class SteamChat {
 						response = "/code " + JSON.stringify(result);
 						break;
 					default:
-						response = unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))];
+						let event = new ChatCommandEvent(this, groupName, command, message, arg);
+						for(let listener of this.rawListeners("chatCommand")){
+							await Promise.resolve(listener.call(this, event));
+						}
+						if(event.handled)
+							response = null;
+						else
+							response = unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))];
 						break;
 				}
 			} catch(e){
@@ -179,11 +208,19 @@ class SteamChat {
 		}
 	}
 
-	async sendMessage(groupName, message){
-		let chat = await this.findChatRoom(groupName);
-		await this.page.evaluate((chat, message) => {
-			g_FriendsUIApp.ChatStore.FindChatRoom(chat.groupId, chat.roomId).SendChatMessage(message);
-		}, chat, message);
+	async sendMessage(groupName, chatRoom, message){
+		await this.page.evaluate((groupName, chatRoom, message) => {
+			for(let g of g_FriendsUIApp.ChatStore.m_mapChatGroups.values()){
+				if(g.name == groupName){
+					for(let r of g.m_mapRooms.values()){
+						if(r.name == chatRoom){
+							r.SendChatMessage(message);
+							return;
+						}
+					}
+				}
+			}
+		}, groupName, chatRoom, message);
 	}
 
 	findChatRoom(groupName){
@@ -366,39 +403,6 @@ class SteamChat {
 		return this.page.evaluate(() => {
 			window.audio.pause();
 			return true;
-		});
-	}
-
-	playInstant(search){
-		return new Promise((resolve, reject) => {
-			const instantRegEx = /^(.*?)(#(\d))?$/;
-			let reRes = instantRegEx.exec(search);
-			search = reRes[1];
-			let number = reRes[3] || 1;
-			let url = "https://www.myinstants.com/search/?name=" + encodeURIComponent(search);
-			console.log("instant search url", url);
-			https.get(url, (resp) => {
-				let data = "";
-
-				resp.on('data', (chunk) => {
-					data += chunk;
-				});
-
-				resp.on('end', () => {
-					let search_regex = /<div class="small-button" onmousedown="play\('([\w\.\/\-_%]*)'\)/g;
-					let regex_result;
-					for(let i = 0; i < number; i++){
-						regex_result = search_regex.exec(data);
-					}
-					if(regex_result == null)
-						return reject(new Error("No instant found."));
-					this.playSoundUrl("https://www.myinstants.com" + regex_result[1]);
-					resolve();
-				});
-			}).on("error", (err) => {
-				console.log("Error: " + err.message);
-				reject(err);
-			});
 		});
 	}
 }

@@ -16,50 +16,6 @@ window.addEventListener("load", async () => {
 	}
 	listSounds();
 	registerAsyncSubmitEvents();
-
-	let soundContextMenu = new ContextMenu(".soundContextMenu", [
-		{
-			name: "Add to welcome sounds", 
-			fn: (target) => {
-				fetch("/api/user/sounds/welcome/" + target.innerText, {
-					method: "post",
-					headers: {
-						Session: localStorage.getItem("authId")
-					}
-				});
-			}
-		}, {
-			name: "Remove from welcome sounds", 
-			fn: (target) => {
-				fetch("/api/user/sounds/welcome/" + target.innerText, {
-					method: "delete",
-					headers: {
-						Session: localStorage.getItem("authId")
-					}
-				});
-			}
-		}, {
-			name: "Add to leave sounds", 
-			fn: (target) => {
-				fetch("/api/user/sounds/leave/" + target.innerText, {
-					method: "post",
-					headers: {
-						Session: localStorage.getItem("authId")
-					}
-				});
-			}
-		}, {
-			name: "Remove from leave sounds", 
-			fn: (target) => {
-				fetch("/api/user/sounds/leave/" + target.innerText, {
-					method: "delete",
-					headers: {
-						Session: localStorage.getItem("authId")
-					}
-				});
-			}
-		}
-	]);
 });
 
 window.addEventListener("storage", (e) => {
@@ -78,6 +34,7 @@ window.addEventListener("storage", (e) => {
 
 function registerAsyncSubmitEvents(){
 	for(let form of document.querySelectorAll("form[data-asyncSubmit]")){
+		form.removeAttribute("data-asyncSubmit");
 		form.addEventListener("submit", async (event) => {
 			event.preventDefault();
 			let form = event.target;
@@ -126,7 +83,6 @@ async function listSounds(){
 			btn.className = "button";
 			btn.draggable = true;
 			btn.ondragstart = soundDragStart;
-			btn.classList.add("soundContextMenu");
 			btn.innerText = sound;
 			btn.addEventListener("click", async () => {
 				let res = await fetch("/api/sounds/" + encodeURIComponent(sound) + "/play", {

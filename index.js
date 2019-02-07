@@ -4,6 +4,8 @@ const SteamChat = require("./steamchat");
 const WebApp = require("./webapp");
 const pgp = require("pg-promise")();
 const SoundsDBGW = require("./soundsdbgw");
+const http = require('http');
+const https = require('https');
 
 class Main {
 	static async main(args){
@@ -60,6 +62,11 @@ class Main {
 			}
 		if(!config){
 			config = {};
+		}
+
+		// Default plugins
+		if(!config.plugins){
+			config.plugins = ["myinstants"];
 		}
 
 		// Check if all required values are defined
@@ -142,7 +149,43 @@ class Main {
 			webApp.startSteamLoginApi();
 	
 			console.log("Web UI ready.");
-			//await browser.close();
+
+			console.log("Loading plugins.");
+			let apiGW = {
+				steamChat: steamchat,
+				webApp: webApp,
+				config: config,
+				plugins: []
+			}
+			for(let plugin of config.plugins){
+				console.log("Loading \""+plugin+"\" plugin.");
+				try {
+					let pluginClass;
+					if(plugin.startsWith("http:") || plugin.startsWith("https:")){
+						pluginClass = eval(await new Promise((resolve, reject) => {
+							(plugin.startsWith("https:")? https:http).get(plugin, (resp) => {
+								let data = "";
+
+								resp.on('data', (chunk) => {
+									data += chunk;
+								});
+
+								resp.on('end', () => {
+									resolve(data);
+								});
+							}).on("error", (err) => {
+								reject(err);
+							});
+						}));
+					} else {
+						pluginClass = require("./plugins/"+plugin+".js");
+					}
+					apiGW.plugins.push(new (pluginClass)(apiGW));
+				} catch(error){
+					console.error(error);
+				}
+			}
+			console.log("Start done.");
 		} catch(error){
 			console.error(error);
 		}
