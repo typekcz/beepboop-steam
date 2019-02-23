@@ -11,7 +11,8 @@ const selectors = {
 	groupListItemOpenBtn: ".openGroupButton",
 	groupListItemVoiceChannel: ".chatRoomVoiceChannel .chatRoomVoiceChannelName",
 	groupChatTab: "div.chatDialogs div.chatWindow.MultiUserChat.namedGroup",
-	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants"
+	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants",
+	loggedOut: ".ConnectionTrouble"
 };
 
 class ChatCommandEvent {
@@ -37,6 +38,12 @@ class ChatCommandEvent {
 	}
 }
 
+class ConnectionTroubleEvent {
+	constructor(message){
+		this.message = message;
+	}
+}
+
 class SteamChat extends EventEmitter {
 	/**
 	 * @param {Page} page - Puppeteer page
@@ -49,10 +56,6 @@ class SteamChat extends EventEmitter {
 		this.soundsDbGw = soundsDbGw;
 		this.groupName = null;
 		this.joinedUsers = [];
-
-		this.activityInterval = setInterval(() => {
-			this.page.mouse.move(Math.random()*100, Math.random()*100+300);
-		},60000);
 	}
 
 	getPage(){
@@ -101,6 +104,21 @@ class SteamChat extends EventEmitter {
 			g_FriendsUIApp.VoiceStore.SetUseAutoGainControl(false);
 			g_FriendsUIApp.VoiceStore.SetUseNoiseCancellation(false);
 		});
+
+		if(!this.activityInterval){
+			this.activityInterval = setInterval(() => {
+				let connectionTrouble = this.page.evaluate((selectors) => {
+					let element = document.querySelector(selectors.connectionTrouble);
+					if(element)
+						return element.innerText;
+					else 
+						return null;
+				}, selectors);
+				if(connectionTrouble)
+					this.emit("connectionTrouble", new ConnectionTroubleEvent(connectionTrouble));
+				this.page.mouse.move(Math.random()*100, Math.random()*100+300);
+			},60000);
+		}
 	}
 	
 	initAudio(){
@@ -138,6 +156,20 @@ class SteamChat extends EventEmitter {
 				window.speechSynthesis.speak(utter);
 			}
 		});
+	}
+
+	async login(username, password){
+		try {
+			let navigationPromise = this.page.waitForNavigation({waitUntil : "networkidle0"});
+			await this.page.evaluate((user, pass) => {
+				document.querySelector("#steamAccountName").value = user;
+				document.querySelector("#steamPassword").value = pass;
+				document.querySelector("#SteamLogin").click();
+			}, username, password);
+			await navigationPromise;
+		} catch(error){
+			console.log(error);
+		}
 	}
 
 	async handleMessage(groupName, message){

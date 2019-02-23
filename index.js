@@ -8,6 +8,18 @@ const http = require('http');
 const https = require('https');
 
 class Main {
+	static async joinSteamChat(steamchat, config){
+		await steamchat.getPage().goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
+
+		if(steamchat.getPage().url().includes("login")){
+			console.log("login");
+			await steamchat.login(config.steam.userName, config.steam.password);
+		}
+		
+		await steamchat.init(config.volume || 0.3);
+		await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName);
+	}
+
 	static async main(args){
 		process.on("unhandledRejection", (error, p) => {
 			console.error("Unhandled Promise Rejection", p, error);
@@ -124,27 +136,16 @@ class Main {
 			await page.setBypassCSP(true);
 			// Steam won't accept HeadlessChrome
 			await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
-			await page.goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
-			if(page.url().includes("login")){
-				console.log("login");
-				try {
-					let navigationPromise = page.waitForNavigation({waitUntil : "networkidle0"});
-					await page.evaluate((user, pass) => {
-						document.querySelector("#steamAccountName").value = user;
-						document.querySelector("#steamPassword").value = pass;
-						document.querySelector("#SteamLogin").click();
-					}, config.steam.userName, config.steam.password);
-					await navigationPromise;
-				} catch(error){
-					console.log(error);
-				}
-			}
 			
-			//await new Promise((res) => { setTimeout(res, 1000); });
 			let steamchat = new SteamChat(page, "http://localhost:" + port + "/api/sounds/", "http://localhost:" + port + "/api/yt?url=", soundsDbGw);
-			await steamchat.init(config.volume || 0.3);
-			await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName);
-	
+
+			await this.joinSteamChat(steamchat, config);
+
+			steamchat.on("connectionTrouble", (e) => {
+				console.log("Connection trouble: ", e.message);
+				joinSteamChat(steamchat, config);
+			})
+				
 			webApp.startRestApi(steamchat, soundsDbGw);
 			webApp.startSteamLoginApi();
 	
