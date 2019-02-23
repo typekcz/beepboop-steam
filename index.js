@@ -143,7 +143,7 @@ class Main {
 
 			steamchat.on("connectionTrouble", (e) => {
 				console.log("Connection trouble: ", e.message);
-				joinSteamChat(steamchat, config);
+				this.joinSteamChat(steamchat, config);
 			})
 				
 			webApp.startRestApi(steamchat, soundsDbGw);

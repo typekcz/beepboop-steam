@@ -106,8 +106,8 @@ class SteamChat extends EventEmitter {
 		});
 
 		if(!this.activityInterval){
-			this.activityInterval = setInterval(() => {
-				let connectionTrouble = this.page.evaluate((selectors) => {
+			this.activityInterval = setInterval(async () => {
+				let connectionTrouble = await this.page.evaluate((selectors) => {
 					let element = document.querySelector(selectors.connectionTrouble);
 					if(element)
 						return element.innerText;
