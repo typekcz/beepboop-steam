@@ -48,7 +48,7 @@ class SteamChat extends EventEmitter {
 	/**
 	 * @param {Page} page - Puppeteer page
 	 */
-	constructor(page, soundsBaseUrl, youtubeBaseUrl, soundsDbGw){
+	constructor(page, soundsBaseUrl, youtubeBaseUrl, soundsDbGw, ttsUrl){
 		super();
 		this.page = page;
 		this.soundsBaseUrl = soundsBaseUrl;
@@ -56,6 +56,7 @@ class SteamChat extends EventEmitter {
 		this.soundsDbGw = soundsDbGw;
 		this.groupName = null;
 		this.joinedUsers = [];
+		this.ttsUrl = ttsUrl;
 	}
 
 	getPage(){
@@ -174,15 +175,16 @@ class SteamChat extends EventEmitter {
 
 	async handleMessage(groupName, message){
 		const unknownMessages = [
-			"the fuck you want?",
-			"I'm not fluent in meatbag language",
-			"fuck you too"
+			"The fuck you want?",
+			"I'm not fluent in meatbag language.",
+			"Fuck you too."
 		];
 		const errorMessages = [
-			"nope",
-			"418 I'm a teapot",
-			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉",
-			"/me is currently unavailable"
+			"Nope.",
+			"418 I'm a teapot.",
+			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉.",
+			"/me is currently unavailable.",
+			"No can do."
 		];
 		// g_FriendsUIApp.ChatStore.m_mapChatGroups.get("21961").m_mapRooms.get("84836").SendChatMessage("beep?","beep?","beep?","beep?")
 		message = /.*: "(.*)"/.exec(message)[1];
@@ -202,6 +204,11 @@ class SteamChat extends EventEmitter {
 						break;
 					case "playurl":
 						await this.playSoundUrl(arg);
+						break;
+					case "say":
+						if(!this.ttsUrl)
+							throw new Error("Missing text to speech URL.");
+						this.textToSpeech(arg);
 						break;
 					case "stop":
 						await this.stopSound();
@@ -233,7 +240,10 @@ class SteamChat extends EventEmitter {
 				response = errorMessages[Math.round(Math.random()*(errorMessages.length - 1))] + "\n" + e.message;
 			}
 		}
-		console.log("response", response);
+		if(response){
+			console.log("response", response);
+			this.textToSpeech(response);
+		}
 		if(response !== null){
 			await this.page.type("textarea", response);
 			await this.page.click("textarea + button");
@@ -253,6 +263,13 @@ class SteamChat extends EventEmitter {
 				}
 			}
 		}, groupName, chatRoom, message);
+	}
+
+	textToSpeech(text){
+		if(this.ttsUrl){
+			text = text.replace("/me", this.myName);
+			this.playSoundUrl(this.ttsUrl + encodeURIComponent(text));
+		}
 	}
 
 	findChatRoom(groupName){
@@ -418,12 +435,14 @@ class SteamChat extends EventEmitter {
 		this.playSoundUrl(this.soundsBaseUrl + soundName);
 	}
 	
-	playSoundUrl(url){
-		const ytRegEx = /^(https?:)?(\/\/)?(www.)?(youtube.com|youtu.be)\//;
-		console.log("playUrl", url);
-		if(ytRegEx.test(url)){
-			console.log("youtube detected");
-			url = this.youtubeBaseUrl + encodeURIComponent(url);
+	playSoundUrl(url, checkYt = true){
+		if(checkYt){
+			const ytRegEx = /^(https?:)?(\/\/)?(www.)?(youtube.com|youtu.be)\//;
+			console.log("playUrl", url);
+			if(ytRegEx.test(url)){
+				console.log("youtube detected");
+				url = this.youtubeBaseUrl + encodeURIComponent(url);
+			}
 		}
 		return this.page.evaluate((url) => {
 			window.audio.src = url;

@@ -11,9 +11,9 @@ class MyInstantsPlugin {
 			event.setAsHandled();
 		});
 
-		apiGW.webApp.expressApp.post("/api/plugins/myinstants/play", (req, res) => {
+		apiGW.webApp.expressApp.post("/api/plugins/myinstants/play", async (req, res) => {
 			if(req.body && req.body.name){
-				this.playInstant(req.body.name);
+				await this.playInstant(req.body.name);
 			} else {
 				res.status(400);
 			}
@@ -23,14 +23,16 @@ class MyInstantsPlugin {
 		apiGW.webApp.addBrowserScript(() => {
 			window.addEventListener("load", () => {
 				let form = document.createElement("form");
-				document.getElementById("controls").innerHTML += 
-					`<form action="/api/plugins/myinstants/play" method="post" data-asyncSubmit>
-						<fieldset>
-							<legend>Play Instant</legend>
+				document.getElementById("controls").insertAdjacentHTML("beforeend", 
+					`<fieldset>
+						<legend>Play Instant</legend>
+						<form action="/api/plugins/myinstants/play" method="post" data-asyncSubmit>
+							<small>Find and play button from <a href="https://myinstants.com" target="_blank">myinstants.com</a></small><br>
 							<input type="text" name="name">
 							<input type="submit" value="Play">
-						</fieldset>
-					</form>`;
+						</form>
+					</fieldset>`
+				);
 				registerAsyncSubmitEvents();
 			});
 		});

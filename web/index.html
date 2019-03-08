@@ -5,7 +5,6 @@
 		<script src="api/browserScripts"></script>
 		<link rel="stylesheet" type="text/css" href="css/gui.css">
 		<link rel="stylesheet" type="text/css" href="css/behavior.css">
-		<link rel="stylesheet" type="text/css" href="css/contextMenu.css">
 	</head>
 	<body>
 		<div class="when-notlogged">
@@ -15,33 +14,42 @@
 			<form action="/api/steam/logout" method="get" data-asyncSubmit data-session>
 				<input type="submit" value="Steam Logout">
 			</form>
+			<div class="flex">
+				<fieldset>
+					<legend>Upload Sound</legend>
+					<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
+						<input type="text" name="name" placeholder="Sound name">
+						<input type="file" name="sound">
+						<input type="submit">
+					</form>
+				</fieldset>
+				<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'welcome')">
+					<legend>My welcome sounds</legend>
+					<div id="welcomeSounds"></div>
+					<small>Drag sound button here.</small>
+				</fieldset>
+				<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'leave')">
+					<legend>My leave sounds</legend>
+					<div id="leaveSounds"></div>
+					<small>Drag sound button here.</small>
+				</fieldset>
+			</div>
+		</div>
+		<div id="controls" class="flex">
 			<fieldset>
-				<legend>Upload Sound</legend>
-				<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
-					<input type="text" name="name" placeholder="Name">
-					<input type="file" name="sound">
-					<input type="submit">
+				<legend>Controls</legend>
+				<form action="/api/stop" method="post" data-asyncSubmit>
+					<input type="submit" value="Stop">
 				</form>
 			</fieldset>
-			<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'welcome')">
-				<legend>My welcome sounds</legend>
-				<div id="welcomeSounds"></div>
-				<small>Drag sound button here.</small>
-			</fieldset>
-			<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'leave')">
-				<legend>My leave sounds</legend>
-				<div id="leaveSounds"></div>
-				<small>Drag sound button here.</small>
-			</fieldset>
-		</div>
-		<div id="controls">
-			<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
-				<fieldset>
-					<legend>Play URL</legend>
+			<fieldset>
+				<legend>Play URL</legend>
+				<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
+					<small>Supports links to <a href="https://youtube.com" target="_blank">youtube.com</a>.</small><br>
 					<input type="text" name="url">
 					<input type="submit" value="Play">
-				</fieldset>
-			</form>
+				</form>
+			</fieldset>
 		</div>
 		<fieldset>
 			<legend>Play sound</legend>

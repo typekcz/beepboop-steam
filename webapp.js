@@ -1,4 +1,5 @@
 const express = require("express");
+require('express-async-errors');
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const openid = require("openid");
@@ -92,9 +93,14 @@ class WebApp {
 			res.end();
 		});
 
+		this.expressApp.post("/api/stop", (req, res) => {
+			steamchat.stopSound();
+			res.end();
+		});
+
 		this.expressApp.get("/api/yt", (req, res) => {
 			if(req.query.url){
-				ytdl(req.query.url, {quality: "highestaudio"}).pipe(res);
+				ytdl(req.query.url, {filter: "audioonly"}).pipe(res);
 			} else {
 				res.status(400);
 				res.end();
