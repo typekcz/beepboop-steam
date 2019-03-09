@@ -52,7 +52,7 @@ npm run start
 ```
 
 ## Chat commands
-Chat commands can be sent into any chat room that bot can access. All commands starts with bot's name handle, for example:
+Chat commands can be sent into any Steam chat room that bot can access. All commands starts with bot's name handle, for example:
 ```
 @BeepBoop play engineerremix
 ```
@@ -69,6 +69,3 @@ Command | Description
 ## Known issues
  * It's just wrong...
  * Bot is sometimes logged out of Steam and you have to restart it.
- * Web interface won't show you what sounds you have set as welcome and leave.
- 
- ![Web interface](https://i.imgur.com/80LgR6o.png)
