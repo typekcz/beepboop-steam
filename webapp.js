@@ -98,15 +98,6 @@ class WebApp {
 			res.end();
 		});
 
-		this.expressApp.get("/api/yt", (req, res) => {
-			if(req.query.url){
-				ytdl(req.query.url, {filter: "audioonly"}).pipe(res);
-			} else {
-				res.status(400);
-				res.end();
-			}
-		});
-
 		this.expressApp.post("/api/uploadSound", async (req, res) => {
 			try {
 				if(req.body && req.body.name && req.files){

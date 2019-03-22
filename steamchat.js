@@ -1,6 +1,7 @@
 const {VM} = require('vm2');
 const https = require('https');
 const EventEmitter = require('events');
+const ytdl = require("ytdl-core");
 
 const selectors = {
 	loading: ".main_throbberContainer-exit-active_24VO6",
@@ -435,13 +436,21 @@ class SteamChat extends EventEmitter {
 		this.playSoundUrl(this.soundsBaseUrl + soundName);
 	}
 	
-	playSoundUrl(url, checkYt = true){
+	async playSoundUrl(url, checkYt = true){
 		if(checkYt){
 			const ytRegEx = /^(https?:)?(\/\/)?(www.)?(youtube.com|youtu.be)\//;
 			console.log("playUrl", url);
 			if(ytRegEx.test(url)){
 				console.log("youtube detected");
-				url = this.youtubeBaseUrl + encodeURIComponent(url);
+				url = await new Promise((resolve, reject) => {
+					ytdl.getInfo(url, {filter: "audioonly"}, (err, info) => {
+						if(err)
+							return reject(err);
+						console.log("yturl: ", info.formats[0].url);
+						resolve(info.formats[0].url);
+					});
+				});
+				console.log(url);
 			}
 		}
 		return this.page.evaluate((url) => {
