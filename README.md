@@ -44,12 +44,25 @@ volume | For some reason BeepBoop is incredibly loud so I recommend to set volum
 ![Steam group chat](https://i.imgur.com/sh6RMgU.png)
 
 ## Instalation
-Requires [Node.js](https://nodejs.org/). On Heroku use [Puppeteer buildpack](https://github.com/jontewks/puppeteer-heroku-buildpack).
+Requires [Node.js](https://nodejs.org/). On Heroku use [Puppeteer buildpack](https://github.com/typekcz/puppeteer-heroku-buildpack).
 When all is configured just do:
 ```
 npm install
 npm run start
 ```
+
+### Audio support
+Puppeteer downloads its own Chromium which does not contain ffmpeg codec. Some sounds/videos won't work especialy those from Youtube. If you want ffmpeg you your own Chromium installation. On Ubuntu use these packages:
+```
+chromium-browser chromium-codecs-ffmpeg-extra
+```
+Then set env. variables so that Puppeteer will you your installed Chromium.
+```
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=
+PUPPETEER_EXECUTABLE_PATH="/usr/lib/chromium-browser/chromium-browser"
+```
+Buildpack for Heroku linked above is already modified to do this.
+
 
 ## Chat commands
 Chat commands can be sent into any Steam chat room that bot can access. All commands starts with bot's name handle, for example:
