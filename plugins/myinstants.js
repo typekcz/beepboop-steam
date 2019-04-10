@@ -1,4 +1,4 @@
-const https = require('https');
+const utils = require("../utils");
 
 class MyInstantsPlugin {
 	constructor(apiGW){
@@ -38,37 +38,25 @@ class MyInstantsPlugin {
 		});
 	}
 
-	playInstant(search){
-		return new Promise((resolve, reject) => {
-			const instantRegEx = /^(.*?)(#(\d))?$/;
-			let reRes = instantRegEx.exec(search);
-			search = reRes[1];
-			let number = reRes[3] || 1;
-			let url = "https://www.myinstants.com/search/?name=" + encodeURIComponent(search);
-			console.log("instant search url", url);
-			https.get(url, (resp) => {
-				let data = "";
+	async playInstant(search){
+		const instantRegEx = /^(.*?)(#(\d))?$/;
+		let reRes = instantRegEx.exec(search);
+		search = reRes[1];
+		let number = reRes[3] || 1;
+		let url = "https://www.myinstants.com/search/?name=" + encodeURIComponent(search);
+		console.log("instant search url", url);
 
-				resp.on('data', (chunk) => {
-					data += chunk;
-				});
+		let response = await utils.request(url);
 
-				resp.on('end', () => {
-					let search_regex = /<div class="small-button" onmousedown="play\('([\w\.\/\-_%]*)'\)/g;
-					let regex_result;
-					for(let i = 0; i < number; i++){
-						regex_result = search_regex.exec(data);
-					}
-					if(regex_result == null)
-						return reject(new Error("No instant found."));
-					this.apiGW.steamChat.playSoundUrl("https://www.myinstants.com" + regex_result[1]);
-					resolve();
-				});
-			}).on("error", (err) => {
-				console.log("Error: " + err.message);
-				reject(err);
-			});
-		});
+		let body = response.body.toString();
+		let search_regex = /<div class="small-button" onmousedown="play\('([\w\.\/\-_%]*)'\)/g;
+		let regex_result;
+		for(let i = 0; i < number; i++){
+			regex_result = search_regex.exec(body);
+		}
+		if(regex_result == null)
+			return reject(new Error("No instant found."));
+		this.apiGW.steamChat.playSoundUrl("https://www.myinstants.com" + regex_result[1]);
 	}
 }
 
