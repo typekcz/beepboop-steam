@@ -13,7 +13,9 @@ const selectors = {
 	groupListItemVoiceChannel: ".chatRoomVoiceChannel .chatRoomVoiceChannelName",
 	groupChatTab: "div.chatDialogs div.chatWindow.MultiUserChat.namedGroup",
 	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants",
-	loggedOut: ".ConnectionTrouble"
+	loggedOut: ".ConnectionTrouble",
+	fileUpload: ".chatEntry input[name=fileupload]",
+	confirmFileUpload: ".chatFileUploadBtn"
 };
 
 class ChatCommandEvent {
@@ -266,6 +268,14 @@ class SteamChat extends EventEmitter {
 		}, groupName, chatRoom, message);
 	}
 
+	async uploadFile(groupName, chatRoom, filename){
+		await this.openGroup(groupName, chatRoom);
+		let uploadElement = await this.page.$(selectors.fileUpload);
+		await uploadElement.uploadFile(filename);
+		let btn = await this.page.waitForSelector(selectors.confirmFileUpload);
+		await btn.click();
+	}
+
 	textToSpeech(text){
 		if(this.ttsUrl){
 			text = text.replace("/me", this.myName);
@@ -325,12 +335,21 @@ class SteamChat extends EventEmitter {
 		}, group, selectors);
 	}
 
-	async openGroup(group){
+	async openGroup(group, chatroom = null){
 		let groupId = await this.getGroupIdByName(group);
-		await this.page.evaluate((groupId) => {
+		await this.page.evaluate((groupId, chatroom) => {
 			let group = g_FriendsUIApp.ChatStore.GetChatRoomGroup(groupId);
-			g_FriendsUIApp.UIStore.ShowAndOrActivateChatRoomGroup(group.chatRoomList[0], group, true);
-		}, groupId);
+			let room = group.chatRoomList[0];
+			if(chatroom){
+				for(let r of group.chatRoomList){
+					if(r.m_strName == chatroom){
+						room = r;
+						break;
+					}
+				}
+			}
+			g_FriendsUIApp.UIStore.ShowAndOrActivateChatRoomGroup(room, group, true);
+		}, groupId, chatroom);
 		try {
 			await this.page.waitForSelector(selectors.groupChatTab);
 		} catch(e){
@@ -369,13 +388,18 @@ class SteamChat extends EventEmitter {
 			let users = [];
 			let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat();
 			for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
-				users.push(m.persona.m_steamid.m_ulSteamID.toString());
+				users.push({
+					steamID: m.persona.m_steamid.m_ulSteamID.toString(),
+					name: m.display_name,
+					gameID: m.persona.m_gameid,
+
+				});
 			return users;
 		});
 	}
 
 	async voiceChannelUsersChanged(){
-		let users = await this.getVoiceChannelUsers();
+		let users = await this.getVoiceChannelUsers().map(u => u.name);
 		for(let user of this.joinedUsers){
 			if(users.indexOf(user) >= 0)
 				continue;

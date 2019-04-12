@@ -156,13 +156,18 @@ class Main {
 				steamChat: steamchat,
 				webApp: webApp,
 				config: config,
+				browser: browser,
 				plugins: []
 			}
+			let currentFilename = require.main.filename;
+			let fakeFilename = currentFilename;
+			fakeFilename = fakeFilename.substring(0, Math.max(fakeFilename.lastIndexOf("/"), fakeFilename.lastIndexOf("\\"))) + "/_.js";
 			for(let plugin of config.plugins){
 				console.log("Loading \""+plugin+"\" plugin.");
 				try {
 					let pluginClass;
 					if(plugin.startsWith("http:") || plugin.startsWith("https:")){
+						require.main.filename = fakeFilename;
 						pluginClass = eval(await new Promise((resolve, reject) => {
 							(plugin.startsWith("https:")? https:http).get(plugin, (resp) => {
 								let data = "";
@@ -178,6 +183,7 @@ class Main {
 								reject(err);
 							});
 						}));
+						require.main.filename = currentFilename;
 					} else {
 						pluginClass = require("./plugins/"+plugin+".js");
 					}
