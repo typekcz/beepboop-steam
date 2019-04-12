@@ -376,7 +376,7 @@ class SteamChat extends EventEmitter {
 				for(let f of bucket.m_rgMembers)
 					members.push({
 						name: f.display_name,
-						steamid64: f.steamid64,
+						steamid: f.steamid64,
 						accountid: f.accountid
 					});
 			}
@@ -390,7 +390,7 @@ class SteamChat extends EventEmitter {
 			let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat();
 			for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
 				users.push({
-					steamID: m.persona.m_steamid.m_ulSteamID.toString(),
+					steamid: m.persona.m_steamid.m_ulSteamID.toString(),
 					name: m.display_name,
 					gameID: m.persona.m_gameid,
 					accountid: m.accountid
@@ -400,7 +400,8 @@ class SteamChat extends EventEmitter {
 	}
 
 	async voiceChannelUsersChanged(){
-		let users = (await this.getVoiceChannelUsers()).map(u => u.name);
+		let users = (await this.getVoiceChannelUsers()).map(u => u.steamid);
+		console.log(users);
 		for(let user of this.joinedUsers){
 			if(users.indexOf(user) >= 0)
 				continue;
