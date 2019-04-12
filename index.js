@@ -157,11 +157,12 @@ class Main {
 				webApp: webApp,
 				config: config,
 				browser: browser,
+				port: port,
 				plugins: []
 			}
 			let currentFilename = require.main.filename;
 			let fakeFilename = currentFilename;
-			fakeFilename = fakeFilename.substring(0, Math.max(fakeFilename.lastIndexOf("/"), fakeFilename.lastIndexOf("\\"))) + "/_.js";
+			fakeFilename = fakeFilename.substring(0, Math.max(fakeFilename.lastIndexOf("/"), fakeFilename.lastIndexOf("\\"))) + "/plugins/_.js";
 			for(let plugin of config.plugins){
 				console.log("Loading \""+plugin+"\" plugin.");
 				try {
