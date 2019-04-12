@@ -376,7 +376,8 @@ class SteamChat extends EventEmitter {
 				for(let f of bucket.m_rgMembers)
 					members.push({
 						name: f.display_name,
-						steamid64: f.steamid64
+						steamid64: f.steamid64,
+						accountid: f.accountid
 					});
 			}
 			return members;
@@ -392,14 +393,14 @@ class SteamChat extends EventEmitter {
 					steamID: m.persona.m_steamid.m_ulSteamID.toString(),
 					name: m.display_name,
 					gameID: m.persona.m_gameid,
-
+					accountid: m.accountid
 				});
 			return users;
 		});
 	}
 
 	async voiceChannelUsersChanged(){
-		let users = await this.getVoiceChannelUsers().map(u => u.name);
+		let users = (await this.getVoiceChannelUsers()).map(u => u.name);
 		for(let user of this.joinedUsers){
 			if(users.indexOf(user) >= 0)
 				continue;
