@@ -2,6 +2,8 @@ const {VM} = require('vm2');
 const https = require('https');
 const EventEmitter = require('events');
 const ytdl = require("ytdl-core");
+const UserInfo = require("./userinfo");
+const ChatCommandEvent = require("./chatcommandevent");
 
 const selectors = {
 	loading: ".main_throbberContainer-exit-active_24VO6",
@@ -17,29 +19,6 @@ const selectors = {
 	fileUpload: ".chatEntry input[name=fileupload]",
 	confirmFileUpload: ".chatFileUploadBtn"
 };
-
-class ChatCommandEvent {
-	constructor(steamChat, groupName, command, message, argument){
-		this.steamChat = steamChat;
-		this.groupName = groupName;
-		this.command = command;
-		this.message = message;
-		this.argument = argument;
-		this.handled = false;
-	}
-
-	sendResponse(response){
-		this.handled = true;
-		return (async () => {
-			await this.steamChat.getPage().type("textarea", response);
-			await this.steamChat.getPage().click("textarea + button");
-		})();
-	}
-
-	setAsHandled(){
-		this.handled = true;
-	}
-}
 
 class ConnectionTroubleEvent {
 	constructor(message){
@@ -79,15 +58,17 @@ class SteamChat extends EventEmitter {
 			return document.querySelector(selectors.loggedUsername).innerText;
 		}, selectors);
 
-		await this.page.exposeFunction("handleMessage", (group, message) => {
-			return this.handleMessage(group, message);
+		await this.page.exposeFunction("handleMessage", (group, message, userinfo) => {
+			return this.handleMessage(group, message, userinfo);
 		});
 
 		await this.page.exposeFunction("findChatRoom", (message) => {
 			return this.findChatRoom(message);
 		});
 
-		await this.page.evaluate(() => {
+		await this.page.evaluate((userinfoclass) => {
+			window.UserInfo = eval("("+userinfoclass+")");
+
 			window.Notification = function(text, options){
 				this.text = text;
 				this.options = options;
@@ -95,7 +76,10 @@ class SteamChat extends EventEmitter {
 				this.addEventListener = async function(type, handler){
 					if(type == "click"){
 						handler();
-						handleMessage(this.text, this.options.body);
+						let userinfo = new UserInfo(
+							g_FriendsUIApp.m_NotificationManager.m_FriendStore.m_mapPlayerCache.get(parseInt(this.options.tag.replace(/\D/g, "")))
+						);
+						handleMessage(this.text, this.options.body, userinfo);
 					}
 				};
 				this.close = function(){};
@@ -107,7 +91,7 @@ class SteamChat extends EventEmitter {
 			g_FriendsUIApp.VoiceStore.SetUseEchoCancellation(false);
 			g_FriendsUIApp.VoiceStore.SetUseAutoGainControl(false);
 			g_FriendsUIApp.VoiceStore.SetUseNoiseCancellation(false);
-		});
+		}, UserInfo.toString());
 
 		if(!this.activityInterval){
 			this.activityInterval = setInterval(async () => {
@@ -176,7 +160,7 @@ class SteamChat extends EventEmitter {
 		}
 	}
 
-	async handleMessage(groupName, message){
+	async handleMessage(groupName, message, userinfo){
 		const unknownMessages = [
 			"The fuck you want?",
 			"I'm not fluent in meatbag language.",
@@ -228,7 +212,7 @@ class SteamChat extends EventEmitter {
 						response = "/code " + JSON.stringify(result);
 						break;
 					default:
-						let event = new ChatCommandEvent(this, groupName, command, message, arg);
+						let event = new ChatCommandEvent(this, groupName, command, message, arg, userinfo);
 						for(let listener of this.rawListeners("chatCommand")){
 							await Promise.resolve(listener.call(this, event));
 						}
@@ -374,11 +358,7 @@ class SteamChat extends EventEmitter {
 			let members = [];
 			for(let bucket of g_FriendsUIApp.GroupMemberStore.GetGroupMemberList(groupId)){
 				for(let f of bucket.m_rgMembers)
-					members.push({
-						name: f.display_name,
-						steamid: f.steamid64,
-						accountid: f.accountid
-					});
+					members.push(new UserInfo(f));
 			}
 			return members;
 		}, groupId.toString());
@@ -389,19 +369,13 @@ class SteamChat extends EventEmitter {
 			let users = [];
 			let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat();
 			for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
-				users.push({
-					steamid: m.persona.m_steamid.m_ulSteamID.toString(),
-					name: m.display_name,
-					gameID: m.persona.m_gameid,
-					accountid: m.accountid
-				});
+				users.push(new UserInfo(m));
 			return users;
 		});
 	}
 
 	async voiceChannelUsersChanged(){
 		let users = (await this.getVoiceChannelUsers()).map(u => u.steamid);
-		console.log(users);
 		for(let user of this.joinedUsers){
 			if(users.indexOf(user) >= 0)
 				continue;
@@ -456,6 +430,8 @@ class SteamChat extends EventEmitter {
 				window.mutationObserver.observe(usersList, {childList: true});
 			}, 1000);
 		}, selectors);
+
+		this.joinedUsers = (await this.getVoiceChannelUsers()).map(u => u.steamid);
 	}
 
 	playSound(soundName){
