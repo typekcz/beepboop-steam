@@ -38,7 +38,7 @@ class SoundsDBGW {
 	 */
 	async insert(name, data, mime){
 		try {
-			await this.db.none("INSERT INTO sound(name, data, mime) VALUES($1, $2, $3)", [name, data, mime]);
+			await this.db.none("INSERT INTO sound(name, data, mime) VALUES($1, $2, $3) ON CONFLICT UPDATE", [name, data, mime]);
 			return true;
 		} catch(e){
 			console.error(e);

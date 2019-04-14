@@ -6,6 +6,7 @@ const pgp = require("pg-promise")();
 const SoundsDBGW = require("./soundsdbgw");
 const http = require('http');
 const https = require('https');
+const storage = require("./storage");
 
 class Main {
 	static async joinSteamChat(steamchat, config){
@@ -105,6 +106,7 @@ class Main {
 		const db = pgp(config.db.connection);
 		const soundsDbGw = new SoundsDBGW(db);
 		soundsDbGw.init();
+		storage.setUpPersistence(db);
 
 		this.hook_stream(process.stdout, (str) => webApp.appendToLog(str));
 		this.hook_stream(process.stderr, (str) => webApp.appendToLog(str));
@@ -188,7 +190,7 @@ class Main {
 					} else {
 						pluginClass = require("./plugins/"+plugin+".js");
 					}
-					apiGW.plugins.push(new (pluginClass)(apiGW));
+					apiGW.plugins.push(new (pluginClass)(apiGW, await storage.getStorage(plugin)));
 				} catch(error){
 					console.error(error);
 				}
