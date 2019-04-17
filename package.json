@@ -16,6 +16,7 @@
     "openid": "^2.0.6",
     "pg-promise": "^8.6.4",
     "puppeteer": "^1.13.0",
+    "require-from-string": "^2.0.2",
     "uid-safe": "^2.1.5",
     "vm2": "^3.6.10",
     "ytdl-core": "^0.28.3"

@@ -7,6 +7,8 @@ const SoundsDBGW = require("./soundsdbgw");
 const http = require('http');
 const https = require('https');
 const storage = require("./storage");
+const utils = require("./utils");
+const requireFromString = require("require-from-string");
 
 class Main {
 	static async joinSteamChat(steamchat, config){
@@ -162,31 +164,13 @@ class Main {
 				port: port,
 				plugins: []
 			}
-			let currentFilename = require.main.filename;
-			let fakeFilename = currentFilename;
-			fakeFilename = fakeFilename.substring(0, Math.max(fakeFilename.lastIndexOf("/"), fakeFilename.lastIndexOf("\\"))) + "/plugins/_.js";
 			for(let plugin of config.plugins){
 				console.log("Loading \""+plugin+"\" plugin.");
 				try {
 					let pluginClass;
 					if(plugin.startsWith("http:") || plugin.startsWith("https:")){
-						require.main.filename = fakeFilename;
-						pluginClass = eval(await new Promise((resolve, reject) => {
-							(plugin.startsWith("https:")? https:http).get(plugin, (resp) => {
-								let data = "";
-
-								resp.on('data', (chunk) => {
-									data += chunk;
-								});
-
-								resp.on('end', () => {
-									resolve(data);
-								});
-							}).on("error", (err) => {
-								reject(err);
-							});
-						}));
-						require.main.filename = currentFilename;
+						let code = (await utils.request(plugin)).body.toString();
+						pluginClass = requireFromString(code, "./plugins/"+plugin.replace(/[^\w^.]+/g, "_"));
 					} else {
 						pluginClass = require("./plugins/"+plugin+".js");
 					}

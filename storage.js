@@ -8,7 +8,7 @@ async function setUpPersistence(db_){
 	await db.none(
 		`CREATE TABLE IF NOT EXISTS storage(
 			module	text PRIMARY KEY,
-			data	bytea NOT NULL
+			data	text NOT NULL
 		)`
 	);
 }
