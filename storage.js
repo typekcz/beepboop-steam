@@ -75,6 +75,10 @@ class Storage {
 	get length(){
 		return Object.keys(this).length;
 	}
+
+	key(i){
+		return Object.keys(this)[i];
+	}
 }
 
 module.exports = {setUpPersistence, getStorage}
