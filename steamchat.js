@@ -58,8 +58,11 @@ class SteamChat extends EventEmitter {
 			return document.querySelector(selectors.loggedUsername).innerText;
 		}, selectors);
 
-		await this.page.exposeFunction("handleMessage", (group, message, userinfo) => {
-			return this.handleMessage(group, message, userinfo);
+		await this.page.exposeFunction("handleMessage", (groupRoom, message, userinfo) => {
+			let groupRoomSplit = groupRoom.split(" | ");
+			if(groupRoomSplit.length < 2)
+				groupRoomSplit.push("Home");
+			return this.handleMessage(groupRoomSplit[0], groupRoomSplit[1], message, userinfo);
 		});
 
 		await this.page.exposeFunction("findChatRoom", (message) => {
@@ -69,6 +72,7 @@ class SteamChat extends EventEmitter {
 		await this.page.evaluate((userinfoclass) => {
 			window.UserInfo = eval("("+userinfoclass+")");
 
+			// Use notifications for listening chat messages
 			window.Notification = function(text, options){
 				this.text = text;
 				this.options = options;
@@ -77,7 +81,7 @@ class SteamChat extends EventEmitter {
 					if(type == "click"){
 						handler();
 						let userinfo = new UserInfo(
-							g_FriendsUIApp.m_NotificationManager.m_FriendStore.m_mapPlayerCache.get(parseInt(this.options.tag.replace(/\D/g, "")))
+							g_FriendsUIApp.FriendStore.m_mapPlayerCache.get(parseInt(this.options.tag.replace(/\D/g, "")))
 						);
 						handleMessage(this.text, this.options.body, userinfo);
 					}
@@ -96,7 +100,7 @@ class SteamChat extends EventEmitter {
 		if(!this.activityInterval){
 			this.activityInterval = setInterval(async () => {
 				let connectionTrouble = await this.page.evaluate((selectors) => {
-					let element = document.querySelector(selectors.connectionTrouble);
+					let element = document.querySelector(selectors.loggedOut);
 					if(element)
 						return element.innerText;
 					else 
@@ -160,7 +164,7 @@ class SteamChat extends EventEmitter {
 		}
 	}
 
-	async handleMessage(groupName, message, userinfo){
+	async handleMessage(groupName, roomName, message, userinfo){
 		const unknownMessages = [
 			"The fuck you want?",
 			"I'm not fluent in meatbag language.",
@@ -177,7 +181,7 @@ class SteamChat extends EventEmitter {
 		message = /.*: "(.*)"/.exec(message)[1];
 		let response = null;
 		if(message.startsWith("@" + this.myName + " ")){
-			console.log("handlemessage", groupName, message);
+			console.log("handlemessage", groupName, "|", roomName, ":", message);
 			message = message.substring(this.myName.length + 2);
 			let index = message.indexOf(" ");
 			if(index < 0)
@@ -212,7 +216,7 @@ class SteamChat extends EventEmitter {
 						response = "/code " + JSON.stringify(result);
 						break;
 					default:
-						let event = new ChatCommandEvent(this, groupName, command, message, arg, userinfo);
+						let event = new ChatCommandEvent(this, groupName, roomName, command, message, arg, userinfo);
 						for(let listener of this.rawListeners("chatCommand")){
 							await Promise.resolve(listener.call(this, event));
 						}

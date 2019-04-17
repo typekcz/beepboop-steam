@@ -1,7 +1,8 @@
 class ChatCommandEvent {
-	constructor(steamChat, groupName, command, message, argument, userinfo){
+	constructor(steamChat, groupName, roomName, command, message, argument, userinfo){
 		this.steamChat = steamChat;
 		this.groupName = groupName;
+		this.roomName = roomName;
 		this.command = command;
 		this.message = message;
 		this.argument = argument;
