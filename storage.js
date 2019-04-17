@@ -14,12 +14,17 @@ async function setUpPersistence(db_){
 }
 
 async function getStorage(moduleName){
+	let storage = storages.get(moduleName);
+	if(storage)
+		return storage;
+	storage = new Storage(moduleName);
 	if(db){
-		let storage = await db.oneOrNone("SELECT data FROM storage WHERE module = $1", moduleName);
-		if(storage)
-			return JSON.parse(storage);
+		let storageData = await db.oneOrNone("SELECT data FROM storage WHERE module = $1", moduleName);
+		if(storageData)
+			Object.assign(storage, JSON.parse(storageData.data.toString()));
 	}
-	return new Storage(moduleName);
+	storages.set(moduleName, storage);
+	return storage;
 }
 
 async function syncStorage(moduleName){
@@ -28,7 +33,7 @@ async function syncStorage(moduleName){
 			updates.push(moduleName);
 			setTimeout(async () => {
 				try {
-					await db.none("INSERT INTO storage(module, data) VALUES($1, $2, $3) ON CONFLICT UPDATE", [moduleName, JSON.stringify(storages.get(moduleName))]);
+					await db.none("INSERT INTO storage(module, data) VALUES($1, $2) ON CONFLICT (module) DO UPDATE SET data = EXCLUDED.data", [moduleName, JSON.stringify(storages.get(moduleName))]);
 				} catch(e){
 					console.error(e);
 				}
