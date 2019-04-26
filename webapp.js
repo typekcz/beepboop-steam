@@ -108,7 +108,7 @@ class WebApp {
 					if(!groupId)
 						return res.status(500).end();
 					let members = await steamchat.getGroupMembers(groupId);
-					let member = members.find((m) => m.steamid64 == steamid);
+					let member = members.find((m) => m.steamid == steamid);
 					if(!member)
 						return res.status(403).send("Not member of group.").end();
 				
