@@ -132,6 +132,7 @@ class Main {
 				]
 			});
 			const page = (await browser.pages())[0];
+			webApp.setupPageScreen(page);
 			
 			page.on("console", msg => console.log("Page log: " + msg.text()) );
 			page.on("pageerror", error => console.log("Page error: " + error.message) );

@@ -50,20 +50,12 @@ class WebApp {
 
 		this.expressApp.listen(port);
 	}
-
-	appendToLog(text){
-		this.log.push("[" + (new Date()).toLocaleString("en-GB") + "] " + text);
-	}
-
-	addBrowserScript(func){
-		this.browserScripts += "("+func.toString()+")();";
-	}
-
-	startRestApi(steamchat, soundsDbGw){
+	
+	setupPageScreen(page){
 		// Debug screenshot of page
-		steamchat.getPage().setViewport({width: 1024, height: 900});
+		page.setViewport({width: 1024, height: 900});
 		this.expressApp.get(["/screen", "/screen.png"], async (req, res) => {
-			let image = steamchat.getPage().screenshot({type: "png"});
+			let image = page.screenshot({type: "png"});
 			res.set("Content-Type", "image/png");
 			res.write(await image);
 			res.end();
@@ -78,12 +70,22 @@ class WebApp {
 				<link href="https://steamcommunity-a.akamaihd.net/public/shared/css/shared_global.css?v=5OoDLCYZma2O" rel="stylesheet" type="text/css" >
 				<link href="https://steamcommunity-a.akamaihd.net/public/css/webui/friends.css?v=vCn_VIISkvcx" rel="stylesheet" type="text/css" >
 				</head>`;
-			html += await steamchat.getPage().evaluate(() => document.body.outerHTML);
+			html += await page.evaluate(() => document.body.outerHTML);
 			html += `</html>`;
 			res.write(html);
 			res.end();
 		});
+	}
 
+	appendToLog(text){
+		this.log.push("[" + (new Date()).toLocaleString("en-GB") + "] " + text);
+	}
+
+	addBrowserScript(func){
+		this.browserScripts += "("+func.toString()+")();";
+	}
+
+	startRestApi(steamchat, soundsDbGw){
 		this.expressApp.post("/api/playSoundUrl", (req, res) => {
 			if(req.body && req.body.url){
 				steamchat.playSoundUrl(req.body.url);
