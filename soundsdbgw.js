@@ -12,22 +12,26 @@ class SoundsDBGW {
 	}
 
 	async init(){
-		await this.db.none(
-			`CREATE TABLE IF NOT EXISTS sound(
-				name	varchar(50) PRIMARY KEY,
-				data	bytea NOT NULL,
-				mime	varchar(255) NOT NULL
-			)`
-		);
-		await this.db.none(
-			`CREATE TABLE IF NOT EXISTS user_sound(
-				steamid	varchar(50),
-				name	varchar(50),
-				type	smallint,
-				PRIMARY KEY(steamid, name, type),
-				FOREIGN KEY(name) REFERENCES sound(name)
-			)`
-		);
+		try {
+			await this.db.none(
+				`CREATE TABLE IF NOT EXISTS sound(
+					name	varchar(50) PRIMARY KEY,
+					data	bytea NOT NULL,
+					mime	varchar(255) NOT NULL
+				)`
+			);
+			await this.db.none(
+				`CREATE TABLE IF NOT EXISTS user_sound(
+					steamid	varchar(50),
+					name	varchar(50),
+					type	smallint,
+					PRIMARY KEY(steamid, name, type),
+					FOREIGN KEY(name) REFERENCES sound(name)
+				)`
+			);
+		} catch(e){
+			console.error(e.message);
+		}
 	}
 
 	/**
@@ -41,7 +45,7 @@ class SoundsDBGW {
 			await this.db.none("INSERT INTO sound(name, data, mime) VALUES($1, $2, $3) ON CONFLICT (name) DO UPDATE SET data = EXCLUDED.data, mime = EXCLUDED.mime", [name, data, mime]);
 			return true;
 		} catch(e){
-			console.error(e);
+			console.error(e.message);
 			return false;
 		}
 	}
@@ -50,7 +54,7 @@ class SoundsDBGW {
 		try {
 			return await this.db.one("SELECT data, mime FROM sound WHERE name = $1", name);
 		} catch(e){
-			console.error(e);
+			console.error(e.message);
 			return null;
 		}
 	}
@@ -59,7 +63,7 @@ class SoundsDBGW {
 		try {
 			return (await this.db.any("SELECT name FROM sound")).map(row => row.name);
 		} catch(e){
-			console.error(e);
+			console.error(e.message);
 			return null;
 		}
 	}
@@ -73,7 +77,7 @@ class SoundsDBGW {
 			);
 			return sounds.map(s => s.name);
 		} catch(e){
-			console.error(e);
+			console.error(e.message);
 			return null;
 		}
 	}
@@ -88,7 +92,7 @@ class SoundsDBGW {
 			);
 			return (sound == null ? null : sound.name);
 		} catch(e){
-			console.error(e);
+			console.error(e.message);
 			return null;
 		}
 	}
@@ -98,7 +102,7 @@ class SoundsDBGW {
 			let res = await this.db.result("INSERT INTO user_sound(steamid, name, type) VALUES($1, $2, $3)", [steamid, sound, type]);
 			return (res.rowCount == 1);
 		} catch(e){
-			console.error(e);
+			console.error(e.message);
 			return false;
 		}
 	}
@@ -108,7 +112,7 @@ class SoundsDBGW {
 			await this.db.none("DELETE FROM user_sound WHERE steamid = $1 AND name = $2 AND type = $3", [steamid, sound, type]);
 			return true;
 		} catch(e){
-			console.error(e);
+			console.error(e.message);
 			return false;
 		}
 	}

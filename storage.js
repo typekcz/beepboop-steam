@@ -5,12 +5,16 @@ let updates = [];
 async function setUpPersistence(db_){
 	db = db_;
 
-	await db.none(
-		`CREATE TABLE IF NOT EXISTS storage(
-			module	text PRIMARY KEY,
-			data	text NOT NULL
-		)`
-	);
+	try {
+		await db.none(
+			`CREATE TABLE IF NOT EXISTS storage(
+				module	text PRIMARY KEY,
+				data	text NOT NULL
+			)`
+		);
+	} catch(e){
+		console.error(e.message);
+	}
 }
 
 async function getStorage(moduleName){
@@ -19,9 +23,13 @@ async function getStorage(moduleName){
 		return storage;
 	storage = new Storage(moduleName);
 	if(db){
-		let storageData = await db.oneOrNone("SELECT data FROM storage WHERE module = $1", moduleName);
-		if(storageData)
-			Object.assign(storage, JSON.parse(storageData.data.toString()));
+		try {
+			let storageData = await db.oneOrNone("SELECT data FROM storage WHERE module = $1", moduleName);
+			if(storageData)
+				Object.assign(storage, JSON.parse(storageData.data.toString()));
+		} catch(e){
+			console.error(e.message);
+		}
 	}
 	storages.set(moduleName, storage);
 	return storage;
@@ -35,7 +43,7 @@ async function syncStorage(moduleName){
 				try {
 					await db.none("INSERT INTO storage(module, data) VALUES($1, $2) ON CONFLICT (module) DO UPDATE SET data = EXCLUDED.data", [moduleName, JSON.stringify(storages.get(moduleName))]);
 				} catch(e){
-					console.error(e);
+					console.error(e.message);
 				}
 				let i = updates.indexOf(moduleName);
 				if(i >= 0)
