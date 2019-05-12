@@ -15,7 +15,7 @@ const selectors = {
 	groupListItemVoiceChannel: ".chatRoomVoiceChannel .chatRoomVoiceChannelName",
 	groupChatTab: "div.chatDialogs div.chatWindow.MultiUserChat.namedGroup",
 	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants",
-	loggedOut: ".ConnectionTrouble",
+	loggedOut: ".ConnectionTroubleMessage:not(.NotificationBrowserWarning)",
 	fileUpload: ".chatEntry input[name=fileupload]",
 	confirmFileUpload: ".chatFileUploadBtn"
 };
@@ -39,6 +39,7 @@ class SteamChat extends EventEmitter {
 		this.groupName = null;
 		this.joinedUsers = [];
 		this.ttsUrl = ttsUrl;
+		this.requestCaptchaSolution = null;
 	}
 
 	getPage(){
@@ -150,15 +151,59 @@ class SteamChat extends EventEmitter {
 		});
 	}
 
+	setCaptchaSolver(func){
+		this.requestCaptchaSolution = func;
+	}
+
 	async login(username, password){
 		try {
-			let navigationPromise = this.page.waitForNavigation({waitUntil : "networkidle0"});
-			await this.page.evaluate((user, pass) => {
+			let navigationPromise = this.page.waitForNavigation({waitUntil : "domcontentloaded", timeout: 1000});
+			navigationPromise.catch(()=>{ console.log("Login: Wait for navigation timedout."); }); // Ignore timeout
+			if(await this.page.evaluate((user, pass) => {
 				document.querySelector("#steamAccountName").value = user;
 				document.querySelector("#steamPassword").value = pass;
+				let captcha_input = document.querySelector("#input_captcha");
+				if(captcha_input.offsetParent != null){
+					// Captcha detected
+					return false;
+				}
 				document.querySelector("#SteamLogin").click();
-			}, username, password);
-			await navigationPromise;
+				return true;
+			}, username, password)){
+				await navigationPromise;
+			} else {
+				console.log("Login: Captcha detected, requesting solution.");
+				// Deal with captcha
+				if(this.requestCaptchaSolution){
+					while(true) {
+						await this.page.evaluate(async () => {
+							let img = document.querySelector("#captchaImg");
+							if(!img.complete){
+								await new Promise((resolve => {
+									img.onload = () => resolve();
+								}));
+							}
+						});
+						let captchaElement = await this.page.$("#captchaImg");
+						let solution = await this.requestCaptchaSolution(await captchaElement.screenshot({type: "png"}));
+						console.log("Login: Captcha solution received.");
+						navigationPromise = this.page.waitForNavigation({waitUntil : "domcontentloaded", timeout: 3000});
+						await this.page.evaluate((solution) => {
+							document.querySelector("#input_captcha").value = solution;
+							document.querySelector("#SteamLogin").click();
+						}, solution);
+						try {
+							await navigationPromise;
+							console.log("Login: Captcha solved.");
+							break;
+						} catch(e){
+							console.log("Login: Captcha solution failed. Trying again.");
+						}
+					}
+				} else {
+					throw new Error("Captcha solver is not set.");
+				}
+			}
 		} catch(error){
 			console.log(error);
 		}

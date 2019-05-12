@@ -9,6 +9,7 @@ const https = require('https');
 const storage = require("./storage");
 const utils = require("./utils");
 const requireFromString = require("require-from-string");
+const DealWithCaptcha = require("./dealwithcaptcha");
 
 class Main {
 	static async joinSteamChat(steamchat, config){
@@ -144,6 +145,18 @@ class Main {
 			
 			let steamchat = new SteamChat(page, "http://localhost:" + port + "/api/sounds/", "http://localhost:" + port + "/api/yt?url=", soundsDbGw, config.ttsUrl);
 
+			let apiGW = {
+				steamChat: steamchat,
+				webApp: webApp,
+				config: config,
+				browser: browser,
+				port: port,
+				plugins: []
+			}
+
+			let dealWithCaptcha = new DealWithCaptcha(apiGW);
+			steamchat.setCaptchaSolver((img) => dealWithCaptcha.getCaptchaSolution(img));
+
 			await this.joinSteamChat(steamchat, config);
 
 			steamchat.on("connectionTrouble", (e) => {
@@ -157,14 +170,6 @@ class Main {
 			console.log("Web UI ready.");
 
 			console.log("Loading plugins.");
-			let apiGW = {
-				steamChat: steamchat,
-				webApp: webApp,
-				config: config,
-				browser: browser,
-				port: port,
-				plugins: []
-			}
 			for(let plugin of config.plugins){
 				console.log("Loading \""+plugin+"\" plugin.");
 				try {
