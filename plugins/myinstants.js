@@ -22,7 +22,6 @@ class MyInstantsPlugin {
 
 		apiGW.webApp.addBrowserScript(() => {
 			window.addEventListener("load", () => {
-				let form = document.createElement("form");
 				document.getElementById("controls").insertAdjacentHTML("beforeend", 
 					`<fieldset>
 						<legend>Play Instant</legend>
