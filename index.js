@@ -1,5 +1,5 @@
+const config = require("./configloader");
 const puppeteer = require("puppeteer");
-const fs = require("fs");
 const SteamChat = require("./steamchat");
 const WebApp = require("./webapp");
 const pgp = require("pg-promise")();
@@ -32,76 +32,6 @@ class Main {
 		process.on("SIGINT", process.exit);
 		process.on("SIGUSR1", process.exit);
 		process.on("SIGUSR2", process.exit);
-
-		const helpString = 
-		`Usage:
-			[--config <json> | -c <json>]
-			[--config-file <path> | -C <path>]
-		Default config file is config.json. 
-		Required values are steam.userName, steam.password, steam.groupName, steam.channelName.`;
-		let configFile = process.env.CONFIGFILE || "config.json";
-		let config = null;
-		if(process.env.CONFIG){
-			try {
-				config = JSON.parse(process.env.CONFIG);
-			} catch(error){
-				console.log(error);
-			}
-		}
-
-		// Handle parameters
-		for(let i = 2; i < args.length; i++) {
-			let arg = args[i];
-			
-			if((arg == "--config" || arg == "-c") && args.length >= i){
-				try {
-					config = JSON.parse(args[++i]);
-				} catch(error){
-					console.log(error);
-				}
-			} else if((arg == "--config-file" || arg == "-C") && args.length >= i){
-				configFile = args[++i];
-			} else {
-				console.error("Unknown parameter \"" + arg + "\"");
-			}
-		}
-
-		// Load config file
-		if(!config)
-			try {
-				if(typeof(configFile) === "string" && fs.existsSync(configFile) && fs.statSync(configFile).isFile())
-					config = JSON.parse(fs.readFileSync(configFile, "utf8"));
-			} catch(error){
-				console.error(error);
-				console.log(helpString);
-				process.exit(1);
-			}
-		if(!config){
-			config = {};
-		}
-
-		// Default plugins
-		if(!config.plugins){
-			config.plugins = ["myinstants"];
-		}
-
-		// Check if all required values are defined
-		if(!config.steam.userName){
-			console.log("Missing steam.userName in the configuration.");
-			process.exit(1);
-		}
-		if(!config.steam.password){
-			console.log("Missing steam.password in the configuration.");
-			process.exit(1);
-		}
-		if(!config.steam.groupName){
-			console.log("Missing steam.groupName in the configuration.");
-			process.exit(1);
-		}
-		if(!config.steam.channelName){
-			console.log("Missing steam.channelName in the configuration.");
-			process.exit(1);
-		}
 
 		// Start
 		let port = config.port || process.env.PORT || 8080;
