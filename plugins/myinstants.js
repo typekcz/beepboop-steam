@@ -54,7 +54,7 @@ class MyInstantsPlugin {
 			regex_result = search_regex.exec(body);
 		}
 		if(regex_result == null)
-			return reject(new Error("No instant found."));
+			throw new Error("No instant found.");
 		this.apiGW.steamChat.playSoundUrl("https://www.myinstants.com" + regex_result[1]);
 	}
 }
