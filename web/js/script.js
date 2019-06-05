@@ -39,6 +39,11 @@ function registerAsyncSubmitEvents(){
 		form.addEventListener("submit", async (event) => {
 			event.preventDefault();
 			let form = event.target;
+
+			let beforeScript = form.getAttribute("data-beforesubmit");
+			if(beforeScript)
+				eval(beforeScript);
+
 			let options = {
 				method: form.method
 			};
@@ -57,6 +62,10 @@ function registerAsyncSubmitEvents(){
 			} else if(contentType != null && contentType.indexOf("text/javascript") !== -1){
 				eval(await res.text());
 			}
+			
+			let afterScript = form.getAttribute("data-aftersubmit");
+			if(afterScript)
+				eval(afterScript);
 		});
 	}
 }

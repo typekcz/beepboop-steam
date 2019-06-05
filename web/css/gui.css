@@ -5,6 +5,7 @@
 	--main-color: #ff8400;
 	--shadow-color: #000000;
 	--line-color: #909090;
+	--disabled-color: #b1814e;
 }
 body {
 	background-color: var(--bg-color);
@@ -70,7 +71,7 @@ nav a {
 	padding: 0 5px;
 }
 
-input[type="text"],input[type="password"],textarea, select {
+input[type="text"], input[type="password"], textarea, select {
 	font-size: 16px;
 	font-family: sans-serif;
 	background-color: var(--secondary-bg-color);
@@ -83,6 +84,10 @@ input[type="text"],input[type="password"],textarea, select {
 	text-shadow: 1px 1px 1px var(--shadow-color);
 	background:
 		linear-gradient(225deg, transparent 5px, var(--secondary-bg-color) 5px);
+}
+
+input[type="text"]:disabled, input[type="password"]:disabled, textarea:disabled, select:disabled {
+	border-color: var(--disabled-color);
 }
 
 select option {
@@ -101,6 +106,16 @@ input[type="submit"], input[type="button"], button, .button {
 	background:
 		linear-gradient(45deg, transparent 6px, var(--main-color) 6px),
 		linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
+	background-position: bottom left, bottom right;
+	background-size: 52% 100%;
+	background-repeat: no-repeat;
+}
+
+input[type="submit"]:disabled, input[type="button"]:disabled, button:disabled {
+	background-color: var(--disabled-color);
+	background:
+		linear-gradient(45deg, transparent 6px, var(--disabled-color) 6px),
+		linear-gradient(225deg, transparent 6px, var(--disabled-color) 6px);
 	background-position: bottom left, bottom right;
 	background-size: 52% 100%;
 	background-repeat: no-repeat;

@@ -158,7 +158,7 @@ class SteamChat extends EventEmitter {
 	async login(username, password){
 		try {
 			let navigationPromise = this.page.waitForNavigation({waitUntil : "domcontentloaded", timeout: 1000});
-			navigationPromise.catch(()=>{ console.log("Login: Wait for navigation timedout."); }); // Ignore timeout
+			navigationPromise.catch(()=>{ console.log("Login: Wait for navigation timed out."); }); // Ignore timeout
 			if(await this.page.evaluate((user, pass) => {
 				document.querySelector("#steamAccountName").value = user;
 				document.querySelector("#steamPassword").value = pass;

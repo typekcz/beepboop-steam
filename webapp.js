@@ -1,5 +1,5 @@
 const express = require("express");
-require('express-async-errors');
+require("express-async-errors");
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const openid = require("openid");

@@ -11,9 +11,16 @@ const utils = require("./utils");
 const requireFromString = require("require-from-string");
 const DealWithCaptcha = require("./dealwithcaptcha");
 
+let db = null;
+let page = null;
+
 class Main {
 	static async joinSteamChat(steamchat, config){
-		await steamchat.getPage().goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
+		try {
+			await steamchat.getPage().goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
+		} catch(e){
+			console.error(e.message);
+		}
 
 		if(steamchat.getPage().url().includes("login")){
 			console.log("login");
@@ -29,17 +36,24 @@ class Main {
 			console.error("Unhandled Promise Rejection", p, error);
 		});
 	
-		process.on("SIGINT", process.exit);
-		process.on("SIGUSR1", process.exit);
-		process.on("SIGUSR2", process.exit);
+		process.on("SIGINT", Main.shutdown);
+		process.on("SIGUSR1", Main.shutdown);
+		process.on("SIGUSR2", Main.shutdown);
 
 		// Start
 		let port = config.port || process.env.PORT || 8080;
 		let webApp = new WebApp(config.baseUrl, port);
-		const db = pgp(config.db.connection);
+		db = pgp(config.db.connection);
 		const soundsDbGw = new SoundsDBGW(db);
 		soundsDbGw.init();
 		storage.setUpPersistence(db);
+
+		await db.none(
+			`CREATE TABLE IF NOT EXISTS variable(
+				name	text PRIMARY KEY,
+				value	text NOT NULL
+			)`
+		);
 
 		this.hook_stream(process.stdout, (str) => webApp.appendToLog(str));
 		this.hook_stream(process.stderr, (str) => webApp.appendToLog(str));
@@ -62,8 +76,10 @@ class Main {
 					"--disable-setuid-sandbox"
 				]
 			});
-			const page = (await browser.pages())[0];
+			page = (await browser.pages())[0];
 			webApp.setupPageScreen(page);
+
+			await this.loadCookies();
 			
 			page.on("console", msg => console.log("Page log: " + msg.text()) );
 			page.on("pageerror", error => console.log("Page error: " + error.message) );
@@ -116,6 +132,7 @@ class Main {
 				}
 			}
 			console.log("Start done.");
+			this.storeCookies();
 		} catch(error){
 			console.error(error);
 		}
@@ -129,6 +146,33 @@ class Main {
 				callback(string, encoding, fd);
 			};
 		})(stream.write);
+	}
+
+	static async loadCookies(){
+		let cookiesRow = await db.oneOrNone("SELECT value FROM variable WHERE name = 'cookies'");
+		if(cookiesRow){
+			let cookies = JSON.parse(cookiesRow.value.toString());
+			for(let cookie of cookies)
+				await page.setCookie(cookie);
+		}
+	}
+
+	static async storeCookies(){
+		return db.none(
+			"INSERT INTO variable(name, value) VALUES('cookies', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
+			[ JSON.stringify(await page.cookies()) ]
+		);
+	}
+
+	static shutdown(){
+		console.log("Shutdown:");
+		Main.storeCookies().then(() => {
+			console.log("Cookies stored.");
+			process.exit(0);
+		}).catch((e) => {
+			console.error(e.message);
+			process.exit(1);
+		});
 	}
 }
 
