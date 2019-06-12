@@ -26,6 +26,9 @@ Example config:
 	"db": {
 		"connection": "postgres://beepboop:beepboop@localhost/beepboop"
 	},
+	"plugins": [
+		"myinstants"
+	],
 	"volume": 0.15
 }
 ```
