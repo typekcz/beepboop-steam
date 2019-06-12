@@ -48,12 +48,16 @@ class Main {
 		soundsDbGw.init();
 		storage.setUpPersistence(db);
 
-		await db.none(
-			`CREATE TABLE IF NOT EXISTS variable(
-				name	text PRIMARY KEY,
-				value	text NOT NULL
-			)`
-		);
+		try {
+			await db.none(
+				`CREATE TABLE IF NOT EXISTS variable(
+					name	text PRIMARY KEY,
+					value	text NOT NULL
+				)`
+			);
+		} catch(e){
+			console.error(e.message);
+		}
 
 		this.hook_stream(process.stdout, (str) => webApp.appendToLog(str));
 		this.hook_stream(process.stderr, (str) => webApp.appendToLog(str));
@@ -62,7 +66,7 @@ class Main {
 
 		try {
 			const browser = await puppeteer.launch({
-				headless: true,
+				headless: false,
 				args: [
 					"--disable-client-side-phishing-detection",
 					"--disable-sync",
@@ -149,19 +153,28 @@ class Main {
 	}
 
 	static async loadCookies(){
-		let cookiesRow = await db.oneOrNone("SELECT value FROM variable WHERE name = 'cookies'");
-		if(cookiesRow){
-			let cookies = JSON.parse(cookiesRow.value.toString());
-			for(let cookie of cookies)
-				await page.setCookie(cookie);
+		try {
+			let cookiesRow = await db.oneOrNone("SELECT value FROM variable WHERE name = 'cookies'");
+			if(cookiesRow){
+				let cookies = JSON.parse(cookiesRow.value.toString());
+				for(let cookie of cookies)
+					await page.setCookie(cookie);
+			}
+		} catch(e){
+			console.error(e.message);
 		}
 	}
 
 	static async storeCookies(){
-		return db.none(
-			"INSERT INTO variable(name, value) VALUES('cookies', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-			[ JSON.stringify(await page.cookies()) ]
-		);
+		try {
+			return db.none(
+				"INSERT INTO variable(name, value) VALUES('cookies', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
+				[ JSON.stringify(await page.cookies()) ]
+			);
+		} catch(e){
+			console.error(e.message);
+			return null;
+		}
 	}
 
 	static shutdown(){

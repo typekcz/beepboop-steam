@@ -497,8 +497,7 @@ class SteamChat extends EventEmitter {
 					ytdl.getInfo(url, {filter: "audioonly"}, (err, info) => {
 						if(err)
 							return reject(err);
-						let format = ytdl.chooseFormat(info.formats, {filter: "audioonly", quality: "lowestaudio"});
-						console.log("yturl: ", format.url);
+						let format = ytdl.chooseFormat(info.formats, {filter: "audioonly", quality: "lowest"});
 						resolve(format.url);
 					});
 				});
