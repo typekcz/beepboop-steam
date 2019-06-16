@@ -122,7 +122,7 @@ class SteamChat extends EventEmitter {
 	}
 	
 	initAudio(volume){
-		return this.page.evaluate(() => {
+		return this.page.evaluate((volume) => {
 			window.audioContext = new AudioContext();
 			window.mixedAudio = window.audioContext.createMediaStreamDestination();
 			window.gainNode = window.audioContext.createGain();
@@ -155,7 +155,7 @@ class SteamChat extends EventEmitter {
 				utter.pitch = 0.3;
 				window.speechSynthesis.speak(utter);
 			}
-		});
+		}, volume);
 	}
 
 	setCaptchaSolver(func){
