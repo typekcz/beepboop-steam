@@ -46,7 +46,7 @@ class SteamChat extends EventEmitter {
 		return this.page;
 	}
 
-	async init(){
+	async init(volume){
 		try {
 			await this.page.waitForSelector(selectors.loading);
 		} catch(e){
@@ -94,7 +94,7 @@ class SteamChat extends EventEmitter {
 
 			// Voice settings
 			g_FriendsUIApp.VoiceStore.SetUseEchoCancellation(false);
-			g_FriendsUIApp.VoiceStore.SetUseAutoGainControl(false);
+			g_FriendsUIApp.VoiceStore.SetUseAutoGainControl(true);
 			g_FriendsUIApp.VoiceStore.SetUseNoiseCancellation(false);
 		}, UserInfo.toString());
 
@@ -112,14 +112,21 @@ class SteamChat extends EventEmitter {
 				this.page.mouse.move(Math.random()*100, Math.random()*100+300);
 			},60000);
 		}
+
+		const greetingMessages = [
+			"Hello, I am BeebBoop and I do beep and boop.",
+			"I really like cheese.",
+			"Knock, knock."
+		];
+		this.textToSpeech(greetingMessages[Math.round(Math.random()*(greetingMessages.length - 1))]);
 	}
 	
-	initAudio(){
+	initAudio(volume){
 		return this.page.evaluate(() => {
 			window.audioContext = new AudioContext();
 			window.mixedAudio = window.audioContext.createMediaStreamDestination();
 			window.gainNode = window.audioContext.createGain();
-			window.gainNode.gain.value = 0.3;
+			window.gainNode.gain.value = volume;
 			window.gainNode.connect(window.mixedAudio);
 
 			function addStream(stream){
@@ -489,24 +496,43 @@ class SteamChat extends EventEmitter {
 	
 	async playSoundUrl(url, checkYt = true){
 		if(checkYt){
-			const ytRegEx = /^(https?:)?(\/\/)?(www.)?(youtube.com|youtu.be)\//;
 			console.log("playUrl", url);
-			if(ytRegEx.test(url)){
+			if(ytdl.validateURL(url)){
 				console.log("youtube detected");
 				url = await new Promise((resolve, reject) => {
-					ytdl.getInfo(url, {filter: "audioonly"}, (err, info) => {
+					ytdl.getInfo(url, {}, (err, info) => {
 						if(err)
 							return reject(err);
-						let format = ytdl.chooseFormat(info.formats, {filter: "audioonly", quality: "lowest"});
+						let format = ytdl.chooseFormat(info.formats, {
+							quality: [
+								// 128 bitrate
+								34, 35, 43, 44, 140, 171, 94, 120,
+								// 192 bitrate
+								37, 38, 45, 46, 84, 85, 100, 101, 102, 172
+							]
+						});
 						resolve(format.url);
 					});
 				});
 				console.log(url);
 			}
 		}
-		return this.page.evaluate((url) => {
-			window.audio.src = url;
-			return true;
+		return this.page.evaluate(async (url) => {
+			await new Promise((resolve, reject) => {
+				let errorHandler = (e) => {
+					window.audio.removeEventListener("error", errorHandler);
+					window.audio.removeEventListener("canplay", canplayHandler);
+					reject(new Error("Error while loading audio from URL."));
+				};
+				let canplayHandler = () => {
+					window.audio.removeEventListener("error", errorHandler);
+					window.audio.removeEventListener("canplay", canplayHandler);
+					resolve();
+				};
+				window.audio.addEventListener("error", errorHandler);
+				window.audio.addEventListener("canplay", canplayHandler);
+				window.audio.src = url;
+			});
 		}, url);
 	}
 
