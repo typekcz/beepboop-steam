@@ -52,7 +52,7 @@ class SteamChat extends EventEmitter {
 		} catch(e){
 			console.log(e);
 		}
-		await this.initAudio();
+		await this.initAudio(volume);
 
 		this.myName = await this.page.evaluate((selectors) => {
 			document.hasFocus = function(){return false;};
