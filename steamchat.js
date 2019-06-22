@@ -218,11 +218,9 @@ class SteamChat extends EventEmitter {
 									});
 								});
 							});
-							clearInterval(errorCheckInterval);
 							console.log("Login: Captcha solved.");
 							break;
 						} catch(e){
-							clearInterval(errorCheckInterval);
 							console.log("Login: Captcha solution failed. Trying again.");
 						}
 					}
