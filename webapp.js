@@ -86,9 +86,9 @@ class WebApp {
 	}
 
 	startRestApi(steamchat, soundsDbGw){
-		this.expressApp.post("/api/playSoundUrl", (req, res) => {
+		this.expressApp.post("/api/playSoundUrl", async (req, res) => {
 			if(req.body && req.body.url){
-				steamchat.playSoundUrl(req.body.url);
+				await steamchat.playSoundUrl(req.body.url);
 			} else {
 				res.status(400);
 			}
@@ -154,8 +154,8 @@ class WebApp {
 			}
 		});
 
-		this.expressApp.post("/api/sounds/:soundName/play", (req, res) => {
-			steamchat.playSoundUrl("http://localhost:" + this.port + "/api/sounds/" + req.params.soundName);
+		this.expressApp.post("/api/sounds/:soundName/play", async (req, res) => {
+			await steamchat.playSoundUrl("http://localhost:" + this.port + "/api/sounds/" + req.params.soundName);
 			res.end();
 		});
 

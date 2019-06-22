@@ -19,6 +19,6 @@
     "require-from-string": "^2.0.2",
     "uid-safe": "^2.1.5",
     "vm2": "^3.6.10",
-    "ytdl-core": "^0.28.3"
+    "ytdl-core": "^0.29.2"
   }
 }

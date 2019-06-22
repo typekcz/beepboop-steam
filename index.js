@@ -198,10 +198,10 @@ class Main {
 		console.log("Shutdown:");
 		Main.storeCookies().then(() => {
 			console.log("Cookies stored.");
-			process.exit(0);
+			page.browser().close().then(() => process.exit(0));
 		}).catch((e) => {
 			console.error(e.message);
-			process.exit(1);
+			page.browser().close().then(() => process.exit(1));
 		});
 	}
 }

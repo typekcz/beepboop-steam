@@ -112,13 +112,6 @@ class SteamChat extends EventEmitter {
 				this.page.mouse.move(Math.random()*100, Math.random()*100+300);
 			},60000);
 		}
-
-		const greetingMessages = [
-			"Hello, I am BeebBoop and I do beep and boop.",
-			"I really like cheese.",
-			"Knock, knock."
-		];
-		this.textToSpeech(greetingMessages[Math.round(Math.random()*(greetingMessages.length - 1))]);
 	}
 	
 	initAudio(volume){
@@ -164,8 +157,6 @@ class SteamChat extends EventEmitter {
 
 	async login(username, password){
 		try {
-			let navigationPromise = this.page.waitForNavigation({waitUntil : "domcontentloaded", timeout: 1000});
-			navigationPromise.catch(()=>{ console.log("Login: Wait for navigation timed out."); }); // Ignore timeout
 			if(await this.page.evaluate((user, pass) => {
 				document.querySelector("#steamAccountName").value = user;
 				document.querySelector("#steamPassword").value = pass;
@@ -177,7 +168,21 @@ class SteamChat extends EventEmitter {
 				document.querySelector("#SteamLogin").click();
 				return true;
 			}, username, password)){
-				await navigationPromise;
+				await this.page.evaluate( () => {
+					return new Promise((resolve, reject) => {
+						let checkInt = setInterval(() => {
+							if(document.querySelector("#error_display").offsetParent != null){
+								clearInterval(checkInt);
+								reject(new Error("Login failed."));
+							}
+						}, 200);
+						window.addEventListener("beforeunload", () => {
+							clearInterval(checkInt);
+							resolve();
+						});
+					});
+				});
+				console.log("Login: Success.");
 			} else {
 				console.log("Login: Captcha detected, requesting solution.");
 				// Deal with captcha
@@ -194,16 +199,30 @@ class SteamChat extends EventEmitter {
 						let captchaElement = await this.page.$("#captchaImg");
 						let solution = await this.requestCaptchaSolution(await captchaElement.screenshot({type: "png"}));
 						console.log("Login: Captcha solution received.");
-						navigationPromise = this.page.waitForNavigation({waitUntil : "domcontentloaded", timeout: 3000});
 						await this.page.evaluate((solution) => {
 							document.querySelector("#input_captcha").value = solution;
 							document.querySelector("#SteamLogin").click();
 						}, solution);
 						try {
-							await navigationPromise;
+							await this.page.evaluate( () => {
+								return new Promise((resolve, reject) => {
+									let checkInt = setInterval(() => {
+										if(document.querySelector("#error_display").offsetParent != null){
+											clearInterval(checkInt);
+											reject(new Error("Login failed."));
+										}
+									}, 200);
+									window.addEventListener("beforeunload", () => {
+										clearInterval(checkInt);
+										resolve();
+									});
+								});
+							});
+							clearInterval(errorCheckInterval);
 							console.log("Login: Captcha solved.");
 							break;
 						} catch(e){
+							clearInterval(errorCheckInterval);
 							console.log("Login: Captcha solution failed. Trying again.");
 						}
 					}
@@ -251,7 +270,7 @@ class SteamChat extends EventEmitter {
 					case "say":
 						if(!this.ttsUrl)
 							throw new Error("Missing text to speech URL.");
-						this.textToSpeech(arg);
+						await this.textToSpeech(arg);
 						break;
 					case "stop":
 						await this.stopSound();
@@ -285,7 +304,11 @@ class SteamChat extends EventEmitter {
 		}
 		if(response){
 			console.log("response", response);
-			this.textToSpeech(response);
+			try {
+				await this.textToSpeech(response);
+			} catch(e){
+				console.error(e);
+			}
 		}
 		if(response !== null){
 			await this.page.type("textarea", response);
@@ -316,10 +339,10 @@ class SteamChat extends EventEmitter {
 		await btn.click();
 	}
 
-	textToSpeech(text){
+	async textToSpeech(text){
 		if(this.ttsUrl){
 			text = text.replace("/me", this.myName);
-			this.playSoundUrl(this.ttsUrl + encodeURIComponent(text));
+			await this.playSoundUrl(this.ttsUrl + encodeURIComponent(text));
 		}
 	}
 
@@ -488,10 +511,23 @@ class SteamChat extends EventEmitter {
 		}, selectors);
 
 		this.joinedUsers = (await this.getVoiceChannelUsers()).map(u => u.steamid);
+
+		const greetingMessages = [
+			"Hello, I am BeebBoop and I do beep and boop.",
+			"I really like cheese.",
+			"Knock, knock."
+		];
+		setTimeout(async () => {
+			try {
+				await this.textToSpeech(greetingMessages[Math.round(Math.random()*(greetingMessages.length - 1))]);
+			} catch(e){
+				console.error(e);
+			}
+		}, 3000);
 	}
 
-	playSound(soundName){
-		this.playSoundUrl(this.soundsBaseUrl + soundName);
+	async playSound(soundName){
+		await this.playSoundUrl(this.soundsBaseUrl + soundName);
 	}
 	
 	async playSoundUrl(url, checkYt = true){
@@ -517,23 +553,32 @@ class SteamChat extends EventEmitter {
 				console.log(url);
 			}
 		}
-		return this.page.evaluate(async (url) => {
-			await new Promise((resolve, reject) => {
-				let errorHandler = (e) => {
-					window.audio.removeEventListener("error", errorHandler);
-					window.audio.removeEventListener("canplay", canplayHandler);
-					reject(new Error("Error while loading audio from URL."));
-				};
-				let canplayHandler = () => {
-					window.audio.removeEventListener("error", errorHandler);
-					window.audio.removeEventListener("canplay", canplayHandler);
-					resolve();
-				};
-				window.audio.addEventListener("error", errorHandler);
-				window.audio.addEventListener("canplay", canplayHandler);
-				window.audio.src = url;
-			});
-		}, url);
+		try {
+			await this.page.evaluate(async (url) => {
+				await new Promise((resolve, reject) => {
+					let errorHandler = async (e) => {
+						window.audio.removeEventListener("error", errorHandler);
+						window.audio.removeEventListener("canplay", canplayHandler);
+						try {
+							await window.audio.play();
+						} catch(e){
+							return reject(e.message);
+						}
+						reject("Error while loading audio from URL.");
+					};
+					let canplayHandler = () => {
+						window.audio.removeEventListener("error", errorHandler);
+						window.audio.removeEventListener("canplay", canplayHandler);
+						resolve();
+					};
+					window.audio.addEventListener("error", errorHandler);
+					window.audio.addEventListener("canplay", canplayHandler);
+					window.audio.src = url;
+				});
+			}, url);
+		} catch(e){
+			throw new Error(e.message.replace("Evaluation failed: ", ""));
+		}
 	}
 
 	stopSound(){
