@@ -4,8 +4,8 @@ BeepBoop is sound bot for new Steam chat. He connects to group chat voice channe
 ## Features
  * Plays all Chromium supported audio formats
  * Support for playing Youtube links
- * Search and play sound from myinstants.com
- * Multiple user welcome and leave sounds (random)
+ * Search and play sound from myinstants.com (plugin)
+ * Multiple user welcome and leave sounds (randomly plays one)
  * Only members of Steam group chat can upload sounds.
  * Chat commands.
 
@@ -55,11 +55,11 @@ npm run start
 ```
 
 ### Audio support
-Puppeteer downloads its own Chromium which does not contain ffmpeg codec. Some sounds/videos won't work especialy those from Youtube. If you want ffmpeg you your own Chromium installation. On Ubuntu use these packages:
+Puppeteer downloads its own Chromium which does not contain ffmpeg codec. Some sounds/videos won't work especialy those from Youtube. If you want ffmpeg you can use your own Chromium installation. On Ubuntu use these packages:
 ```
 chromium-browser chromium-codecs-ffmpeg-extra
 ```
-Then set env. variables so that Puppeteer will you your installed Chromium.
+Then set env. variables so that Puppeteer will use your installed Chromium.
 ```
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=
 PUPPETEER_EXECUTABLE_PATH="/usr/lib/chromium-browser/chromium-browser"
