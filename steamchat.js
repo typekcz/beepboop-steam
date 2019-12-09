@@ -96,6 +96,7 @@ class SteamChat extends EventEmitter {
 			g_FriendsUIApp.VoiceStore.SetUseEchoCancellation(false);
 			g_FriendsUIApp.VoiceStore.SetUseAutoGainControl(true);
 			g_FriendsUIApp.VoiceStore.SetUseNoiseCancellation(false);
+			g_FriendsUIApp.VoiceStore.SetUseNoiseGateLevel(0);
 		}, UserInfo.toString());
 
 		if(!this.activityInterval){
