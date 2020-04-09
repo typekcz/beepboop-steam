@@ -17,7 +17,7 @@
 			<div class="flex">
 				<fieldset>
 					<legend>Upload Sound</legend>
-					<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session>
+					<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session data-aftersubmit="if(res.ok){form.reset();location.reload();}">
 						<input type="text" name="name" placeholder="Sound name">
 						<input type="file" name="sound">
 						<input type="submit">

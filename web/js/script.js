@@ -19,7 +19,6 @@ window.addEventListener("load", async () => {
 });
 
 window.addEventListener("storage", (e) => {
-	console.log(e);
 	if(e.key == "authId"){
 		if(e.newValue){
 			document.body.classList.toggle("logged", true);
@@ -56,8 +55,13 @@ function registerAsyncSubmitEvents(){
 			let contentType = res.headers.get("content-type");
 			if(!res.ok){
 				let responseText = await res.text();
-				if(contentType.indexOf("text/html") !== -1)
-					responseText = /<pre>(.*?)<br>/.exec(responseText)[1];
+				if(contentType.indexOf("text/html") !== -1 && responseText){
+					let reres = /<pre>(.*?)<br>/.exec(responseText);
+					if(reres)
+						responseText = reres[1];
+				}
+				if(!responseText)
+					responseText = res.statusText;
 				alert(responseText);
 			} else if(contentType != null && contentType.indexOf("text/javascript") !== -1){
 				eval(await res.text());
