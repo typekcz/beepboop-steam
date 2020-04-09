@@ -1,8 +1,9 @@
-const {VM} = require('vm2');
 const https = require('https');
 const EventEmitter = require('events');
 const ytdl = require("ytdl-core");
 const UserInfo = require("./userinfo");
+const RoomInfo = require("./roominfo");
+const ChatHandler = require("./chathandler");
 const ChatCommandEvent = require("./chatcommandevent");
 
 const selectors = {
@@ -54,41 +55,14 @@ class SteamChat extends EventEmitter {
 		}
 		await this.initAudio(volume);
 
-		this.myName = await this.page.evaluate((selectors) => {
-			document.hasFocus = function(){return false;};
-			return document.querySelector(selectors.loggedUsername).innerText;
-		}, selectors);
-
-		await this.page.exposeFunction("handleMessage", (groupRoom, message, userinfo) => {
-			let groupRoomSplit = groupRoom.split(" | ");
-			if(groupRoomSplit.length < 2)
-				groupRoomSplit.push("Home");
-			return this.handleMessage(groupRoomSplit[0], groupRoomSplit[1], message, userinfo);
-		});
-
 		await this.page.exposeFunction("findChatRoom", (message) => {
 			return this.findChatRoom(message);
 		});
 
-		await this.page.evaluate((userinfoclass) => {
+		await this.page.evaluate((userinfoclass, roominfoclass) => {
 			window.UserInfo = eval("("+userinfoclass+")");
+			window.RoomInfo = eval("("+roominfoclass+")");
 
-			// Use notifications for listening chat messages
-			window.Notification = function(text, options){
-				this.text = text;
-				this.options = options;
-
-				this.addEventListener = async function(type, handler){
-					if(type == "click"){
-						handler();
-						let userinfo = new UserInfo(
-							g_FriendsUIApp.FriendStore.m_mapPlayerCache.get(parseInt(this.options.tag.replace(/\D/g, "")))
-						);
-						handleMessage(this.text, this.options.body, userinfo);
-					}
-				};
-				this.close = function(){};
-			};
 			window.Notification.permission = "granted";
 			window.Notification.requestPermission = function(e){e("granted")};
 
@@ -97,7 +71,11 @@ class SteamChat extends EventEmitter {
 			g_FriendsUIApp.VoiceStore.SetUseAutoGainControl(true);
 			g_FriendsUIApp.VoiceStore.SetUseNoiseCancellation(false);
 			g_FriendsUIApp.VoiceStore.SetUseNoiseGateLevel(0);
-		}, UserInfo.toString());
+
+			setInterval(() => {
+				g_FriendsUIApp.IdleTracker.OnUserAction();
+			}, 120000);
+		}, UserInfo.toString(), RoomInfo.toString());
 
 		if(!this.activityInterval){
 			this.activityInterval = setInterval(async () => {
@@ -105,14 +83,20 @@ class SteamChat extends EventEmitter {
 					let element = document.querySelector(selectors.loggedOut);
 					if(element)
 						return element.innerText;
-					else 
+					else
 						return null;
 				}, selectors);
 				if(connectionTrouble)
 					this.emit("connectionTrouble", new ConnectionTroubleEvent(connectionTrouble));
-				this.page.mouse.move(Math.random()*100, Math.random()*100+300);
 			},60000);
 		}
+
+		this.chatHandler = new ChatHandler(this);
+
+		this.loggedUser = await this.page.evaluate(() => {
+			return new UserInfo(g_FriendsUIApp.FriendStore.m_self);
+		});
+		this.myName = this.loggedUser.name;
 	}
 	
 	initAudio(volume){
@@ -234,100 +218,16 @@ class SteamChat extends EventEmitter {
 		}
 	}
 
-	async handleMessage(groupName, roomName, message, userinfo){
-		const unknownMessages = [
-			"The fuck you want?",
-			"I'm not fluent in meatbag language.",
-			"Fuck you too."
-		];
-		const errorMessages = [
-			"Nope.",
-			"418 I'm a teapot.",
-			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉.",
-			"/me is currently unavailable.",
-			"No can do."
-		];
-		// g_FriendsUIApp.ChatStore.m_mapChatGroups.get("21961").m_mapRooms.get("84836").SendChatMessage("beep?","beep?","beep?","beep?")
-		message = /.*: "(.*)"/.exec(message)[1];
-		let response = null;
-		if(message.startsWith("@" + this.myName + " ")){
-			console.log("handlemessage", groupName, "|", roomName, ":", message);
-			message = message.substring(this.myName.length + 2);
-			let index = message.indexOf(" ");
-			if(index < 0)
-				index = message.length;
-			let command = message.substr(0, index).trim();
-			let arg = message.substr(index + 1);
-			try {
-				switch(command.toLowerCase()){
-					case "play":
-						await this.playSound(arg);
-						break;
-					case "playurl":
-						await this.playSoundUrl(arg);
-						break;
-					case "say":
-						if(!this.ttsUrl)
-							throw new Error("Missing text to speech URL.");
-						await this.textToSpeech(arg);
-						break;
-					case "stop":
-						await this.stopSound();
-						break;
-					case "beep":
-					case "beep?":
-						response = "boop";
-						break;
-					case "eval":
-						const vm = new VM({
-							wrapper: "none"
-						});
-						let result = vm.run(arg);
-						response = "/code " + JSON.stringify(result);
-						break;
-					default:
-						let event = new ChatCommandEvent(this, groupName, roomName, command, message, arg, userinfo);
-						for(let listener of this.rawListeners("chatCommand")){
-							await Promise.resolve(listener.call(this, event));
-						}
-						if(event.handled)
-							response = null;
-						else
-							response = unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))];
-						break;
-				}
-			} catch(e){
-				console.log("command error", e.message);
-				response = errorMessages[Math.round(Math.random()*(errorMessages.length - 1))] + "\n" + e.message;
-			}
-		}
-		if(response){
-			console.log("response", response);
-			try {
-				await this.textToSpeech(response);
-			} catch(e){
-				console.error(e);
-			}
-		}
-		if(response !== null){
-			await this.page.type("textarea", response);
-			await this.page.click("textarea + button");
-		}
+	getLoggedUserInfo(){
+		return this.loggedUser;
 	}
 
-	async sendMessage(groupName, chatRoom, message){
-		await this.page.evaluate((groupName, chatRoom, message) => {
-			for(let g of g_FriendsUIApp.ChatStore.m_mapChatGroups.values()){
-				if(g.name == groupName){
-					for(let r of g.m_mapRooms.values()){
-						if(r.name == chatRoom){
-							r.SendChatMessage(message);
-							return;
-						}
-					}
-				}
-			}
-		}, groupName, chatRoom, message);
+	async sendMessage(group, chatRoom, message){
+		await this.chatHandler.sendGroupMessage(group, chatRoom, message);
+	}
+
+	async sendDirectMessage(userId, text){
+		await this.chatHandler.sendDirectMessage(userId, text);
 	}
 
 	async uploadFile(groupName, chatRoom, filename){

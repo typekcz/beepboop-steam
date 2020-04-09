@@ -1,21 +1,23 @@
 class ChatCommandEvent {
-	constructor(steamChat, groupName, roomName, command, message, argument, userinfo){
+	constructor(steamChat, roomInfo, userInfo, command, message, argument, rawMessage){
 		this.steamChat = steamChat;
-		this.groupName = groupName;
-		this.roomName = roomName;
+		this.roomInfo = roomInfo;
+		this.groupName = (roomInfo != null)? roomInfo.groupName : null;
+		this.roomName = (roomInfo != null)? roomInfo.name : null;
 		this.command = command;
 		this.message = message;
+		this.rawMessage = rawMessage;
 		this.argument = argument;
 		this.handled = false;
-		this.userinfo = userinfo;
+		this.userinfo = userInfo;
 	}
 
-	sendResponse(response){
+	async sendResponse(response){
 		this.handled = true;
-		return (async () => {
-			await this.steamChat.getPage().type("textarea", response);
-			await this.steamChat.getPage().click("textarea + button");
-		})();
+		if(this.roomInfo != null)
+			await this.steamChat.sendMessage(this.roomInfo.groupId, this.roomInfo.id, response);
+		else
+			await this.steamChat.sendDirectMessage(userinfo.accountid, response);
 	}
 
 	setAsHandled(){
