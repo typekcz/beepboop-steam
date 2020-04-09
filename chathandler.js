@@ -90,7 +90,7 @@ class ChatHandler {
 						response = "/code " + JSON.stringify(result);
 						break;
 					default:
-						let event = new ChatCommandEvent(this.steamChat, roomInfo, userInfo, command, message, arg, rawMessage);
+						let event = new ChatCommandEvent(this.steamChat, room, user, command, message, arg, rawMessage);
 						for(let listener of this.steamChat.rawListeners("chatCommand")){
 							await Promise.resolve(listener.call(this.steamChat, event));
 						}
