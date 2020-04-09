@@ -4,7 +4,6 @@ const ytdl = require("ytdl-core");
 const UserInfo = require("./userinfo");
 const RoomInfo = require("./roominfo");
 const ChatHandler = require("./chathandler");
-const ChatCommandEvent = require("./chatcommandevent");
 
 const selectors = {
 	loading: ".main_throbberContainer-exit-active_24VO6",

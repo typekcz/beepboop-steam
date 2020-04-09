@@ -1,6 +1,7 @@
 const {VM} = require('vm2');
 const UserInfo = require("./userinfo");
 const RoomInfo = require("./roominfo");
+const ChatCommandEvent = require("./chatcommandevent");
 
 const help_msg = `Commands:
 play sound
@@ -47,8 +48,6 @@ class ChatHandler {
 		];
 		//message = /.*: "(.*)"/.exec(message)[1];
 		let response = null;
-		console.log("[mention="+this.steamChat.getLoggedUserInfo().accountid+"]");
-		console.log(rawMessage);
 		if(room == null || rawMessage.startsWith("[mention="+this.steamChat.getLoggedUserInfo().accountid+"]")){
 			if(room){
 				console.log("handleMessage", room.groupName, "|", room.name, ":", rawMessage);
