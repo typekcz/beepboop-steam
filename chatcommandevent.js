@@ -17,7 +17,7 @@ class ChatCommandEvent {
 		if(this.roomInfo != null)
 			await this.steamChat.sendMessage(this.roomInfo.groupId, this.roomInfo.id, response);
 		else
-			await this.steamChat.sendDirectMessage(userinfo.accountid, response);
+			await this.steamChat.sendDirectMessage(this.userinfo.accountid, response);
 	}
 
 	setAsHandled(){
