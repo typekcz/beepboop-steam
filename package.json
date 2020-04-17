@@ -1,24 +1,24 @@
 {
-  "name": "beepboop",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index"
-  },
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "body-parser": "^1.19.0",
-    "express": "^4.17.1",
-    "express-async-errors": "^3.1.1",
-    "express-fileupload": "^1.1.6",
-    "openid": "^2.0.6",
-    "pg-promise": "^8.7.5",
-    "puppeteer": "^1.20.0",
-    "require-from-string": "^2.0.2",
-    "uid-safe": "^2.1.5",
-    "vm2": "^3.8.4",
-    "ytdl-core": "^2.0.0"
-  }
+	"name": "beepboop",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"start": "node index"
+	},
+	"author": "",
+	"license": "MIT",
+	"dependencies": {
+		"body-parser": "^1.19.0",
+		"express": "^4.17.1",
+		"express-async-errors": "^3.1.1",
+		"express-fileupload": "^1.1.6",
+		"openid": "^2.0.6",
+		"pg-promise": "^8.7.5",
+		"puppeteer": "^3.0.0",
+		"require-from-string": "^2.0.2",
+		"uid-safe": "^2.1.5",
+		"vm2": "^3.9.1",
+		"ytdl-core": "^2.1.0"
+	}
 }
