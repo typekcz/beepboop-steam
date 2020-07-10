@@ -61,7 +61,7 @@ class SoundsDBGW {
 
 	async selectList(){
 		try {
-			return (await this.db.any("SELECT name FROM sound")).map(row => row.name);
+			return (await this.db.any("SELECT name FROM sound ORDER BY name ASC")).map(row => row.name);
 		} catch(e){
 			console.error(e.message);
 			return null;
