@@ -1,11 +1,11 @@
 :root {
-	--bg-color: #292929;
-	--secondary-bg-color: #393939;
-	--txt-color: #ffffff;
-	--main-color: #ff8400;
+	--bg-color: #090909;
+	--secondary-bg-color: #131313;
+	--txt-color: #d9d9d9;
+	--main-color: #00437d;
 	--shadow-color: #000000;
 	--line-color: #909090;
-	--disabled-color: #b1814e;
+	--disabled-color: #2a3d4d;
 }
 body {
 	background-color: var(--bg-color);
@@ -109,6 +109,7 @@ input[type="submit"], input[type="button"], button, .button {
 	background-position: bottom left, bottom right;
 	background-size: 52% 100%;
 	background-repeat: no-repeat;
+	user-select: none;
 }
 
 input[type="submit"]:disabled, input[type="button"]:disabled, button:disabled {
@@ -265,6 +266,7 @@ legend {
 	padding: 6px;
 	background: var(--main-color);
 	background: linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
+	user-select: none;
 }
 
 meter {
@@ -335,4 +337,9 @@ table th {
 
 .flex {
 	display: flex;
+}
+
+#sounds .button {
+	margin: 4px;
+	padding: 10px;
 }
