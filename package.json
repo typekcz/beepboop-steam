@@ -6,19 +6,23 @@
 	"scripts": {
 		"start": "node index"
 	},
-	"author": "",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/typekcz/beepboop-steam.git"
+	},
+	"author": "Lukáš Kotržena",
 	"license": "MIT",
 	"dependencies": {
 		"body-parser": "^1.19.0",
 		"express": "^4.17.1",
 		"express-async-errors": "^3.1.1",
-		"express-fileupload": "^1.1.9",
-		"openid": "^2.0.6",
-		"pg-promise": "^8.7.5",
-		"puppeteer": "^3.3.0",
+		"express-fileupload": "^1.2.0",
+		"openid": "^2.0.7",
+		"pg-promise": "^10.6.1",
+		"puppeteer": "^5.3.0",
 		"require-from-string": "^2.0.2",
 		"uid-safe": "^2.1.5",
 		"vm2": "^3.9.2",
-		"ytdl-core": "^2.1.7"
+		"ytdl-core": "^3.2.2"
 	}
 }
