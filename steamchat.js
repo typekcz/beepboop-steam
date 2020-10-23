@@ -6,6 +6,12 @@ const RoomInfo = require("./roominfo");
 const ChatHandler = require("./chathandler");
 
 const selectors = {
+	loginUsername: "#input_username",
+	loginPassword: "#input_password",
+	loginCaptcha: "#input_captcha",
+	loginCaptchaImg: "#captchaImg",
+	loginError: "#error_display",
+	loginButton: "#login_btn_signin button",
 	loading: ".main_throbberContainer-exit-active_24VO6",
 	loggedUsername: ".personanameandstatus_playerName_1uxaf",
 	groupList: ".ChatRoomList .ChatRoomListGroupItem",
@@ -16,6 +22,7 @@ const selectors = {
 	groupChatTab: "div.chatDialogs div.chatWindow.MultiUserChat.namedGroup",
 	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants",
 	loggedOut: ".ConnectionTroubleMessage:not(.NotificationBrowserWarning)",
+	activeVoice: ".activeVoiceControls",
 	fileUpload: ".chatEntry input[name=fileupload]",
 	confirmFileUpload: ".chatFileUploadBtn"
 };
@@ -40,6 +47,19 @@ class SteamChat extends EventEmitter {
 		this.joinedUsers = [];
 		this.ttsUrl = ttsUrl;
 		this.requestCaptchaSolution = null;
+
+		// Functions can be exposed only once to a page!
+		this.page.exposeFunction("findChatRoom", (message) => {
+			return this.findChatRoom(message);
+		});
+
+		this.page.exposeFunction("handleMessage", (room, user, text, rawText) => {
+			this.chatHandler.handleMessage(room, user, text, rawText);
+		});
+
+		this.page.exposeFunction("joinedUsersChanged", async () => {
+			this.voiceChannelUsersChanged();
+		});
 	}
 
 	getPage(){
@@ -53,10 +73,6 @@ class SteamChat extends EventEmitter {
 			console.log(e);
 		}
 		await this.initAudio(volume);
-
-		await this.page.exposeFunction("findChatRoom", (message) => {
-			return this.findChatRoom(message);
-		});
 
 		await this.page.evaluate((userinfoclass, roominfoclass) => {
 			window.UserInfo = eval("("+userinfoclass+")");
@@ -79,6 +95,8 @@ class SteamChat extends EventEmitter {
 		if(!this.activityInterval){
 			this.activityInterval = setInterval(async () => {
 				let connectionTrouble = await this.page.evaluate((selectors) => {
+					if(document.querySelector(selectors.activeVoice).offsetParent == null)
+						return "Disconnected from voice room.";
 					let element = document.querySelector(selectors.loggedOut);
 					if(element)
 						return element.innerText;
@@ -141,21 +159,21 @@ class SteamChat extends EventEmitter {
 
 	async login(username, password){
 		try {
-			if(await this.page.evaluate((user, pass) => {
-				document.querySelector("#steamAccountName").value = user;
-				document.querySelector("#steamPassword").value = pass;
-				let captcha_input = document.querySelector("#input_captcha");
+			if(await this.page.evaluate((user, pass, selectors) => {
+				document.querySelector(selectors.loginUsername).value = user;
+				document.querySelector(selectors.loginPassword).value = pass;
+				let captcha_input = document.querySelector(selectors.loginCaptcha);
 				if(captcha_input.offsetParent != null){
 					// Captcha detected
 					return false;
 				}
-				document.querySelector("#SteamLogin").click();
+				document.querySelector(selectors.loginButton).click();
 				return true;
-			}, username, password)){
-				await this.page.evaluate( () => {
+			}, username, password, selectors)){
+				await this.page.evaluate((selectors) => {
 					return new Promise((resolve, reject) => {
 						let checkInt = setInterval(() => {
-							if(document.querySelector("#error_display").offsetParent != null){
+							if(document.querySelector(selectors.loginError).offsetParent != null){
 								clearInterval(checkInt);
 								reject(new Error("Login failed."));
 							}
@@ -165,33 +183,33 @@ class SteamChat extends EventEmitter {
 							resolve();
 						});
 					});
-				});
+				}, selectors);
 				console.log("Login: Success.");
 			} else {
 				console.log("Login: Captcha detected, requesting solution.");
 				// Deal with captcha
 				if(this.requestCaptchaSolution){
 					while(true) {
-						await this.page.evaluate(async () => {
-							let img = document.querySelector("#captchaImg");
+						await this.page.evaluate(async (selectors) => {
+							let img = document.querySelector(selectors.loginCaptchaImg);
 							if(!img.complete){
 								await new Promise((resolve => {
 									img.onload = () => resolve();
 								}));
 							}
-						});
-						let captchaElement = await this.page.$("#captchaImg");
+						}, selectors);
+						let captchaElement = await this.page.$(selectors.loginCaptchaImg);
 						let solution = await this.requestCaptchaSolution(await captchaElement.screenshot({type: "png"}));
 						console.log("Login: Captcha solution received.");
-						await this.page.evaluate((solution) => {
-							document.querySelector("#input_captcha").value = solution;
-							document.querySelector("#SteamLogin").click();
-						}, solution);
+						await this.page.evaluate((solution, selectors) => {
+							document.querySelector(selectors.loginCaptcha).value = solution;
+							document.querySelector(selectors.loginButton).click();
+						}, solution, selectors);
 						try {
-							await this.page.evaluate( () => {
+							await this.page.evaluate(selectors => {
 								return new Promise((resolve, reject) => {
 									let checkInt = setInterval(() => {
-										if(document.querySelector("#error_display").offsetParent != null){
+										if(document.querySelector(selectors.loginError).offsetParent != null){
 											clearInterval(checkInt);
 											reject(new Error("Login failed."));
 										}
@@ -201,7 +219,7 @@ class SteamChat extends EventEmitter {
 										resolve();
 									});
 								});
-							});
+							}, selectors);
 							console.log("Login: Captcha solved.");
 							break;
 						} catch(e){
@@ -248,7 +266,7 @@ class SteamChat extends EventEmitter {
 		return this.page.evaluate((groupName) => {
 			let groupId = null;
 			let group = null;
-			for(g of g_FriendsUIApp.ChatStore.m_mapChatGroups){
+			for(let g of g_FriendsUIApp.ChatStore.m_mapChatGroups){
 				if(g[1].name == groupName){
 					groupId = g[0];
 					group = g[1];
@@ -298,7 +316,7 @@ class SteamChat extends EventEmitter {
 
 	async openGroup(group, chatroom = null){
 		let groupId = await this.getGroupIdByName(group);
-		await this.page.evaluate((groupId, chatroom) => {
+		await this.page.evaluate((groupId, chatroom, selectors) => {
 			let group = g_FriendsUIApp.ChatStore.GetChatRoomGroup(groupId);
 			let room = group.chatRoomList[0];
 			if(chatroom){
@@ -310,7 +328,7 @@ class SteamChat extends EventEmitter {
 				}
 			}
 			g_FriendsUIApp.UIStore.ShowAndOrActivateChatRoomGroup(room, group, true);
-		}, groupId, chatroom);
+		}, groupId, chatroom, selectors);
 		try {
 			await this.page.waitForSelector(selectors.groupChatTab);
 		} catch(e){
@@ -383,9 +401,7 @@ class SteamChat extends EventEmitter {
 	async joinVoiceChannel(group, channel){
 		this.groupName = group;
 		this.openGroup(group);
-		await this.page.exposeFunction("joinedUsersChanged", async () => {
-			this.voiceChannelUsersChanged();
-		});
+
 		let groupId = await this.getGroupIdByName(group);
 		await this.page.evaluate((groupId, channelName) => {
 			let group = g_FriendsUIApp.ChatStore.GetChatRoomGroup(groupId);

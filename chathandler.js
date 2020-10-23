@@ -18,10 +18,6 @@ class ChatHandler {
 	constructor(steamChat){
 		this.steamChat = steamChat;
 		this.page = steamChat.getPage();
-		
-		this.page.exposeFunction("handleMessage", (room, user, text, rawText) => {
-			this.handleMessage(room, user, text, rawText);
-		});
 
 		this.page.evaluate(() => {
 			g_FriendsUIApp.ChatStore.m_mapChatGroups.values().next().value.m_mapRooms.values().next().value.__proto__.CheckShouldNotify = function(msg, text, rawText){
