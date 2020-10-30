@@ -77,7 +77,10 @@ class Main {
 					"--disable-web-security",
 					"--reduce-security-for-testing",
 					"--no-sandbox",
-					"--disable-setuid-sandbox"
+					"--disable-setuid-sandbox",
+					"--incognito",
+					"--disable-site-isolation-for-policy",
+					"--allow-http-background-page"
 				]
 			});
 			page = (await browser.pages())[0];

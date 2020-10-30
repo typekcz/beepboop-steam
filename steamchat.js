@@ -24,7 +24,8 @@ const selectors = {
 	loggedOut: ".ConnectionTroubleMessage:not(.NotificationBrowserWarning)",
 	activeVoice: ".activeVoiceControls",
 	fileUpload: ".chatEntry input[name=fileupload]",
-	confirmFileUpload: ".chatFileUploadBtn"
+	confirmFileUpload: ".chatFileUploadBtn",
+	audioElementContainer: ".main_SteamPageHeader_3EaXO" // Just some place to put audio element
 };
 
 class ConnectionTroubleEvent {
@@ -117,7 +118,7 @@ class SteamChat extends EventEmitter {
 	}
 	
 	initAudio(volume){
-		return this.page.evaluate((volume) => {
+		return this.page.evaluate((volume, selectors) => {
 			window.audioContext = new AudioContext();
 			window.mixedAudio = window.audioContext.createMediaStreamDestination();
 			window.gainNode = window.audioContext.createGain();
@@ -136,12 +137,12 @@ class SteamChat extends EventEmitter {
 			
 			window.audio = new Audio();
 			window.audio.controls = true;
-			window.audio.muted = true;
 			window.audio.crossOrigin = "annonymous";
 			window.audio.oncanplay = ()=>{
 				window.addStream(window.audio.captureStream());
 				window.audio.play();
 			};
+			document.querySelector(selectors.audioElementContainer).appendChild(window.audio);
 
 			window.say = function(text){
 				let utter = new SpeechSynthesisUtterance(text);
@@ -150,7 +151,7 @@ class SteamChat extends EventEmitter {
 				utter.pitch = 0.3;
 				window.speechSynthesis.speak(utter);
 			}
-		}, volume);
+		}, volume, selectors);
 	}
 
 	setCaptchaSolver(func){
