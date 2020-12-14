@@ -27,7 +27,7 @@ Example config:
 		"connection": "postgres://beepboop:beepboop@localhost/beepboop"
 	},
 	"plugins": [
-		"myinstants"
+		"myinstants", "youtubesearch"
 	],
 	"volume": 0.15
 }
