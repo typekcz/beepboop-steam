@@ -20,12 +20,15 @@ const selectors = {
 	groupListItemOpenBtn: ".openGroupButton",
 	groupListItemVoiceChannel: ".chatRoomVoiceChannel .chatRoomVoiceChannelName",
 	groupChatTab: "div.chatDialogs div.chatWindow.MultiUserChat.namedGroup",
-	voiceChannelUsers: ".ActiveVoiceChannel .VoiceChannelParticipants",
+	voiceChannelUsers: ".chatRoomVoiceChannelsGroup", // Extended to entire voice channels list to capture users change even if out of room.
 	loggedOut: ".ConnectionTroubleMessage:not(.NotificationBrowserWarning)",
 	activeVoice: ".activeVoiceControls",
 	fileUpload: ".chatEntry input[name=fileupload]",
 	confirmFileUpload: ".chatFileUploadBtn",
-	audioElementContainer: ".main_SteamPageHeader_3EaXO" // Just some place to put audio element
+	audioElementContainer: ".main_SteamPageHeader_3EaXO", // Just some place to put audio element
+	activeVoiceName: ".ActiveVoiceChannel .chatRoomVoiceChannelName",
+	connectionStatus: ".activeVoiceControls .connectionStatus", // Place where reconnecting message appears
+	leaveVoiceBtn: ".VoiceControlPanelButton.chatEndVoiceChat"
 };
 
 class ConnectionTroubleEvent {
@@ -48,6 +51,7 @@ class SteamChat extends EventEmitter {
 		this.joinedUsers = [];
 		this.ttsUrl = ttsUrl;
 		this.requestCaptchaSolution = null;
+		this.reconnectOnUserJoin = false;
 
 		// Functions can be exposed only once to a page!
 		this.page.exposeFunction("findChatRoom", (message) => {
@@ -96,8 +100,9 @@ class SteamChat extends EventEmitter {
 		if(!this.activityInterval){
 			this.activityInterval = setInterval(async () => {
 				let connectionTrouble = await this.page.evaluate((selectors) => {
-					if(document.querySelector(selectors.activeVoice).offsetParent == null)
-						return "Disconnected from voice room.";
+					// Remove this check for now because bot disconnect from room on purpose.
+					//if(document.querySelector(selectors.activeVoice).offsetParent == null)
+					//	return "Disconnected from voice room.";
 					let element = document.querySelector(selectors.loggedOut);
 					if(element)
 						return element.innerText;
@@ -363,7 +368,8 @@ class SteamChat extends EventEmitter {
 	async getVoiceChannelUsers(){
 		return await this.page.evaluate(() => {
 			let users = [];
-			let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat();
+			//let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat(); // This won't work when bot leaves room
+			let voiceChat = window.currentVoiceChat;
 			for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
 				users.push(new UserInfo(m));
 			return users;
@@ -372,6 +378,20 @@ class SteamChat extends EventEmitter {
 
 	async voiceChannelUsersChanged(){
 		let users = (await this.getVoiceChannelUsers()).map(u => u.steamid);
+		users = users.filter(u => u != this.loggedUser.steamid); // Remove bot
+		if(this.reconnectOnUserJoin){
+			let status = await this.getVoiceChannelStatus();
+			if(users.length > 0){
+				if(status !== "OK"){
+					this.rejoinVoiceChat();
+					console.log("Rejoin voice.");
+				}
+			} else {
+				// On empty
+				this.leaveVoiceChannel();
+				console.log("Leave voice on empty.");
+			}
+		}
 		for(let user of this.joinedUsers){
 			if(users.indexOf(user) >= 0)
 				continue;
@@ -399,9 +419,37 @@ class SteamChat extends EventEmitter {
 		this.joinedUsers = users;
 	}
 	
-	async joinVoiceChannel(group, channel){
+	async getActiveVoiceChannel(){
+		return await this.page.evaluate((selectors) => {
+			let el = document.querySelector(selectors.activeVoiceName);
+			return el? el.innerText : null;
+		}, selectors);
+	}
+	
+	async getVoiceChannelStatus(){
+		if(!(await this.getActiveVoiceChannel()))
+			return "Not in room";
+		let message = await this.page.evaluate((selectors) => {
+			let el = document.querySelector(selectors.connectionStatus);
+			return el? el.innerText : null;
+		}, selectors);
+		if(message)
+			return message;
+		return "OK";
+	}
+
+	async rejoinVoiceChat(){
+		await this.page.evaluate(() => {
+			window.currentVoiceChat.StartVoiceChat();
+		});
+		await this.page.waitForSelector(selectors.voiceChannelUsers);
+	}
+	
+	async joinVoiceChannel(group, channel, reconnectOnUserJoin){
 		this.groupName = group;
 		this.openGroup(group);
+		if(typeof(reconnectOnUserJoin) !== "undefined")
+			this.reconnectOnUserJoin = reconnectOnUserJoin;
 
 		let groupId = await this.getGroupIdByName(group);
 		await this.page.evaluate((groupId, channelName) => {
@@ -409,6 +457,7 @@ class SteamChat extends EventEmitter {
 			for(let voiceChannel of group.voiceRoomList){
 				if(voiceChannel.name == channelName){
 					voiceChannel.StartVoiceChat();
+					window.currentVoiceChat = voiceChannel;
 					break;
 				}
 			}
@@ -416,16 +465,23 @@ class SteamChat extends EventEmitter {
 		await this.page.waitForSelector(selectors.voiceChannelUsers);
 		await this.page.evaluate((selectors) => {
 			// Join observer
-			setTimeout(() => {
-				let usersList = document.querySelector(selectors.voiceChannelUsers).firstElementChild;
-				window.mutationObserver = new MutationObserver((mutRecords) => {
-					window.joinedUsersChanged();
-				});
-				window.mutationObserver.observe(usersList, {childList: true});
-			}, 1000);
+			if(!window.voiceChannelUsersTimer){
+				window.voiceChannelUsersTimer = setTimeout(() => {
+					let usersList = document.querySelector(selectors.voiceChannelUsers);
+					window.mutationObserver = new MutationObserver((mutRecords) => {
+						window.joinedUsersChanged();
+					});
+					window.mutationObserver.observe(usersList, {childList: true, subtree: true});
+				}, 1000);
+			}
 		}, selectors);
 
 		this.joinedUsers = (await this.getVoiceChannelUsers()).map(u => u.steamid);
+		if(reconnectOnUserJoin && this.joinedUsers.length === 0){
+			console.log("Leaving empty room on initial join.");
+			this.leaveVoiceChannel();
+			return;
+		}
 
 		const greetingMessages = [
 			"Hello, I am BeebBoop and I do beep and boop.",
@@ -434,11 +490,20 @@ class SteamChat extends EventEmitter {
 		];
 		setTimeout(async () => {
 			try {
+				//await this.voiceChannelUsersChanged(); // Lazy way to trigger auto leave when empty room.
 				await this.textToSpeech(greetingMessages[Math.round(Math.random()*(greetingMessages.length - 1))]);
 			} catch(e){
 				console.error(e);
 			}
 		}, 3000);
+	}
+
+	async leaveVoiceChannel(){
+		try {
+			await this.page.click(selectors.leaveVoiceBtn);
+		} catch(e){
+			// Ignore failure
+		}
 	}
 
 	async playSound(soundName){

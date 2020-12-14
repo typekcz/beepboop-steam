@@ -28,7 +28,7 @@ class Main {
 		}
 		
 		await steamchat.init(config.volume || 0.3);
-		await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName);
+		await steamchat.joinVoiceChannel(config.steam.groupName, config.steam.channelName, true);
 	}
 
 	static async main(args){
@@ -66,7 +66,7 @@ class Main {
 
 		try {
 			const browser = await puppeteer.launch({
-				headless: true,
+				headless: false,
 				args: [
 					"--disable-client-side-phishing-detection",
 					"--disable-sync",
