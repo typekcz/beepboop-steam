@@ -52,6 +52,8 @@ class SteamChat extends EventEmitter {
 		this.ttsUrl = ttsUrl;
 		this.requestCaptchaSolution = null;
 		this.reconnectOnUserJoin = false;
+		this.lastConnectionChangeTime = 0;
+		this.connectionChangeDelay = 5000;
 
 		// Functions can be exposed only once to a page!
 		this.page.exposeFunction("findChatRoom", (message) => {
@@ -125,10 +127,8 @@ class SteamChat extends EventEmitter {
 	initAudio(volume){
 		return this.page.evaluate((volume, selectors) => {
 			window.audioContext = new AudioContext();
-			window.mixedAudio = window.audioContext.createMediaStreamDestination();
 			window.gainNode = window.audioContext.createGain();
 			window.gainNode.gain.value = volume;
-			window.gainNode.connect(window.mixedAudio);
 
 			function addStream(stream){
 				let audioSource = window.audioContext.createMediaStreamSource(stream);
@@ -137,7 +137,9 @@ class SteamChat extends EventEmitter {
 			window.addStream = addStream;
 
 			navigator.getUserMedia = function(options, success){
-				success(window.mixedAudio.stream);
+				let mixed = window.audioContext.createMediaStreamDestination();
+				window.gainNode.connect(mixed);
+				success(mixed.stream);
 			};
 			
 			window.audio = new Audio();
@@ -439,10 +441,26 @@ class SteamChat extends EventEmitter {
 	}
 
 	async rejoinVoiceChat(){
+		console.log("cond", Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay, this.lastConnectionChangeTime, this.connectionChangeDelay);
+		if(Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay)
+			return;
 		await this.page.evaluate(() => {
 			window.currentVoiceChat.StartVoiceChat();
 		});
 		await this.page.waitForSelector(selectors.voiceChannelUsers);
+		this.lastConnectionChangeTime = Date.now();
+	}
+
+	async leaveVoiceChannel(){
+		console.log("cond", Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay, this.lastConnectionChangeTime, this.connectionChangeDelay);
+		if(Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay)
+			return;
+		try {
+			await this.page.click(selectors.leaveVoiceBtn);
+		} catch(e){
+			// Ignore failure
+		}
+		this.lastConnectionChangeTime = Date.now();
 	}
 	
 	async joinVoiceChannel(group, channel, reconnectOnUserJoin){
@@ -490,20 +508,11 @@ class SteamChat extends EventEmitter {
 		];
 		setTimeout(async () => {
 			try {
-				//await this.voiceChannelUsersChanged(); // Lazy way to trigger auto leave when empty room.
 				await this.textToSpeech(greetingMessages[Math.round(Math.random()*(greetingMessages.length - 1))]);
 			} catch(e){
 				console.error(e);
 			}
 		}, 3000);
-	}
-
-	async leaveVoiceChannel(){
-		try {
-			await this.page.click(selectors.leaveVoiceBtn);
-		} catch(e){
-			// Ignore failure
-		}
 	}
 
 	async playSound(soundName){
