@@ -52,8 +52,6 @@ class SteamChat extends EventEmitter {
 		this.ttsUrl = ttsUrl;
 		this.requestCaptchaSolution = null;
 		this.reconnectOnUserJoin = false;
-		this.lastConnectionChangeTime = 0;
-		this.connectionChangeDelay = 5000;
 
 		// Functions can be exposed only once to a page!
 		this.page.exposeFunction("findChatRoom", (message) => {
@@ -441,26 +439,18 @@ class SteamChat extends EventEmitter {
 	}
 
 	async rejoinVoiceChat(){
-		console.log("cond", Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay, this.lastConnectionChangeTime, this.connectionChangeDelay);
-		if(Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay)
-			return;
 		await this.page.evaluate(() => {
 			window.currentVoiceChat.StartVoiceChat();
 		});
 		await this.page.waitForSelector(selectors.voiceChannelUsers);
-		this.lastConnectionChangeTime = Date.now();
 	}
 
 	async leaveVoiceChannel(){
-		console.log("cond", Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay, this.lastConnectionChangeTime, this.connectionChangeDelay);
-		if(Date.now() - this.lastConnectionChangeTime < this.connectionChangeDelay)
-			return;
 		try {
 			await this.page.click(selectors.leaveVoiceBtn);
 		} catch(e){
 			// Ignore failure
 		}
-		this.lastConnectionChangeTime = Date.now();
 	}
 	
 	async joinVoiceChannel(group, channel, reconnectOnUserJoin){
