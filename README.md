@@ -78,6 +78,7 @@ Command | Description
 **play** *sound* | Plays uploaded sound matching name %1.
 **playurl** *http://linktosound.mp3* | Plays passed URL, supports Youtube URLs.
 **instant** *get to da choppa* | Searches sounds on [myinstants.com](https://www.myinstants.com/) and plays first result. If you want another result append # followed by number of result you want to play.
+**youtube** *dramatic* *chipmunk* | Searches videos on YouTube and plays the first one or you can append # and number to play that specific result like with **instant** command.
 **stop** | Stops whatever is playing.
 **beep** | Boop.
 **eval** *[3,2,1].sort()* | Safely runs JavaScript code. Don't ask me why.
@@ -85,3 +86,4 @@ Command | Description
 ## Known issues
  * It's just wrong...
  * Bot is sometimes logged out of Steam and you have to restart it.
+ * Look like my bot's account has some voice chat ban. He cannot join voice chat, it's stuck on connecting. I updated the code so that he won't sit in empty room and will rejoin when someone joins, so we'll see.
