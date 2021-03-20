@@ -94,7 +94,7 @@ class Main {
 			
 			await page.setBypassCSP(true);
 			// Steam won't accept HeadlessChrome
-			await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
+			await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36");
 			
 			let steamchat = new SteamChat(page, "http://localhost:" + port + "/api/sounds/", "http://localhost:" + port + "/api/yt?url=", soundsDbGw, config.ttsUrl);
 
