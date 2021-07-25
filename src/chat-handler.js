@@ -1,7 +1,7 @@
 const {VM} = require('vm2');
-const UserInfo = require("./userinfo");
-const RoomInfo = require("./roominfo");
-const ChatCommandEvent = require("./chatcommandevent");
+const UserInfo = require("./user-info");
+const RoomInfo = require("./room-info");
+const ChatCommandEvent = require("./chat-command-event");
 
 const help_msg = `Commands:
 play sound
@@ -44,7 +44,6 @@ class ChatHandler {
 			"/me is currently unavailable.",
 			"No can do."
 		];
-		//message = /.*: "(.*)"/.exec(message)[1];
 		let response = null;
 		if(room == null || rawMessage.startsWith("[mention="+this.steamChat.getLoggedUserInfo().accountid+"]")){
 			if(room){
