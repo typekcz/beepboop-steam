@@ -516,12 +516,8 @@ class SteamChat extends EventEmitter {
 				console.log("youtube detected");
 				let info = await ytdl.getInfo(url, {});
 				let format = ytdl.chooseFormat(info.formats, {
-					quality: [
-						// 128 bitrate
-						34, 35, 43, 44, 140, 171, 94, 120,
-						// 192 bitrate
-						37, 38, 45, 46, 84, 85, 100, 101, 102, 172
-					]
+					quality: "highestaudio",
+					filter: f => f.container === "webm"
 				});
 				url = format.url;
 				console.log(url);

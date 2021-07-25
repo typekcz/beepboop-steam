@@ -1,6 +1,6 @@
 {
 	"name": "beepboop",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
@@ -23,6 +23,6 @@
 		"require-from-string": "^2.0.2",
 		"uid-safe": "^2.1.5",
 		"vm2": "^3.9.2",
-		"ytdl-core": "~4.1.7"
+		"ytdl-core": ">=4.8.0"
 	}
 }

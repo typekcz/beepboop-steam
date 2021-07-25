@@ -16,10 +16,14 @@ BeepBoop is sound bot for new Steam chat. He connects to group chat voice channe
  * Chrome/Chromium - For playing non-free codecs (which you probably want) you need to provide Chrome or Chromium browser with proper codecs support.
     * Windows: You can use regular Chrome installation
     * Linux: Install `chromium-browser` and `chromium-codecs-ffmpeg-extra` packages (Debian/Ubuntu) or your distros equivalent
-    * [Heroku](https://www.heroku.com/): Use [Puppeteer buildpack](https://github.com/typekcz/puppeteer-heroku-buildpack)
+    * [Heroku](https://www.heroku.com/): 
+      * Use [Puppeteer buildpack](https://github.com/jontewks/puppeteer-heroku-buildpack)
+      * Disable node_modules cache with `heroku config:set NODE_MODULES_CACHE=false` (so that ytdl package is kept up to date)
  * Optional: [PostgreSQL database](https://www.postgresql.org/) - You can skip this, but without it you won't be able to upload your own sounds and will be limited to playing only from YouTube and MyInstants.
 
-### Configuring environment variables
+### Configuring Puppeteer environment variables
+
+> Note: Looks like Chromium without extra codes is fine now, so try skip this step.
 
 You need to set path to Chrome/Chromium that you want to use, otherwise Chromium without extra codecs will be automatically downloaded and used. You can do that by setting [Puppeteer environment variables](https://pptr.dev/#?product=Puppeteer&version=v8.0.0&show=api-environment-variables). Example:
 
