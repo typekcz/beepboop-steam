@@ -7,7 +7,9 @@ const help_msg = `Commands:
 play sound
 playurl url
 say text
+pause
 stop
+play
 beep
 eval`;
 
@@ -61,7 +63,10 @@ class ChatHandler {
 						response = help_msg;
 						break;
 					case "play":
-						await this.steamChat.playSound(arg);
+						if(arg)
+							await this.steamChat.playSound(arg);
+						else
+							await this.steamChat.resumeSound();
 						break;
 					case "playurl":
 						await this.steamChat.playSoundUrl(arg);
@@ -72,6 +77,7 @@ class ChatHandler {
 						await this.steamChat.textToSpeech(arg);
 						break;
 					case "stop":
+					case "pause":
 						await this.steamChat.stopSound();
 						break;
 					case "beep":

@@ -551,6 +551,13 @@ class SteamChat extends EventEmitter {
 		}
 	}
 
+	resumeSound(){
+		return this.page.evaluate(() => {
+			window.audio.play();
+			return true;
+		});
+	}
+
 	stopSound(){
 		return this.page.evaluate(() => {
 			window.audio.pause();

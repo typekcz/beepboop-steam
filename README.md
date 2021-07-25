@@ -109,6 +109,8 @@ Command | Description
 **instant** *get to da choppa* | Searches sounds on [myinstants.com](https://www.myinstants.com/) and plays first result. If you want another result append # followed by number of result you want to play.
 **youtube** *dramatic* *chipmunk* | Searches videos on YouTube and plays the first one or you can append # and number to play that specific result like with **instant** command.
 **stop** | Stops whatever is playing.
+**pause** | Same thing as stop.
+**play** | (Without argument) resume playing stopped/paused sound.
 **beep** | Boop.
 **eval** *[3,2,1].sort()* | Safely runs JavaScript code. Don't ask me why.
 
