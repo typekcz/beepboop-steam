@@ -40,7 +40,11 @@ class ConnectionTroubleEvent {
 
 class SteamChat extends EventEmitter {
 	/**
-	 * @param {Page} page - Puppeteer page
+	 * @param {import('puppeteer').Page} page - Puppeteer page
+	 * @param {string} soundsBaseUrl 
+	 * @param {string} youtubeBaseUrl 
+	 * @param {import('./sounds-db-gw')} soundsDbGw 
+	 * @param {string} ttsUrl 
 	 */
 	constructor(page, soundsBaseUrl, youtubeBaseUrl, soundsDbGw, ttsUrl){
 		super();
@@ -49,8 +53,10 @@ class SteamChat extends EventEmitter {
 		this.youtubeBaseUrl = youtubeBaseUrl;
 		this.soundsDbGw = soundsDbGw;
 		this.groupName = null;
+		/** @type {string[]} */
 		this.joinedUsers = [];
 		this.ttsUrl = ttsUrl;
+		/** @type {function(Buffer): Promise<string>} */
 		this.requestCaptchaSolution = null;
 		this.reconnectOnUserJoin = false;
 
@@ -72,6 +78,10 @@ class SteamChat extends EventEmitter {
 		return this.page;
 	}
 
+	/**
+	 * Initialize page for use.
+	 * @param {number} volume 
+	 */
 	async init(volume){
 		try {
 			await this.page.waitForSelector(selectors.loading);

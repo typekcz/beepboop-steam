@@ -11,11 +11,17 @@ const utils = require("./utils");
 const requireFromString = require("require-from-string");
 const DealWithCaptcha = require("./deal-with-captcha");
 
+/** @type {import("pg-promise").IBaseProtocol} */
 let db = null;
 /** @type {puppeteer.Page} */
 let page = null;
 
 class Main {
+	/**
+	 * 
+	 * @param {SteamChat} steamchat 
+	 * @param {*} config 
+	 */
 	static async joinSteamChat(steamchat, config){
 		try {
 			await steamchat.getPage().goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
@@ -67,7 +73,7 @@ class Main {
 
 		try {
 			const browser = await puppeteer.launch({
-				headless: true,
+				headless: false,
 				args: [
 					"--disable-client-side-phishing-detection",
 					"--disable-sync",
