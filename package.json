@@ -20,6 +20,7 @@
 		"openid": "^2.0.7",
 		"pg-promise": "^10.8.1",
 		"puppeteer": "^5.5.0",
+		"puppeteer-core": "~5.2.1",
 		"require-from-string": "^2.0.2",
 		"uid-safe": "^2.1.5",
 		"vm2": "^3.9.2",

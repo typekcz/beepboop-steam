@@ -1,5 +1,6 @@
+//@ts-check
 /* If you are looking for configuration, create file config.json and use example configuration from README.md. */
-const fs = require("fs");
+import fs from "fs";
 
 const helpString = 
 `Usage:
@@ -51,6 +52,7 @@ function loadConfig(){
 	return null;
 }
 
+/** @type {Config} */
 let config = loadConfig();
 
 if(!config){
@@ -64,24 +66,25 @@ if(!config.plugins){
 }
 
 // Check if all required values are defined
-if(!config.steam.userName){
+if(!config.steam?.userName){
 	console.log("Missing steam.userName in the configuration.");
 	process.exit(1);
 }
-if(!config.steam.password){
+if(!config.steam?.password){
 	console.log("Missing steam.password in the configuration.");
 	process.exit(1);
 }
-if(!config.steam.groupName){
+if(!config.steam?.groupName){
 	console.log("Missing steam.groupName in the configuration.");
 	process.exit(1);
 }
-if(!config.steam.channelName){
+if(!config.steam?.channelName){
 	console.log("Missing steam.channelName in the configuration.");
 	process.exit(1);
 }
 
 // Env var port or default port if missing in config
-config.port = config.port || process.env.PORT || 8080;
+config.port = config.port || Number(process.env.PORT) || 8081;
+config.mode = config.mode || process.env.MODE || "web";
 
-module.exports = config;
+export default config;

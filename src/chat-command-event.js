@@ -1,4 +1,16 @@
-class ChatCommandEvent {
+//@ts-check
+
+export default class ChatCommandEvent {
+	/**
+	 * 
+	 * @param {import("./chat-handler").default} steamChat 
+	 * @param {import("./dto/room-info").default} roomInfo 
+	 * @param {import("./dto/user-info").default} userInfo 
+	 * @param {string} command 
+	 * @param {string} message 
+	 * @param {string} argument 
+	 * @param {string} rawMessage 
+	 */
 	constructor(steamChat, roomInfo, userInfo, command, message, argument, rawMessage){
 		this.steamChat = steamChat;
 		this.roomInfo = roomInfo;
@@ -15,7 +27,7 @@ class ChatCommandEvent {
 	async sendResponse(response){
 		this.handled = true;
 		if(this.roomInfo != null)
-			await this.steamChat.sendMessage(this.roomInfo.groupId, this.roomInfo.id, response);
+			await this.steamChat.sendGroupMessage(this.roomInfo.groupId, this.roomInfo.id, response);
 		else
 			await this.steamChat.sendDirectMessage(this.userinfo.accountid, response);
 	}
@@ -24,5 +36,3 @@ class ChatCommandEvent {
 		this.handled = true;
 	}
 }
-
-module.exports = ChatCommandEvent;

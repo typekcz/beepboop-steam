@@ -1,4 +1,6 @@
-class UserInfo {
+//@ts-check
+
+export default class UserInfo {
 	constructor(user){
 		this.name = user.display_name;
 		this.steamid = user.steamid64;
@@ -7,5 +9,3 @@ class UserInfo {
 		this.appid = user.persona.m_gameid
 	}
 }
-
-module.exports = UserInfo;

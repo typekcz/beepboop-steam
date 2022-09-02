@@ -1,23 +1,27 @@
-const utils = require("./utils");
+//@ts-check
 
-class DealWithCaptcha {
-	constructor(apiGW){
-		this.apiGW = apiGW;
+export default class DealWithCaptcha {
+	/**
+	 * 
+	 * @param {import("./beepboop").default} beepboop 
+	 */
+	constructor(beepboop){
+		this.beepboop = beepboop;
 		this.captchaSolutionPromise = null;
 		this.captchaImage = null;
 
-		apiGW.webApp.expressApp.get("/api/plugins/dealwithcaptcha", async (req, res) => {
+		beepboop.webApp.expressApp.get("/api/plugins/dealwithcaptcha", async (req, res) => {
 			res.json({pending: !!this.captchaSolutionPromise});
 			res.end();
 		});
 
-		apiGW.webApp.expressApp.get("/api/plugins/dealwithcaptcha/image", async (req, res) => {
+		beepboop.webApp.expressApp.get("/api/plugins/dealwithcaptcha/image", async (req, res) => {
 			res.set("Content-Type", "image/png");
 			res.write(this.captchaImage);
 			res.end();
 		});
 
-		apiGW.webApp.expressApp.post("/api/plugins/dealwithcaptcha", async (req, res) => {
+		beepboop.webApp.expressApp.post("/api/plugins/dealwithcaptcha", async (req, res) => {
 			if(this.captchaSolutionPromise && req.body && req.body.solution){
 				this.captchaSolutionPromise.resolve(req.body.solution);
 				this.captchaSolutionPromise = null;
@@ -25,7 +29,7 @@ class DealWithCaptcha {
 			res.end();
 		});
 
-		apiGW.webApp.addBrowserScript(() => {
+		beepboop.webApp.addBrowserScript(() => {
 			window.addEventListener("load", async () => {
 				let res = await fetch("/api/plugins/dealwithcaptcha");
 				let json = await res.json();
@@ -42,6 +46,7 @@ class DealWithCaptcha {
 							</form>
 						</fieldset>`
 					);
+					//@ts-ignore available on the page
 					registerAsyncSubmitEvents();
 				}
 			});
@@ -54,14 +59,10 @@ class DealWithCaptcha {
 			this.captchaSolutionPromise = null;
 		}
 		this.captchaImage = image;
-		this.captchaSolutionPromise = {};
 		this.captchaSolutionPromise.promise = new Promise((resolve, reject) => {
-			this.captchaSolutionPromise.resolve = resolve;
-			this.captchaSolutionPromise.reject = reject;
+			this.captchaSolutionPromise = {resolve, reject};
 		});
 
 		return this.captchaSolutionPromise.promise;
 	}
 }
-
-module.exports = DealWithCaptcha;

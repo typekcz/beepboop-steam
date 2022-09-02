@@ -1,0 +1,8 @@
+{
+	"name": "beepboop-steam-brain",
+	"version": "1.0.0",
+	"main": "index.js",
+	"dependencies": {
+		"puppeteer-core": "5.2.1"
+	}
+}

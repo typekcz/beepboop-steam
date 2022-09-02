@@ -1,3 +1,4 @@
+//@ts-check
 const express = require("express");
 require("express-async-errors");
 const bodyParser = require("body-parser");
@@ -85,10 +86,14 @@ class WebApp {
 		this.browserScripts += "("+func.toString()+")();";
 	}
 
-	startRestApi(steamchat, soundsDbGw){
+	/**
+	 * 
+	 * @param {import("./beepboop").default} beepboop
+	 */
+	startRestApi(beepboop){
 		this.expressApp.post("/api/playSoundUrl", async (req, res) => {
 			if(req.body && req.body.url){
-				await steamchat.playSoundUrl(req.body.url);
+				await beepboop.steamChatAudio.playSoundUrl(req.body.url);
 			} else {
 				res.status(400);
 			}
@@ -96,7 +101,7 @@ class WebApp {
 		});
 
 		this.expressApp.post("/api/stop", (req, res) => {
-			steamchat.stopSound();
+			beepboop.steamChatAudio.stopSound();
 			res.end();
 		});
 
@@ -106,18 +111,24 @@ class WebApp {
 					let steamid = this.sessions.get(req.get("Session"));
 					if(!steamid)
 						return res.status(401).send("Not logged in.").end();
-					let groupId = await steamchat.getGroupIdByName(steamchat.groupName);
+					if(!beepboop.config.steam?.groupName)
+						throw new Error("Cannot check permissions, group is not configured.")
+					let groupId = await beepboop.steamChatApi.getGroupIdByName(beepboop.config.steam.groupName);
 					if(!groupId)
 						return res.status(500).end();
-					let members = await steamchat.getGroupMembers(groupId);
+					let members = await beepboop.steamChatApi.getGroupMembers(groupId);
 					let member = members.find((m) => m.steamid == steamid);
 					if(!member)
 						return res.status(403).send("Not member of group.").end();
 				
-					if(allowedMime.includes(req.files.sound.mimetype)){
-						await soundsDbGw.insert(req.body.name, req.files.sound.data, req.files.sound.mimetype);
-					} else 
-						res.status(415).send("Unsupported Media Type.").end();
+					if(req.files.sound instanceof Array)
+						res.status(415).send("Only one file can be uploaded.").end();
+					else {
+						if(allowedMime.includes(req.files.sound.mimetype)){
+							await beepboop.soundsDbGw?.insert(req.body.name, req.files.sound.data, req.files.sound.mimetype);
+						} else 
+							res.status(415).send("Unsupported Media Type.").end();
+					}
 				} else {
 					res.status(400).send("Missing data.");
 				}
@@ -129,23 +140,12 @@ class WebApp {
 		});
 
 		this.expressApp.get("/api/sounds", async (req, res) => {
-			/*fs.readdir(webDir + "/sounds", (error, files) => {
-				if(error){
-					res.status(500);
-					res.write(error);
-					res.end();
-				} else {
-					//TODO: Check what is file and what is directory.
-					res.json(files);
-					res.end();
-				}
-			});*/
-			res.json(await soundsDbGw.selectList()).end();
+			res.json(await beepboop.soundsDbGw?.selectList()).end();
 		});
 
 		this.expressApp.get("/api/sounds/:soundName", async (req, res) => {
 			try {
-				let file = await soundsDbGw.selectOne(req.params.soundName);
+				let file = await beepboop.soundsDbGw?.selectOne(req.params.soundName);
 				res.set("Content-Type", file.mime);
 				res.write(file.data);
 				res.end();
@@ -155,13 +155,17 @@ class WebApp {
 		});
 
 		this.expressApp.post("/api/sounds/:soundName/play", async (req, res) => {
-			await steamchat.playSoundUrl("http://localhost:" + this.port + "/api/sounds/" + req.params.soundName);
+			await beepboop.steamChatAudio.playSoundUrl("http://localhost:" + this.port + "/api/sounds/" + req.params.soundName);
 			res.end();
 		});
 
 		this.expressApp.get("/api/members", async (req, res) => {
-			let groupId = await steamchat.getGroupIdByName(steamchat.groupName);
-			res.json(await steamchat.getGroupMembers(groupId));
+			if(!beepboop.config.steam?.groupName)
+				res.json([]);
+			else {
+				let groupId = await beepboop.steamChatApi.getGroupIdByName(beepboop.config.steam.groupName);
+				res.json(await beepboop.steamChatApi.getGroupMembers(groupId));
+			}
 			res.end();
 		});
 
@@ -170,10 +174,10 @@ class WebApp {
 				let steamid = this.sessions.get(req.get("Session"));
 				if(!steamid)
 					return res.status(401).send("Not logged in.").end();
-				let type = soundsDbGw.SoundType[req.params.type.toUpperCase()];
+				let type = beepboop.soundsDbGw?.SoundType[req.params.type.toUpperCase()];
 				if(typeof(type) === "undefined")
 					return res.status(400).send("Unknown type.").end();
-				res.json(await soundsDbGw.selectUserSounds(steamid, type));
+				res.json(await beepboop.soundsDbGw?.selectUserSounds(steamid, type));
 				res.end();
 			}
 		});
@@ -183,10 +187,10 @@ class WebApp {
 				let steamid = this.sessions.get(req.get("Session"));
 				if(!steamid)
 					return res.status(401).send("Not logged in.").end();
-				let type = soundsDbGw.SoundType[req.params.type.toUpperCase()];
+				let type = beepboop.soundsDbGw?.SoundType[req.params.type.toUpperCase()];
 				if(typeof(type) === "undefined")
 					return res.status(400).send("Unknown type.").end();
-				if(await soundsDbGw.insertUserSound(steamid, req.params.soundName, type))
+				if(await beepboop.soundsDbGw?.insertUserSound(steamid, req.params.soundName, type))
 					res.status(201);
 				else
 					res.status(200);
@@ -199,10 +203,10 @@ class WebApp {
 				let steamid = this.sessions.get(req.get("Session"));
 				if(!steamid)
 					return res.status(401).send("Not logged in.").end();
-				let type = soundsDbGw.SoundType[req.params.type.toUpperCase()];
+				let type = beepboop.soundsDbGw?.SoundType[req.params.type.toUpperCase()];
 				if(typeof(type) === "undefined")
 					return res.status(400).send("Unknown type.").end();
-				soundsDbGw.deleteUserSound(steamid, req.params.soundName, type);
+				beepboop.soundsDbGw?.deleteUserSound(steamid, req.params.soundName, type);
 			}
 			res.status(200);
 			res.end();
@@ -219,23 +223,23 @@ class WebApp {
 		);
 
 		this.expressApp.get("/api/steam/authenticate", (req, res) => {
-			this.relyingParty.authenticate(steamOpenId, false, (error, authUrl) => {
+			this.relyingParty?.authenticate(steamOpenId, false, (error, authUrl) => {
 				if(error){
 					res.json(error);
 					return;
 				}
-				res.redirect(authUrl);
+				res.redirect(authUrl || "");
 			});
 		});
 
 		this.expressApp.get("/api/steam/verify", (req, res) => {
-			this.relyingParty.verifyAssertion(req, async (error, result) => {
+			this.relyingParty?.verifyAssertion(req, async (error, result) => {
 				if(error){
 					res.json(error);
 					return;
 				}
 				let uid = await generateUid(18);
-				this.sessions.set(uid, result.claimedIdentifier.substr(steamOpenId.length + 4)); // 4 == "/id/".length
+				this.sessions.set(uid, result?.claimedIdentifier?.substring(steamOpenId.length + 4)); // 4 == "/id/".length
 				res.write(`<!DOCTYPE HTML><html><head>
 					<script>localStorage.setItem("authId", ${JSON.stringify(uid)});close();</script>
 				</head></html>`);

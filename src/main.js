@@ -162,48 +162,6 @@ class Main {
 		})(stream.write);
 	}
 
-	static async loadCookies(){
-		try {
-			await page.goto("https://steamcommunity.com/comment/ForumTopic/formattinghelp?ajax=1");
-			let localStorageRow = await db.oneOrNone("SELECT value FROM variable WHERE name = 'localStorage'");
-			if(localStorageRow){
-				let localStorageData = JSON.parse(localStorageRow.value.toString());
-				await page.evaluate((localStorageData) => {
-					Object.assign(window.localStorage, localStorageData);
-				}, localStorageData);
-			}
-
-			let cookiesRow = await db.oneOrNone("SELECT value FROM variable WHERE name = 'cookies'");
-			if(cookiesRow){
-				let cookies = JSON.parse(cookiesRow.value.toString());
-				for(let cookie of cookies)
-					await page.setCookie(cookie);
-			}
-		} catch(e){
-			console.error(e.message);
-		}
-	}
-
-	static async storeCookies(){
-		try {
-			let localStorageJson = await page.evaluate(() => {
-				return JSON.stringify(window.localStorage);
-			});
-			await db.none(
-				"INSERT INTO variable(name, value) VALUES('localStorage', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-				[ localStorageJson ]
-			);
-
-			await db.none(
-				"INSERT INTO variable(name, value) VALUES('cookies', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-				[ JSON.stringify(await page.cookies()) ]
-			);
-		} catch(e){
-			console.error(e.message);
-			return null;
-		}
-	}
-
 	static shutdown(){
 		console.log("Shutdown:");
 		Main.storeCookies().then(() => {
