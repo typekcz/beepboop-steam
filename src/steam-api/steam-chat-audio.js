@@ -1,6 +1,6 @@
 //@ts-check
 import ytdl from "ytdl-core";
-import BeepBoop from "../beepboop";
+import BeepBoop from "../beepboop.js";
 
 export default class SteamChatAudio {
 	/**

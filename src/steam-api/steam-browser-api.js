@@ -1,15 +1,15 @@
 //@ts-check
 import puppeteer from "puppeteer";
-import DealWithCaptcha from "../deal-with-captcha";
-import SteamBrowserGuiApi from "./steam-browser-gui-api";
+import DealWithCaptcha from "../deal-with-captcha.js";
+import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 
 const selectors = {
-	loginUsername: "#input_username",
-	loginPassword: "#input_password",
+	loginUsername: ".newlogindialog_LoginForm_3Tsg9 [type=text]",
+	loginPassword: ".newlogindialog_LoginForm_3Tsg9 [type=password]",
 	loginCaptcha: "#input_captcha",
 	loginCaptchaImg: "#captchaImg",
-	loginError: "#error_display",
-	loginButton: "#login_btn_signin button",
+	loginError: ".newlogindialog_FormError_1Mcy9",
+	loginButton: ".newlogindialog_LoginForm_3Tsg9 [type=submit]",
 	loading: ".main_throbberContainer-exit-active_24VO6",
 	loggedUsername: ".personanameandstatus_playerName_1uxaf",
 	groupList: ".ChatRoomList .ChatRoomListGroupItem",
@@ -147,8 +147,12 @@ export default class SteamBrowserApi {
 		if(!this.frame)
 			throw new Error("Steam chat frame not loaded.");
 		try {
-			if(await this.frame.evaluate(SteamBrowserGuiApi.login, username, password, selectors)){
-				await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
+			await this.frame.waitForSelector(selectors.loginButton);
+			await this.frame.type(selectors.loginUsername, username);
+			await this.frame.type(selectors.loginPassword, password);
+			await this.frame.click(selectors.loginButton);
+			this.frame.waitForNavigation({timeout: 1000});
+			if(await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors)){
 				console.log("Login: Success.");
 			} else {
 				console.log("Login: Captcha detected, requesting solution.");

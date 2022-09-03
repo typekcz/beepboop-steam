@@ -1,8 +1,8 @@
 //@ts-check
-import ChatHandler from "../chat-handler";
-import RoomInfo from "../dto/room-info";
-import UserInfo from "../dto/user-info";
-import SteamFriendsUiApi from "./steam-friends-ui-api";
+import ChatHandler from "../chat-handler.js";
+import RoomInfo from "../dto/room-info.js";
+import UserInfo from "../dto/user-info.js";
+import SteamFriendsUiApi from "./steam-friends-ui-api.js";
 import EventEmitter from "events";
 
 export default class SteamChatApi extends EventEmitter {

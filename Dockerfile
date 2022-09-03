@@ -12,21 +12,16 @@ RUN apt install -y --no-install-recommends mesa-utils steam-installer pulseaudio
 # Install non archaic NodeJS
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && apt install -y --no-install-recommends nodejs
 
-# Steam launcher
-ADD steam-launcher.sh /
-ADD steam-launcher.desktop /home/$USER/.config/autostart/
+ADD . /beepboop
 
 RUN mkdir -p /home/$USER/.steam
 
 # Setup virtual audio devices
-ADD pulseaudio.pa /
-RUN cat /pulseaudio.pa >> /etc/pulse/default.pa && rm -f /pulseaudio.pa
+RUN cat /beepboop/docker/pulseaudio.pa >> /etc/pulse/default.pa
 
 # Append supervisord.conf
-ADD supervisor.conf /
-RUN cat /supervisor.conf >> /etc/supervisor/conf.d/supervisord.conf && rm -f /supervisord.conf
+RUN cat /beepboop/docker/supervisor.conf >> /etc/supervisor/conf.d/supervisord.conf
 
 # Node app
-ADD node-app /node-app
-RUN chmod -R 777 /node-app
-RUN cd /node-app && npm install
+RUN chmod -R 777 /beepboop
+RUN cd /beepboop && npm install

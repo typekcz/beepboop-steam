@@ -1,3 +1,3 @@
-const Main = require("./src/main");
+import Main from "./src/main.js";
 
 Main.main(process.argv);

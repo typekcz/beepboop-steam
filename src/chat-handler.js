@@ -1,8 +1,8 @@
 //@ts-check
 import {VM} from 'vm2';
-import UserInfo from "./dto/user-info";
-import RoomInfo from "./dto/room-info";
-import ChatCommandEvent from "./chat-command-event";
+import UserInfo from "./dto/user-info.js";
+import RoomInfo from "./dto/room-info.js";
+import ChatCommandEvent from "./chat-command-event.js";
 
 const help_msg = `Commands:
 play sound

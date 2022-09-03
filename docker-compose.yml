@@ -3,17 +3,17 @@ services:
   steam:
     build:
       context: .
-      dockerfile: Dockerfile
       shm_size: '2gb'
     shm_size: '2gb'
     ports:
       - 6080:80
       - 5900:5900
-    environment:
-      - STEAM_USERNAME=
-      - STEAM_PASSWORD=
     volumes:
       - steam-client:/home/beepboop/.steam
+    environment:
+      - STEAM_USERNAME=${STEAM_USERNAME}
+      - STEAM_PASSWORD=${STEAM_PASSWORD}
+      - MODE=client
     deploy:
       resources:
         limits:

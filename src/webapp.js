@@ -1,12 +1,10 @@
 //@ts-check
-const express = require("express");
-require("express-async-errors");
-const bodyParser = require("body-parser");
-const fileUpload = require("express-fileupload");
-const openid = require("openid");
-const fs = require("fs");
-const generateUid = require("uid-safe");
-const ytdl = require("ytdl-core");
+import Express from "express";
+import("express-async-errors");
+import BodyParser from "body-parser";
+import fileUpload from "express-fileupload";
+import openid from "openid";
+import generateUid from "uid-safe";
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";
@@ -19,20 +17,20 @@ const allowedMime = [
 	"audio/mp3"
 ];
 
-class WebApp {
+export default class WebApp {
 	constructor(baseUrl, port){
 		if(!baseUrl.endsWith("/"))
 			baseUrl += "/";
 		this.baseUrl = baseUrl;
 		this.port = port;
-		this.expressApp = express();
+		this.expressApp = Express();
 		this.log = [];
 
 		this.sessions = new Map();
 
-		this.expressApp.use(bodyParser.json());
+		this.expressApp.use(BodyParser.json());
 		this.expressApp.use(fileUpload());
-		this.expressApp.use(express.static(webDir));
+		this.expressApp.use(Express.static(webDir));
 
 		this.browserScripts = "";
 		this.expressApp.get("/api/browserScripts", (req, res) => {
@@ -266,5 +264,3 @@ class WebApp {
 		});
 	}
 }
-
-module.exports = WebApp;

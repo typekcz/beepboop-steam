@@ -1,24 +1,25 @@
 //@ts-check
 import pgPromise from "pg-promise";
 import requireFromString from "require-from-string";
-import config from "./config-loader";
-import SoundsDbGw from "./sounds-db-gw";
-import SteamBrowserApi from "./steam-api/steam-browser-api";
-import SteamChatApi from "./steam-api/steam-chat-api";
-import SteamChatAudio from "./steam-api/steam-chat-audio";
-import SteamClientApi from "./steam-api/steam-client-api";
-import { getStorage, setUpPersistence } from "./storage";
-import utils from "./utils";
-import WebApp from "./webapp";
-const pkg = require('../package.json');
+import config from "./config-loader.js";
+import SoundsDbGw from "./sounds-db-gw.js";
+import SteamBrowserApi from "./steam-api/steam-browser-api.js";
+import SteamChatApi from "./steam-api/steam-chat-api.js";
+import SteamChatAudio from "./steam-api/steam-chat-audio.js";
+import SteamClientApi from "./steam-api/steam-client-api.js";
+import { getStorage, setUpPersistence } from "./storage.js";
+import * as utils from "./utils.js";
+import WebApp from "./webapp.js";
+import * as pkg from "../package.json" assert {type: "json"};
+///<reference path="./types.d.ts" />
 
 const paddedVer = (pkg?.version || "").padEnd(13).substring(0, 13);
 const startMessage = 
 ` ___               ___                
 | _ ) ___ ___ _ __| _ ) ___  ___ _ __ 
-| _ \/ -_) -_) '_ \ _ \/ _ \/ _ \ '_ \
-|___/\___\___| .__/___/\___/\___/ .__/
-             |_| v${paddedVer } |_|  `;
+| _ V/ -_) -_) '_ V _ V/ _ V/ _ V '_ V
+|___/V___V___| .__/___/V___/V___/ .__/
+             |_| v${paddedVer } |_|  `.replaceAll("V", "\\");
 
 
 export default class BeepBoop {
@@ -62,6 +63,10 @@ export default class BeepBoop {
 		this.webApp.startRestApi(this);
 		this.webApp.startSteamLoginApi();
 		console.info(`BeepBoop started in ${process.uptime()} seconds.`);
+	}
+
+	async stop(){
+		await this.steamBrowserApi?.storeCookies();
 	}
 
 	/**

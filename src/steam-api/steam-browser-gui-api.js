@@ -2,13 +2,6 @@ const SteamBrowserGuiApi =  {
 	login: (user, pass, selectors) => {
 		document.querySelector(selectors.loginUsername).value = user;
 		document.querySelector(selectors.loginPassword).value = pass;
-		let captcha_input = document.querySelector(selectors.loginCaptcha);
-		if(captcha_input.offsetParent != null){
-			// Captcha detected
-			return false;
-		}
-		document.querySelector(selectors.loginButton).click();
-		return true;
 	},
 
 	verifyLogin: (selectors) => {
