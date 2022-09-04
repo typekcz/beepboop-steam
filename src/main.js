@@ -34,8 +34,9 @@ export default class Main {
 		})(stream.write);
 	}
 
-	static shutdown(){
-		console.log("Shutdown:");
-		beepboop?.stop();
+	static async shutdown(){
+		console.log("\nShutdown:");
+		await beepboop?.stop();
+		process.exit(0);
 	}
 }

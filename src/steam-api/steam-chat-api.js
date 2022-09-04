@@ -26,7 +26,6 @@ export default class SteamChatApi extends EventEmitter {
 	async init(){
 		await this.frame.evaluate(SteamFriendsUiApi.define, "UserInfo", UserInfo.toString());
 		await this.frame.evaluate(SteamFriendsUiApi.define, "RoomInfo", RoomInfo.toString());
-		await this.frame.evaluate(SteamFriendsUiApi.init);
 
 		this.chatHandler = new ChatHandler(this.bb);
 
@@ -115,7 +114,7 @@ export default class SteamChatApi extends EventEmitter {
 	}
 	
 	async getActiveVoiceChannel(){
-		return this.frame.evaluate(SteamFriendsUiApi.getActiveVoiceRoom, selectors);
+		return this.frame.evaluate(SteamFriendsUiApi.getActiveVoiceRoom);
 	}
 	
 	async getVoiceChannelStatus(){
@@ -130,7 +129,7 @@ export default class SteamChatApi extends EventEmitter {
 
 	async leaveVoiceChannel(){
 		try {
-			await this.frame.click(selectors.leaveVoiceBtn);
+			await this.frame.evaluate(SteamFriendsUiApi.leaveVoiceChannel);
 		} catch(e){
 			// Ignore failure
 		}
@@ -143,8 +142,8 @@ export default class SteamChatApi extends EventEmitter {
 
 		let groupId = await this.getGroupIdByName(group);
 		await this.frame.evaluate(SteamFriendsUiApi.joinVoiceRoom, groupId, channel);
-		await this.frame.waitForSelector(selectors.voiceChannelUsers);
-		await this.frame.evaluate(SteamFriendsUiApi.startJoinedUsersObserver, selectors);
+		//await this.frame.waitForSelector(selectors.voiceChannelUsers);
+		//await this.frame.evaluate(SteamFriendsUiApi.startJoinedUsersObserver, selectors);
 
 		this.joinedUsers = (await this.getVoiceChannelUsers()).map(u => u.steamid);
 		if(reconnectOnUserJoin && this.joinedUsers.length === 0){

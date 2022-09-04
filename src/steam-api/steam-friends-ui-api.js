@@ -81,7 +81,9 @@ const SteamFriendsUiApi =  {
 
 	rejoinLastVoiceRoom: () => window.currentVoiceChat.StartVoiceChat(),
 
-	getActiveVoiceRoom: () => g_FriendsUIApp.VoiceStore.GetActiveVoiceChatID()
+	getActiveVoiceRoom: () => g_FriendsUIApp.VoiceStore.GetActiveVoiceChatID(),
+
+	leaveVoiceRoom: () => g_FriendsUIApp.VoiceStore.EndVoiceChatInternal()
 };
 
 export default SteamFriendsUiApi;

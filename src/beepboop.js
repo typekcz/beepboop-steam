@@ -13,7 +13,7 @@ import WebApp from "./webapp.js";
 import * as pkg from "../package.json" assert {type: "json"};
 ///<reference path="./types.d.ts" />
 
-const paddedVer = (pkg?.version || "").padEnd(13).substring(0, 13);
+const paddedVer = (pkg?.version || "?").padEnd(13).substring(0, 13);
 const startMessage = 
 ` ___               ___                
 | _ ) ___ ___ _ __| _ ) ___  ___ _ __ 
@@ -53,6 +53,8 @@ export default class BeepBoop {
 		await this.steamBrowserApi?.init()
 		console.info("Initializing Steam chat API.");
 		await this.steamChatApi.init();
+		console.log("Initializing Steam chat audio.");
+		await this.steamChatAudio.init();
 
 		if(config.steam?.groupName && config.steam?.channelName){
 			await this.steamChatApi.joinVoiceChannel(config.steam.groupName, config.steam.channelName, true);
@@ -66,6 +68,7 @@ export default class BeepBoop {
 	}
 
 	async stop(){
+		await this.steamChatApi.leaveVoiceChannel();
 		await this.steamBrowserApi?.storeCookies();
 	}
 

@@ -61,9 +61,9 @@ export default class SteamChatAudio {
 
 			// Override getUserMedia API 
 			//@ts-ignore
-			navigator.getUserMedia = getUserMedia;
+			navigator.getUserMedia = fakeAudio.getUserMedia;
 			//@ts-ignore
-			navigator.mediaDevices.getUserMedia = getUserMedia;
+			navigator.mediaDevices.getUserMedia = fakeAudio.getUserMedia;
 
 			//@ts-ignore
 			window.fakeAudio = fakeAudio;

@@ -1,16 +1,18 @@
 //@ts-check
 import puppeteer from "puppeteer-core";
+import { retryPromise } from "../utils.js";
 
 export default class SteamClientApi {
 	async init(){
-		await this.connectToCef();
-		await this.identifyPages();
+		await retryPromise(() => this.connectToCef());
+		await retryPromise(() => this.identifyPages());
 	}
 
 	async connectToCef(){
 		this.browser = await puppeteer.connect({
 			browserURL: "http://localhost:8080", // Steam browser's devtools when launched with -cef-enable-debugging
-			defaultViewport: null // Don't resize the viewport
+			defaultViewport: null, // Don't resize the viewport
+			ignoreHTTPSErrors: true
 		});
 	}
 
@@ -31,7 +33,8 @@ export default class SteamClientApi {
 					this.libraryPage = page;
 					break;
 				case "chat":
-					page.setBypassCSP(true);
+					await page.setBypassCSP(true);
+					await page.reload({waitUntil: "networkidle0", timeout: 5000});
 					this.chatPage = page;
 					for(let frame of page.frames())
 						if(frame.name() === "tracked_frame_friends_chat")
