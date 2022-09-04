@@ -1,5 +1,5 @@
 //@ts-check
-import {VM} from 'vm2';
+import {VM} from "vm2";
 import UserInfo from "./dto/user-info.js";
 import RoomInfo from "./dto/room-info.js";
 import ChatCommandEvent from "./chat-command-event.js";

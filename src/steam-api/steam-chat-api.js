@@ -31,6 +31,9 @@ export default class SteamChatApi extends EventEmitter {
 
 		this.loggedUser = await this.frame.evaluate(SteamFriendsUiApi.getLoggedUserInfo);
 		this.myName = this.loggedUser.name;
+
+		let g_FriendsUIApp; // Fake for TS check
+		this.frame.evaluate(() => setInterval(() => g_FriendsUIApp.IdleTracker.OnUserAction(), 120000));
 	}
 
 	getLoggedUserInfo(){
@@ -129,7 +132,7 @@ export default class SteamChatApi extends EventEmitter {
 
 	async leaveVoiceChannel(){
 		try {
-			await this.frame.evaluate(SteamFriendsUiApi.leaveVoiceChannel);
+			await this.frame.evaluate(SteamFriendsUiApi.leaveVoiceRoom);
 		} catch(e){
 			// Ignore failure
 		}

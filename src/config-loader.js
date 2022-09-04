@@ -65,26 +65,14 @@ if(!config.plugins){
 	config.plugins = ["myinstants"];
 }
 
-// Check if all required values are defined
-if(!config.steam?.userName){
-	console.log("Missing steam.userName in the configuration.");
-	process.exit(1);
-}
-if(!config.steam?.password){
-	console.log("Missing steam.password in the configuration.");
-	process.exit(1);
-}
-if(!config.steam?.groupName){
-	console.log("Missing steam.groupName in the configuration.");
-	process.exit(1);
-}
-if(!config.steam?.channelName){
-	console.log("Missing steam.channelName in the configuration.");
-	process.exit(1);
-}
-
 // Env var port or default port if missing in config
 config.port = config.port || Number(process.env.PORT) || 8081;
 config.mode = config.mode || process.env.MODE || "web";
+if(process.env.DB_CONNECTION){
+	if(!config.db)
+		config.db = {connection: process.env.DB_CONNECTION};
+	else if(!config.db?.connection)
+		config.db.connection = process.env.DB_CONNECTION;
+}
 
 export default config;

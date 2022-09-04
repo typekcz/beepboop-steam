@@ -24,4 +24,5 @@ RUN cat /beepboop/docker/supervisor.conf >> /etc/supervisor/conf.d/supervisord.c
 
 # Node app
 RUN chmod -R 777 /beepboop
-RUN cd /beepboop && npm install
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+RUN cd /beepboop && npm ci

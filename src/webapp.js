@@ -1,10 +1,13 @@
 //@ts-check
+import http from "http";
+import https from "https";
 import Express from "express";
 import("express-async-errors");
 import BodyParser from "body-parser";
 import fileUpload from "express-fileupload";
 import openid from "openid";
 import generateUid from "uid-safe";
+import fs from "fs";
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";

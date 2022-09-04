@@ -20,6 +20,8 @@ export default class SteamClientApi {
 		if(!this.browser)
 			throw new Error("Failed to connect to Steam CEF.");
 		for(let page of await this.browser.pages()){
+			if(page.isClosed())
+				continue;
 			let type = await page.evaluate(() => {
 				// @ts-ignore
 				if(SteamClient?.Apps)
@@ -36,9 +38,11 @@ export default class SteamClientApi {
 					await page.setBypassCSP(true);
 					await page.reload({waitUntil: "networkidle0", timeout: 5000});
 					this.chatPage = page;
-					for(let frame of page.frames())
+					for(let frame of page.frames()){
+						console.log("frame");
 						if(frame.name() === "tracked_frame_friends_chat")
 							this.chatFrame = frame;
+					}
 					break;
 			}
 		}
@@ -46,7 +50,13 @@ export default class SteamClientApi {
 			throw new Error("Failed to find chat page.");
 		if(!this.chatFrame)
 			throw new Error("Failed to find chat frame.");
-		this.chatPage.on("console", msg => console.log("Page log:", msg.text()) );
+		this.chatPage.on("console", msg => {
+			// Reduce the spam
+			if(msg.text().startsWith("WebSocket connection to 'ws://127.0.0.1:27060/clientsocket/' failed")
+				|| msg.text().startsWith("Mixed Content:")
+			) return;
+			console.log("Page log:", msg.text());
+		});
 		this.chatPage.on("pageerror", error => console.log("Page error:", error.message) );
 		this.chatPage.on("requestfailed", request => console.log("Page request failed:", request?.failure()?.errorText, request.url));
 	}

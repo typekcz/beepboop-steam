@@ -8,14 +8,28 @@ services:
     ports:
       - 6080:80 # noVNC
       - 5900:5900 # VNC
-      - 80:8081 # Node web server
+      - 8080:8081 # Node web server
+    volumes:
+      - ./config.js:/beepboop/config.js
+      - ./steam:/home/beepboop/.steam
     environment:
       - STEAM_USERNAME=${STEAM_USERNAME}
       - STEAM_PASSWORD=${STEAM_PASSWORD}
       - MODE=client
+      - DB_CONNECTION=postgres://beepboop:beepboop@db/beepboop
     deploy:
       resources:
         limits:
           memory: 1024M
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=beepboop
+      - POSTGRES_PASSWORD=beepboop
+      - POSTGRES_DB=beepboop
+    ports:
+      - 5432:5432
+    volumes: 
+      - ./db:/var/lib/postgresql/data
 volumes:
   steam-client:

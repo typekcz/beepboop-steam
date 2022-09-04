@@ -19,7 +19,9 @@ const startMessage =
 | _ ) ___ ___ _ __| _ ) ___  ___ _ __ 
 | _ V/ -_) -_) '_ V _ V/ _ V/ _ V '_ V
 |___/V___V___| .__/___/V___/V___/ .__/
-             |_| v${paddedVer } |_|  `.replaceAll("V", "\\");
+             |_| v${paddedVer } |_|  `
+	//@ts-ignore
+	.replaceAll("V", "\\");
 
 
 export default class BeepBoop {
