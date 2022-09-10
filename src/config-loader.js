@@ -55,6 +55,12 @@ function loadConfig(){
 /** @type {Config} */
 let config = loadConfig();
 
+try {
+	config.version = JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+} catch(e){
+	console.error("Failed to load package.json", e);
+}
+
 if(!config){
 	console.error("Error: Missing config.");
 	process.exit(1);

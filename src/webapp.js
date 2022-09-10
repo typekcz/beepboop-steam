@@ -1,13 +1,13 @@
 //@ts-check
 import http from "http";
 import https from "https";
+import url from "url";
 import Express from "express";
 import("express-async-errors");
 import BodyParser from "body-parser";
 import fileUpload from "express-fileupload";
 import openid from "openid";
 import generateUid from "uid-safe";
-import fs from "fs";
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";
@@ -31,6 +31,10 @@ export default class WebApp {
 
 		this.sessions = new Map();
 
+		this.expressApp.use((req, res, next) => {
+			res.set("Access-Control-Allow-Origin", "*");
+			next();
+		});
 		this.expressApp.use(BodyParser.json());
 		this.expressApp.use(fileUpload());
 		this.expressApp.use(Express.static(webDir));
@@ -48,6 +52,37 @@ export default class WebApp {
 				res.write(line);
 			}
 			res.end();
+		});
+
+		// Proxy endpoint used to add Access-Control-Allow-Origin header to sound requests.
+		this.expressApp.get("/api/proxy/:url", async (req, res) => {
+			/*                        ▼ Insert "What the hell is this?" meme */
+			if(!["172.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress || ""))
+				return res.status(403).send("Nope").end();
+
+			let parsedUrl = url.parse(req.params.url);
+			let provider = null
+			if(parsedUrl.protocol == "https:")
+				provider = https;
+			else if(parsedUrl.protocol == "http:")
+				provider = http;
+			if(provider == null)
+				throw new Error("No provider for protocol \"" + parsedUrl.protocol + "\"");
+			let request = provider.request(parsedUrl, (result) => {
+				res.statusCode = result.statusCode ?? 500;
+				for(let header of Object.entries(result.headers))
+					if(header[1] && header[0].toLowerCase() !== "access-control-allow-origin")
+						res.set(header[0], header[1]);
+				res.set("Access-Control-Allow-Origin", "*");
+
+				result.on("data", (chunk) => {
+					res.write(chunk);
+				});
+				result.on("end", () => {
+					res.end();
+				});
+			});
+			request.end();
 		});
 
 		this.expressApp.listen(port);
@@ -114,10 +149,10 @@ export default class WebApp {
 						return res.status(401).send("Not logged in.").end();
 					if(!beepboop.config.steam?.groupName)
 						throw new Error("Cannot check permissions, group is not configured.")
-					let groupId = await beepboop.steamChatApi.getGroupIdByName(beepboop.config.steam.groupName);
+					let groupId = await beepboop.steamChat.getGroupIdByName(beepboop.config.steam.groupName);
 					if(!groupId)
 						return res.status(500).end();
-					let members = await beepboop.steamChatApi.getGroupMembers(groupId);
+					let members = await beepboop.steamChat.getGroupMembers(groupId);
 					let member = members.find((m) => m.steamid == steamid);
 					if(!member)
 						return res.status(403).send("Not member of group.").end();
@@ -148,6 +183,7 @@ export default class WebApp {
 			try {
 				let file = await beepboop.soundsDbGw?.selectOne(req.params.soundName);
 				res.set("Content-Type", file.mime);
+				res.set("Access-Control-Allow-Origin", "https://steam-chat.com");
 				res.write(file.data);
 				res.end();
 			} catch(e){
@@ -164,8 +200,8 @@ export default class WebApp {
 			if(!beepboop.config.steam?.groupName)
 				res.json([]);
 			else {
-				let groupId = await beepboop.steamChatApi.getGroupIdByName(beepboop.config.steam.groupName);
-				res.json(await beepboop.steamChatApi.getGroupMembers(groupId));
+				let groupId = await beepboop.steamChat.getGroupIdByName(beepboop.config.steam.groupName);
+				res.json(await beepboop.steamChat.getGroupMembers(groupId));
 			}
 			res.end();
 		});

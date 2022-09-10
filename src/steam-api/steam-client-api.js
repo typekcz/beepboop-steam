@@ -4,8 +4,8 @@ import { retryPromise } from "../utils.js";
 
 export default class SteamClientApi {
 	async init(){
-		await retryPromise(() => this.connectToCef());
-		await retryPromise(() => this.identifyPages());
+		await retryPromise(() => this.connectToCef(), 1000, Number.POSITIVE_INFINITY, true);
+		await retryPromise(() => this.identifyPages(), 1000, Number.POSITIVE_INFINITY, true);
 	}
 
 	async connectToCef(){
@@ -36,10 +36,13 @@ export default class SteamClientApi {
 					break;
 				case "chat":
 					await page.setBypassCSP(true);
-					await page.reload({waitUntil: "networkidle0", timeout: 5000});
+					await page.setExtraHTTPHeaders({
+						"Content-Security-Policy": "base-uri 'self'; media-src *;"
+					});
+					await page.reload({waitUntil: "networkidle0", timeout: 30000});
+					await page.setBypassCSP(true);
 					this.chatPage = page;
 					for(let frame of page.frames()){
-						console.log("frame");
 						if(frame.name() === "tracked_frame_friends_chat")
 							this.chatFrame = frame;
 					}
@@ -50,6 +53,8 @@ export default class SteamClientApi {
 			throw new Error("Failed to find chat page.");
 		if(!this.chatFrame)
 			throw new Error("Failed to find chat frame.");
+		// @ts-ignore it exists damn it!
+		this.chatFrame.waitForFunction(() => window.g_FriendsUIApp?.ready_to_render);
 		this.chatPage.on("console", msg => {
 			// Reduce the spam
 			if(msg.text().startsWith("WebSocket connection to 'ws://127.0.0.1:27060/clientsocket/' failed")

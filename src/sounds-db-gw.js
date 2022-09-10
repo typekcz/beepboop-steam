@@ -70,6 +70,12 @@ export default class SoundsDbGw {
 		}
 	}
 
+	/**
+	 * 
+	 * @param {string} steamid 
+	 * @param {number} type 
+	 * @returns 
+	 */
 	async selectUserSounds(steamid, type){
 		try {
 			let sounds = await this.db.any(
@@ -84,6 +90,12 @@ export default class SoundsDbGw {
 		}
 	}
 
+	/**
+	 * 
+	 * @param {string} steamid 
+	 * @param {number} type 
+	 * @returns 
+	 */
 	async selectRandomUserSound(steamid, type){
 		try {
 			let sound = await this.db.oneOrNone(

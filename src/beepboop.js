@@ -10,10 +10,9 @@ import SteamClientApi from "./steam-api/steam-client-api.js";
 import { getStorage, setUpPersistence } from "./storage.js";
 import * as utils from "./utils.js";
 import WebApp from "./webapp.js";
-import * as pkg from "../package.json" assert {type: "json"};
 ///<reference path="./types.d.ts" />
 
-const paddedVer = (pkg?.version || "?").padEnd(13).substring(0, 13);
+const paddedVer = (config?.version || "?").padEnd(13).substring(0, 13);
 const startMessage = 
 ` ___               ___                
 | _ ) ___ ___ _ __| _ ) ___  ___ _ __ 
@@ -35,14 +34,14 @@ export default class BeepBoop {
 		}
 		switch(config.mode){
 			case "client":
-				this.steamClientApi = new SteamClientApi();
+				this.steamClient = new SteamClientApi();
 				break;
 			case "web":
-				this.steamBrowserApi = new SteamBrowserApi(this);
+				this.steamBrowser = new SteamBrowserApi(this);
 				break;
 		}
-		this.steamChatApi = new SteamChatApi(this);
-		this.steamChatAudio = new SteamChatAudio(this, "http://localhost:" + config.port + "/api/sounds/");
+		this.steamChat = new SteamChatApi(this);
+		this.steamChatAudio = new SteamChatAudio(this, "http://localhost:" + config.port);
 		this.plugins = [];
 	}
 
@@ -51,27 +50,28 @@ export default class BeepBoop {
 		await this.soundsDbGw?.init();
 		setUpPersistence(this.db);
 		console.info(`Initializing Steam ${config.mode} API.`);
-		await this.steamClientApi?.init();
-		await this.steamBrowserApi?.init()
+		await this.steamClient?.init();
+		await this.steamBrowser?.init()
 		console.info("Initializing Steam chat API.");
-		await this.steamChatApi.init();
+		await this.steamChat.init();
 		console.log("Initializing Steam chat audio.");
-		await this.steamChatAudio.init();
+		await this.steamChatAudio.init(config.volume);
 
 		if(config.steam?.groupName && config.steam?.channelName){
-			await this.steamChatApi.joinVoiceChannel(config.steam.groupName, config.steam.channelName, true);
+			await this.steamChat.joinVoiceChannel(config.steam.groupName, config.steam.channelName, true);
 			console.info(`Successully joined voice channel ${config.steam?.channelName} in ${config.steam?.groupName}`);
 		} else
 			console.warn("Missing steam.groupName or steam.channelName, got nowhere to join.");
 		console.info("Initializing REST API.");
 		this.webApp.startRestApi(this);
 		this.webApp.startSteamLoginApi();
+		await this.loadPlugins();
 		console.info(`BeepBoop started in ${process.uptime()} seconds.`);
 	}
 
 	async stop(){
-		await this.steamChatApi.leaveVoiceChannel();
-		await this.steamBrowserApi?.storeCookies();
+		await this.steamChat.leaveVoiceChannel();
+		await this.steamBrowser?.storeCookies();
 	}
 
 	/**
@@ -79,7 +79,7 @@ export default class BeepBoop {
 	 */
 	get chatFrame(){
 		//@ts-ignore my head hurts...
-		return this.steamClientApi?.getFriendsUiFrame() || this.steamBrowserApi?.getFriendsUiFrame();
+		return this.steamClient?.getFriendsUiFrame() || this.steamBrowser?.getFriendsUiFrame();
 	}
 
 	/**
@@ -87,7 +87,7 @@ export default class BeepBoop {
 	 */
 	get chatPage(){
 		//@ts-ignore
-		return this.steamClientApi?.getFriendsUiPage() || this.steamBrowserApi?.getFriendsUiPage();
+		return this.steamClient?.getFriendsUiPage() || this.steamBrowser?.getFriendsUiPage();
 	}
 
 	async loadPlugins(){
@@ -101,8 +101,10 @@ export default class BeepBoop {
 					let code = (await utils.request(plugin)).body.toString();
 					pluginClass = requireFromString(code, "./plugins/"+plugin.replace(/[^\w^.]+/g, "_"));
 				} else {
-					pluginClass = require("./plugins/"+plugin+".js");
+					pluginClass = await import("./plugins/"+plugin+".js");
 				}
+				if(typeof pluginClass !== "function" && pluginClass.default)
+					pluginClass = pluginClass.default;
 				this.plugins.push(new (pluginClass)(this, await getStorage(plugin)));
 			} catch(error){
 				console.error(error);

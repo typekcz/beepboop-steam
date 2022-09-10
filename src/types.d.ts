@@ -1,4 +1,5 @@
 interface Config {
+	version?: string;
 	port: number;
 	mode: "client" | "web";
 	baseUrl?: string;
@@ -11,6 +12,7 @@ interface Config {
 	db?: {
 		connection: string | import("pg-promise/typescript/pg-subset").IConnectionParameters<import("pg-promise/typescript/pg-subset").IClient>
 	}
+	volume?: number;
 	plugins?: string[];
 	ttsUrl?: string;
 }

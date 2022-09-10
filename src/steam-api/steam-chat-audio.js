@@ -1,11 +1,10 @@
 //@ts-check
 import ytdl from "ytdl-core";
-import BeepBoop from "../beepboop.js";
 
 export default class SteamChatAudio {
 	/**
 	 * 
-	 * @param {BeepBoop} beepBoop
+	 * @param {import("../beepboop").default} beepBoop
 	 * @param {string} soundsBaseUrl
 	 */
 	constructor(beepBoop, soundsBaseUrl) {
@@ -71,9 +70,14 @@ export default class SteamChatAudio {
 	}
 
 	async playSound(soundName){
-		await this.playSoundUrl(this.soundsBaseUrl + soundName);
+		await this.playSoundUrl(`${this.soundsBaseUrl}/api/sounds/${soundName}`);
 	}
 	
+	/**
+	 * 
+	 * @param {string} url 
+	 * @param {boolean} checkYt 
+	 */
 	async playSoundUrl(url, checkYt = true){
 		if(checkYt){
 			console.log("playUrl", url);
@@ -88,6 +92,9 @@ export default class SteamChatAudio {
 				console.log(url);
 			}
 		}
+		// Proxy
+		if(!url.startsWith(this.soundsBaseUrl))
+			url = `${this.soundsBaseUrl}/api/proxy/${encodeURIComponent(url)}`;
 		let fakeAudio; // Fake for TS check
 		try {
 			await this.frame.evaluate(async (url) => {
@@ -129,7 +136,7 @@ export default class SteamChatAudio {
 
 	async textToSpeech(text){
 		if(this.bb.config.ttsUrl){
-			text = text.replace("/me", this.bb.steamChatApi.myName);
+			text = text.replace("/me", this.bb.steamChat.myName);
 			await this.bb.steamChatAudio.playSoundUrl(this.bb.config.ttsUrl + encodeURIComponent(text));
 		}
 	}

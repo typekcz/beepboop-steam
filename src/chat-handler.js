@@ -26,7 +26,7 @@ export default class ChatHandler {
 		});
 
 		let g_FriendsUIApp; // Fake for TS check
-		let handleMessage = (a, b, c, d) => {};
+		let handleMessage = (a, b, c, d) => 1;
 		this.bb.chatFrame?.evaluate(() => {
 			g_FriendsUIApp.ChatStore.m_mapChatGroups.values().next().value.m_mapRooms.values().next().value.__proto__.CheckShouldNotify = function(msg, text, rawText){
 				handleMessage(new RoomInfo(this), new UserInfo(this.GetMember(msg.unAccountID)), text, rawText);
@@ -58,11 +58,11 @@ export default class ChatHandler {
 			"No can do."
 		];
 		let response = null;
-		if(room == null || rawMessage.startsWith("[mention="+this.bb.steamChatApi.getLoggedUserInfo().accountid+"]")){
+		if(room == null || rawMessage.startsWith("[mention="+this.bb.steamChat.getLoggedUserInfo()?.accountid+"]")){
 			if(room){
 				console.log("handleMessage", room.groupName, "|", room.name, ":", rawMessage);
 				rawMessage = rawMessage.substr(rawMessage.indexOf("[/mention]") + "[/mention]".length);
-				message = message.substring(this.bb.steamChatApi.myName.length + 2);
+				message = message.substring((this.bb.steamChat.myName?.length ?? 0) + 2);
 			}
 			let index = message.indexOf(" ");
 			if(index < 0)
@@ -103,12 +103,10 @@ export default class ChatHandler {
 						break;
 					default:
 						let event = new ChatCommandEvent(this, room, user, command, message, arg, rawMessage);
-						for(let listener of this.bb.steamChatApi.rawListeners("chatCommand")){
+						for(let listener of this.bb.steamChat.rawListeners("chatCommand")){
 							await Promise.resolve(listener.call(this, event));
 						}
-						if(event.handled)
-							response = null;
-						else
+						if(!event.handled)
 							response = unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))];
 						break;
 				}
@@ -135,7 +133,7 @@ export default class ChatHandler {
 		let g_FriendsUIApp; // Fake for TS check
 		await this.frame.evaluate((group, room, text) => {
 			let g;
-			if(/^[0-9]*$/.test(group))
+			if(/^\d*$/.test(group))
 				g = g_FriendsUIApp.ChatStore.m_mapChatGroups.get(group);
 			else {
 				for(let i of g_FriendsUIApp.ChatStore.m_mapChatGroups.values()){
@@ -148,7 +146,7 @@ export default class ChatHandler {
 				throw new Error("ChatHandler.sendGroupMessage: Group \""+group+"\" not found.");
 			
 			let r;
-			if(/^[0-9]*$/.test(room))
+			if(/^\d*$/.test(room))
 				r = g.m_mapRooms.get(room);
 			else {
 				for(let i of g.m_mapRooms.values()){

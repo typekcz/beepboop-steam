@@ -17,7 +17,9 @@ export function request(url_, options = {}){
 		// For some reason puppeteer messes up https.require function, so it no longer takes url as string
 		options = Object.assign(options, parsedUrl);
 		
-		let request = provider.request(options, (result) => {
+		let request = provider.request(options, (result_) => {
+			/** @type {http.IncomingMessage & {body?: any}} */
+			let result = result_;
 			result.body = [];
 			result.on("data", (chunk) => {
 				result.body.push(chunk);
@@ -43,22 +45,24 @@ export function sleep(ms){
 /**
  * 
  * @template T
- * @param {function():Promise<T>} promise 
- * @param {number} intervalMs 
- * @param {number} maxRetries 
+ * @param {function():Promise<T>} promise promise generator
+ * @param {number} intervalMs time between retries
+ * @param {number} maxRetries
+ * @param {boolean} silent if true, less messages are printed to console
  * @returns {Promise<T>}
  */
-export async function retryPromise(promise, intervalMs = 1000, maxRetries = Number.POSITIVE_INFINITY){
+export async function retryPromise(promise, intervalMs = 1000, maxRetries = Number.POSITIVE_INFINITY, silent = false){
 	try {
 		return await promise();
 	} catch(e){
 		let lastErrorMessage = e.message;
-		console.error(e);
+		if(!silent)
+			console.error(e);
 		if(maxRetries <= 0)
 			throw e;
-		process.stdout.write("Retrying");
+		if(!silent)
+			console.log("Retrying");
 		for(let i = 0; i < maxRetries; i++){
-			process.stdout.write(".");
 			try {
 				await sleep(intervalMs);
 				let res = await promise();
@@ -68,8 +72,13 @@ export async function retryPromise(promise, intervalMs = 1000, maxRetries = Numb
 				if(i == maxRetries-1)
 					throw e;
 				if(e.message !== lastErrorMessage){
-					console.error(e);
-					process.stdout.write("Retrying");
+					if(!silent){
+						console.error(e);
+						console.log("Retrying");
+					} else {
+						console.error(lastErrorMessage);
+						console.log("Retrying");
+					}
 				}
 				lastErrorMessage = e.message;
 			}

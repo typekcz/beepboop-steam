@@ -4,6 +4,7 @@ import RoomInfo from "../dto/room-info.js";
 import UserInfo from "../dto/user-info.js";
 import SteamFriendsUiApi from "./steam-friends-ui-api.js";
 import EventEmitter from "events";
+import { sleep } from "../utils.js";
 
 export default class SteamChatApi extends EventEmitter {
 	/**
@@ -13,7 +14,6 @@ export default class SteamChatApi extends EventEmitter {
 	constructor(beepboop) {
 		super();
 		this.bb = beepboop;
-		this.joinedUsers = [];
 	}
 
 	get frame(){
@@ -26,11 +26,15 @@ export default class SteamChatApi extends EventEmitter {
 	async init(){
 		await this.frame.evaluate(SteamFriendsUiApi.define, "UserInfo", UserInfo.toString());
 		await this.frame.evaluate(SteamFriendsUiApi.define, "RoomInfo", RoomInfo.toString());
+		await this.bb.chatPage?.exposeFunction("handleUsersChanged", (usersBefore, usersAfter) => {
+			this.voiceChannelUsersChanged(usersBefore, usersAfter);
+		});
 
 		this.chatHandler = new ChatHandler(this.bb);
 
+		/** @type {UserInfo} */
 		this.loggedUser = await this.frame.evaluate(SteamFriendsUiApi.getLoggedUserInfo);
-		this.myName = this.loggedUser.name;
+		this.myName = this.loggedUser?.name;
 
 		let g_FriendsUIApp; // Fake for TS check
 		this.frame.evaluate(() => setInterval(() => g_FriendsUIApp.IdleTracker.OnUserAction(), 120000));
@@ -38,6 +42,16 @@ export default class SteamChatApi extends EventEmitter {
 
 	getLoggedUserInfo(){
 		return this.loggedUser;
+	}
+
+	/**
+	 * 
+	 * @param {number} accId 
+	 * @returns {Promise<UserInfo?>}
+	 */
+	getUserByAccId(accId){
+		// @ts-ignore
+		return this.frame.evaluate(SteamFriendsUiApi.getUserByAccId, accId);
 	}
 
 	async sendMessage(group, chatRoom, message){
@@ -73,47 +87,49 @@ export default class SteamChatApi extends EventEmitter {
 		return this.frame.evaluate(SteamFriendsUiApi.getVoiceRoomUsers);
 	}
 
-	async voiceChannelUsersChanged(){
-		let users = (await this.getVoiceChannelUsers()).map(u => u.steamid);
-		users = users.filter(u => u != this.loggedUser.steamid); // Remove bot
+	/**
+	 * Internal
+	 * @param {number[]} usersBefore array of account ids
+	 * @param {number[]} usersAfter array of account ids
+	 */
+	async voiceChannelUsersChanged(usersBefore, usersAfter){
+		usersBefore = usersBefore.filter(u => u != this.loggedUser?.accountid); // Remove bot
+		usersAfter = usersAfter.filter(u => u != this.loggedUser?.accountid); // Remove bot
 		if(this.reconnectOnUserJoin){
 			let status = await this.getVoiceChannelStatus();
-			if(users.length > 0){
+			if(usersAfter.length > 0){
 				if(status !== "OK"){
-					this.rejoinVoiceChat();
-					console.log("Rejoin voice.");
+					await this.rejoinVoiceChat();
+					console.log("Rejoining voice channel.");
+					await sleep(1000); // Wait a sec for voice to join
 				}
 			} else {
 				// On empty
 				this.leaveVoiceChannel();
-				console.log("Leave voice on empty.");
+				console.log("Leaving voice channel because it's empty.");
+				return;
 			}
 		}
-		for(let user of this.joinedUsers){
-			if(users.indexOf(user) >= 0)
-				continue;
-			else {
-				console.log("user left:", user);
-				let sound = await this.bb.soundsDbGw?.selectRandomUserSound(user, this.bb.soundsDbGw.SoundType.LEAVE);
+		// Leaving users
+		for(let user of usersBefore.filter(u => !usersAfter.includes(u))){
+			let userInfo = await this.getUserByAccId(user);
+			if(userInfo){
+				console.log("User left:", userInfo.name);
+				let sound = await this.bb.soundsDbGw?.selectRandomUserSound(userInfo.steamid, this.bb.soundsDbGw.SoundType.LEAVE);
 				if(sound != null)
 					this.bb.steamChatAudio.playSound(sound);
-				else
-					console.log("No sound.");
 			}
 		}
-		for(let user of users){
-			if(this.joinedUsers.indexOf(user) >= 0)
-				continue;
-			else {
-				console.log("user joined:", user);
-				let sound = await this.bb.soundsDbGw?.selectRandomUserSound(user, this.bb.soundsDbGw.SoundType.WELCOME);
+		// Joining users
+		for(let user of usersAfter.filter(u => !usersBefore.includes(u))){
+			let userInfo = await this.getUserByAccId(user);
+			if(userInfo){
+				console.log("User joined:", userInfo.name);
+				let sound = await this.bb.soundsDbGw?.selectRandomUserSound(userInfo.steamid, this.bb.soundsDbGw.SoundType.WELCOME);
 				if(sound != null)
 					this.bb.steamChatAudio.playSound(sound);
-				else
-					console.log("No sound.");
 			}
 		}
-		this.joinedUsers = users;
 	}
 	
 	async getActiveVoiceChannel(){
@@ -145,15 +161,6 @@ export default class SteamChatApi extends EventEmitter {
 
 		let groupId = await this.getGroupIdByName(group);
 		await this.frame.evaluate(SteamFriendsUiApi.joinVoiceRoom, groupId, channel);
-		//await this.frame.waitForSelector(selectors.voiceChannelUsers);
-		//await this.frame.evaluate(SteamFriendsUiApi.startJoinedUsersObserver, selectors);
-
-		this.joinedUsers = (await this.getVoiceChannelUsers()).map(u => u.steamid);
-		if(reconnectOnUserJoin && this.joinedUsers.length === 0){
-			console.log("Leaving empty room on initial join.");
-			this.leaveVoiceChannel();
-			return;
-		}
 
 		const greetingMessages = [
 			"Hello, I am BeebBoop and I do beep and boop.",
@@ -166,6 +173,6 @@ export default class SteamChatApi extends EventEmitter {
 			} catch(e){
 				console.error(e);
 			}
-		}, 3000);
+		}, 5000);
 	}
 }

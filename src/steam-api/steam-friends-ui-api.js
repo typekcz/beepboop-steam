@@ -7,6 +7,13 @@ const SteamFriendsUiApi =  {
 		return new UserInfo(g_FriendsUIApp.FriendStore.m_self);
 	},
 
+	getUserByAccId: (accId) => {
+		let u = g_FriendsUIApp.m_FriendStore.GetPlayer(accId);
+		if(u)
+			return new UserInfo(u);
+		return null;
+	},
+
 	findChatRoom: (groupName) => {
 		let groupId = null;
 		let group = null;
@@ -62,7 +69,7 @@ const SteamFriendsUiApi =  {
 	getVoiceRoomUsers: () => {
 		let users = [];
 		// This won't work when bot leaves room: let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat();
-		let voiceChat = window.currentVoiceChat;
+		let voiceChat = g_FriendsUIApp.ChatStore.GetChatRoomGroup(g_FriendsUIApp.VoiceStore.GetActiveChatRoomGroupID()).GetChatRoom(g_FriendsUIApp.VoiceStore.GetActiveVoiceChatID());
 		for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
 			users.push(new UserInfo(m));
 		return users;
@@ -74,6 +81,13 @@ const SteamFriendsUiApi =  {
 			if(voiceChannel.name == channelName){
 				voiceChannel.StartVoiceChat();
 				window.currentVoiceChat = voiceChannel;
+
+				let UpdateChatState_ = voiceChannel.UpdateChatState;
+				voiceChannel.UpdateChatState = function(state){
+					if(handleUsersChanged && this === window.currentVoiceChat)
+						handleUsersChanged([...this.m_groupVoiceActiveMembers.GetCurrentMemberSet().values()], state.array[3]);
+					return UpdateChatState_.apply(this, arguments);
+				};
 				break;
 			}
 		}
