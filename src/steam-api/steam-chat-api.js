@@ -37,7 +37,13 @@ export default class SteamChatApi extends EventEmitter {
 		this.myName = this.loggedUser?.name;
 
 		let g_FriendsUIApp; // Fake for TS check
-		this.frame.evaluate(() => setInterval(() => g_FriendsUIApp.IdleTracker.OnUserAction(), 120000));
+		await this.frame.evaluate(() => {
+			g_FriendsUIApp.SettingsStore.FriendsSettings.bAnimatedAvatars = false;
+			g_FriendsUIApp.SettingsStore.FriendsSettings.bDisableEmbedInlining = true;
+			g_FriendsUIApp.SettingsStore.FriendsSettings.bDisableRoomEffects = true;
+			g_FriendsUIApp.SettingsStore.FriendsSettings.bDisableSpellcheck = true;
+			setInterval(() => g_FriendsUIApp.IdleTracker.OnUserAction(), 120000);
+		});
 	}
 
 	getLoggedUserInfo(){

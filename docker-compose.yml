@@ -3,15 +3,15 @@ services:
   steam:
     build:
       context: .
-      shm_size: '2gb'
-    shm_size: '2gb'
+      shm_size: '500mb'
+    shm_size: '500mb'
     ports:
       - 6080:80 # noVNC
       - 5900:5900 # VNC
       - 8080:8081 # Node web server
     volumes:
-      - ./config.js:/beepboop/config.js
-      - ./steam:/home/beepboop/.steam
+      - ./config.json:/beepboop/config.json:ro
+      - ./steam/:/home/beepboop/.steam/:rw
     environment:
       - STEAM_USERNAME=${STEAM_USERNAME}
       - STEAM_PASSWORD=${STEAM_PASSWORD}
@@ -20,7 +20,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1024M
+          memory: 512M
   db:
     image: postgres:latest
     environment:
@@ -31,5 +31,3 @@ services:
       - 5432:5432
     volumes: 
       - ./db:/var/lib/postgresql/data
-volumes:
-  steam-client:
