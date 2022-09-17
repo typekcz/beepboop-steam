@@ -39,8 +39,8 @@ export default class DealWithCaptcha {
 							<legend>PLS HELP</legend>
 							<p>Hello human!</p>
 							<p>I require assistance with this robot countermeasure:</p>
-							<form action="/api/plugins/dealwithcaptcha" method="post" data-asyncsubmit="" data-beforesubmit="form[1].disabled = true;setTimeout(()=>location.reload(), 4000);">
-								<img src="/api/plugins/dealwithcaptcha/image" alt="captcha"><br>
+							<form action="api/plugins/dealwithcaptcha" method="post" data-asyncsubmit="" data-beforesubmit="form[1].disabled = true;setTimeout(()=>location.reload(), 4000);">
+								<img src="api/plugins/dealwithcaptcha/image" alt="captcha"><br>
 								<input type="text" name="solution">
 								<input type="submit" value="Send">
 							</form>

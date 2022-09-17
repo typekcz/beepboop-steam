@@ -8,16 +8,16 @@
 	</head>
 	<body>
 		<div class="when-notlogged">
-			<a href="/api/steam/authenticate" target="_blank"><img src="img/steamlogin.png" alt="Steam Login"></a>
+			<a href="api/steam/authenticate" target="_blank"><img src="img/steamlogin.png" alt="Steam Login"></a>
 		</div>
 		<div class="when-logged">
-			<form action="/api/steam/logout" method="get" data-asyncSubmit data-session>
+			<form action="api/steam/logout" method="get" data-asyncSubmit data-session>
 				<input type="submit" value="Steam Logout">
 			</form>
 			<div class="flex">
 				<fieldset>
 					<legend>Upload Sound</legend>
-					<form action="/api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session data-aftersubmit="if(res.ok){form.reset();location.reload();}">
+					<form action="api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session data-aftersubmit="if(res.ok){form.reset();location.reload();}">
 						<input type="text" name="name" placeholder="Sound name">
 						<input type="file" name="sound">
 						<input type="submit">
@@ -38,13 +38,13 @@
 		<div id="controls" class="flex">
 			<fieldset>
 				<legend>Controls</legend>
-				<form action="/api/stop" method="post" data-asyncSubmit>
+				<form action="api/stop" method="post" data-asyncSubmit>
 					<input type="submit" value="Stop">
 				</form>
 			</fieldset>
 			<fieldset>
 				<legend>Play URL</legend>
-				<form action="/api/playSoundUrl" method="post" data-asyncSubmit>
+				<form action="api/playSoundUrl" method="post" data-asyncSubmit>
 					<small>Supports links to <a href="https://youtube.com" target="_blank">youtube.com</a>.</small><br>
 					<input type="text" name="url">
 					<input type="submit" value="Play">

@@ -30,7 +30,7 @@ export default class MyInstantsPlugin {
 				document.getElementById("controls")?.insertAdjacentHTML("beforeend", 
 					`<fieldset>
 						<legend>Play Instant</legend>
-						<form action="/api/plugins/myinstants/play" method="post" data-asyncSubmit>
+						<form action="api/plugins/myinstants/play" method="post" data-asyncSubmit>
 							<small>Find and play button from <a href="https://myinstants.com" target="_blank">myinstants.com</a></small><br>
 							<input type="text" name="name">
 							<input type="submit" value="Play">

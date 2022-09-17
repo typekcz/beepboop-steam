@@ -79,8 +79,8 @@ export default class SteamChatAudio {
 	 * @param {boolean} checkYt 
 	 */
 	async playSoundUrl(url, checkYt = true){
+		console.log("playUrl", url);
 		if(checkYt){
-			console.log("playUrl", url);
 			if(ytdl.validateURL(url)){
 				console.log("youtube detected");
 				let info = await ytdl.getInfo(url, {});
@@ -89,7 +89,6 @@ export default class SteamChatAudio {
 					filter: f => f.container === "webm"
 				});
 				url = format.url;
-				console.log(url);
 			}
 		}
 		// Proxy

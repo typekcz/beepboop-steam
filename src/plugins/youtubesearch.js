@@ -34,7 +34,7 @@ export default class YoutubeSearch {
 				document.getElementById("controls")?.insertAdjacentHTML("beforeend", 
 					`<fieldset>
 						<legend>Find YouTube video</legend>
-						<form action="/api/plugins/youtube/find" method="post" data-asyncSubmit>
+						<form action="api/plugins/youtube/find" method="post" data-asyncSubmit>
 							<input type="text" name="name">
 							<input type="submit" value="Play">
 						</form>
