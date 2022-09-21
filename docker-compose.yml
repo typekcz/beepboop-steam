@@ -6,8 +6,7 @@ services:
       shm_size: '500mb'
     shm_size: '500mb'
     ports:
-      - 6080:80 # noVNC
-      - 5900:5900 # VNC
+      - 127.0.0.1:5900:5900 # VNC LAN only
       - 8080:8081 # Node web server
     volumes:
       - ./config.json:/beepboop/config.json:ro
@@ -29,7 +28,7 @@ services:
       - POSTGRES_USER=beepboop
       - POSTGRES_PASSWORD=beepboop
       - POSTGRES_DB=beepboop
-    ports:
-      - 5432:5432
+    expose:
+      - 5432
     volumes: 
       - ./db:/var/lib/postgresql/data
