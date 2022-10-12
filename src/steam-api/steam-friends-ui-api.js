@@ -60,8 +60,8 @@ const SteamFriendsUiApi =  {
 	getGroupMembers: (groupId) => {
 		let members = [];
 		for(let bucket of g_FriendsUIApp.GroupMemberStore.GetGroupMemberList(groupId)){
-			for(let f of bucket.m_rgMembers)
-				members.push(new UserInfo(f));
+			for(let m of bucket.member_list)
+				members.push(new UserInfo(m));
 		}
 		return members;
 	},
@@ -75,7 +75,13 @@ const SteamFriendsUiApi =  {
 		return users;
 	},
 
-	joinVoiceRoom: (groupId, channelName) => {
+	joinVoiceRoom: async (groupId, channelName) => {
+		// Make group active so that members can be retrieved
+		g_FriendsUIApp.ChatStore.IncRefActiveChatRoomGroup(groupId, true);
+		await g_FriendsUIApp.ChatStore.SendActiveChatRoomGroupsToServer();
+		g_FriendsUIApp.GroupMemberStore.RegisterForGroupMemberList(() => {}, groupId);
+		g_FriendsUIApp.GroupMemberStore.PerformInitialPopulate(groupId);
+
 		let group = g_FriendsUIApp.ChatStore.GetChatRoomGroup(groupId);
 		for(let voiceChannel of group.voiceRoomList){
 			if(voiceChannel.name == channelName){
