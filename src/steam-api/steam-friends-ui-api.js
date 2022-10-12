@@ -58,6 +58,7 @@ const SteamFriendsUiApi =  {
 	},
 
 	getGroupMembers: (groupId) => {
+		g_FriendsUIApp.GroupMemberStore.PerformInitialPopulate(groupId);
 		let members = [];
 		for(let bucket of g_FriendsUIApp.GroupMemberStore.GetGroupMemberList(groupId)){
 			for(let m of bucket.member_list)
