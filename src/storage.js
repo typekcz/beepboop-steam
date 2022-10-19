@@ -1,8 +1,9 @@
+//@ts-check
 let db = null;
 let storages = new Map();
 let updates = [];
 
-async function setUpPersistence(db_){
+export async function setUpPersistence(db_){
 	db = db_;
 
 	try {
@@ -17,7 +18,7 @@ async function setUpPersistence(db_){
 	}
 }
 
-async function getStorage(moduleName){
+export async function getStorage(moduleName){
 	let storage = storages.get(moduleName);
 	if(storage)
 		return storage;
@@ -53,7 +54,7 @@ async function syncStorage(moduleName){
 	}
 }
 
-class Storage {
+export class Storage {
 	constructor(moduleName){
 		Object.defineProperty(this, "#module", {
 			enumerable: false,
@@ -93,5 +94,3 @@ class Storage {
 		return Object.keys(this)[i];
 	}
 }
-
-module.exports = {setUpPersistence, getStorage}

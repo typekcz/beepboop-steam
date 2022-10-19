@@ -1,0 +1,3 @@
+load-module module-null-sink sink_name=dummy sink_properties=device.description=dummy
+load-module module-null-sink sink_name=loop sink_properties=device.description=loop_out
+load-module module-remap-source master=loop.monitor source_name=loop_in source_properties=device.description=loop_in

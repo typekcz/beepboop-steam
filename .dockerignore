@@ -1,0 +1,8 @@
+.vscode
+.git
+node_modules
+docker-compose.yml
+Dockerfile
+config.js
+steam
+db

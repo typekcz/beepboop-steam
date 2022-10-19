@@ -1,5 +1,7 @@
 # BeepBoop
-BeepBoop is sound bot for new Steam chat. He connects to group chat voice channel and plays sounds there. Can run on Heroku free plan.
+BeepBoop is sound bot for new Steam chat. He connects to group chat voice channel and plays sounds there.
+
+Currently it doesn't work in browser version of Steam chat, because browser version of Steam chat doesn't work. Solution is to run entire Steam client, provided is Docker image that runs Steam client and bot in it.
 
 ## Features
  * Plays all Chromium supported audio formats
@@ -11,52 +13,32 @@ BeepBoop is sound bot for new Steam chat. He connects to group chat voice channe
 
 ## Installation
 
-### Prerequisities
- * [Node.js](https://nodejs.org/)
- * Chrome/Chromium - For playing non-free codecs (which you probably want) you need to provide Chrome or Chromium browser with proper codecs support.
-    * Windows: You can use regular Chrome installation
-    * Linux: Install `chromium-browser` and `chromium-codecs-ffmpeg-extra` packages (Debian/Ubuntu) or your distros equivalent
-    * [Heroku](https://www.heroku.com/): 
-      * Use [Puppeteer buildpack](https://github.com/jontewks/puppeteer-heroku-buildpack)
-      * Disable node_modules cache with `heroku config:set NODE_MODULES_CACHE=false` (so that ytdl package is kept up to date)
- * Optional: [PostgreSQL database](https://www.postgresql.org/) - You can skip this, but without it you won't be able to upload your own sounds and will be limited to playing only from YouTube and MyInstants.
+### Prerequisites
+ * Install Docker and Docker Compose
 
-### Configuring Puppeteer environment variables
+### Configuration
 
-> Note: Looks like Chromium without extra codes is fine now, so try skip this step.
-
-You need to set path to Chrome/Chromium that you want to use, otherwise Chromium without extra codecs will be automatically downloaded and used. You can do that by setting [Puppeteer environment variables](https://pptr.dev/#?product=Puppeteer&version=v8.0.0&show=api-environment-variables). Example:
+BeepBoop needs Steam login credentials to "his" account. You can create new account on Steam without Steam Guard (limited Steam account is sufficient). Put login credentials to **.env** file like this:
 
 ```
-PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=
-PUPPETEER_EXECUTABLE_PATH="C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+STEAM_USERNAME=BeepBoop
+STEAM_PASSWORD=sUp3rH4rdC0r3p@s5w0rd
 ```
 
-Heroku build pack sets these for you.
-
-### BeepBoop's configuration
-
-BeepBoop needs Steam login credentials to "his" account. You can create new account on Steam without Steam Guard (limited Steam account is sufficient).
 Configuration can be put to config.json file in the project's root or in environment variable `CONFIG`. You can also specify path to config file through `--config-file <path>` argument or environment variable `CONFIGFILE`.
 Example config:
 ```json
 {
 	"baseUrl": "http://beepboop.example.com/",
-	"port": 8080,
 	"steam": {
-		"userName": "BeepBoop",
-		"password": "sUp3rH4rdC0r3p@s5w0rd",
 		"groupName": "Testy Mc Test Face",
 		"channelName": "Voicey Mc Voice Face"
-	},
-	"db": {
-		"connection": "postgres://beepboop:beepboop@localhost/beepboop"
 	},
 	"plugins": [
 		"myinstants", "youtubesearch"
 	],
 	"ttsUrl": "https://example.com/text-to-speech?lang=en&key=xxxxxx&text=",
-	"volume": 0.15
+	"volume": 0.3
 }
 ```
 Explanation of some options:
@@ -64,11 +46,8 @@ Explanation of some options:
 Option | Description
 ------ | -----------
 baseUrl| URL where web interface will be accessed. This will be http://localhost:8080/ when running locally.
-port | Port for web server. On Heroku this is automaticaly set in environment variable so exclude this on Heroku.
-steam.username, steam.password | Just create new Steam account (https://store.steampowered.com/join/).
 steam.groupName | Name of the Steam group chat. See picture below. Bot's account has to be member of the group chat.
 steam.channelName | Name of the voice channel in Steam group chat. See picture below.
-db.connection | Connection string for PostgreSQL database. Other DBMSs are not supported.
 volume | For some reason BeepBoop is incredibly loud so I recommend to set volume to 0.4.
 ttsUrl | You can provide URL for text to speech. Needs to be URL where text can be appended at the end and which responds with audio.
 
@@ -76,19 +55,13 @@ ttsUrl | You can provide URL for text to speech. Needs to be URL where text can 
 
 ### Run
 
-When you are ready, install npm dependencies `npm install` and then you can start BeepBoop with `npm run start`.
+When you are ready, you can start it with: `docker-compose up -d`. This will start container that runs Steam client and BeepBoop Node.js app and database container.
 
-## Instalation
-Requires [Node.js](https://nodejs.org/). On Heroku use [Puppeteer buildpack](https://github.com/typekcz/puppeteer-heroku-buildpack).
-When all is configured just do:
-```
-npm install
-npm run start
-```
+On first login, it will be stuck on Steam Guard code, so you need to download some VNC client and connect to localhost:5900 and fill in the Steam Guard code into the login form. If you are running it on server, best way to do this is to setup SSH tunneling for port 5900, because it's only accessible from localhost due to security.
 
 ## Usage
 
-Bot will join voice room when there is someone and leave when he is alone in it, because Steam doesn't like long idling in empty room.
+Bot will join voice room when there is someone and leave when he is alone in it.
 
 ### Web interface
 
@@ -115,6 +88,4 @@ Command | Description
 **eval** *[3,2,1].sort()* | Safely runs JavaScript code. Don't ask me why.
 
 ## Known issues
- * It's just wrong...
- * Bot is sometimes logged out of Steam or in some weird non-functioning state and you have to restart it.
- * My bot's account had some voice chat ban. He couldn't join voice chat, but other accounts on the same machine were working. This eventually disappeared when I changed it to leave the room when it's empty, but you should keep in mind that Valve can do these things as bots are technically not allowed on Steam, but are usually tolerated.
+ * Running through just browser without full Steam client is supported, but browser Steam chat is not functioning properly.

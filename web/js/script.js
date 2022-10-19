@@ -1,7 +1,7 @@
 window.addEventListener("load", async () => {
 	let authId = localStorage.getItem("authId");
 	if(authId){
-		let res = await fetch("/api/steam/check", {
+		let res = await fetch("api/steam/check", {
 			headers: {
 				Session: authId
 			}
@@ -90,7 +90,7 @@ function soundDragDrop(event, type){
 
 async function listSounds(){
 	try {
-		let res = await fetch("/api/sounds");
+		let res = await fetch("api/sounds");
 		let sounds = await res.json();
 		if(!(sounds instanceof Array))
 			throw new TypeError("Received data aren't Array.");
@@ -102,7 +102,7 @@ async function listSounds(){
 			btn.ondragstart = soundDragStart;
 			btn.innerText = sound;
 			btn.addEventListener("click", async () => {
-				let res = await fetch("/api/sounds/" + encodeURIComponent(sound) + "/play", {
+				let res = await fetch("api/sounds/" + encodeURIComponent(sound) + "/play", {
 					method: "POST"
 				});
 				console.log(res);
@@ -116,7 +116,7 @@ async function listSounds(){
 
 async function addUserSound(sound, type, sendToServer = true){
 	if(sendToServer){
-		let res = await fetch("/api/user/sounds/"+type+"/" + sound, {
+		let res = await fetch("api/user/sounds/"+type+"/" + sound, {
 			method: "post",
 			headers: {
 				Session: localStorage.getItem("authId")
@@ -135,7 +135,7 @@ async function addUserSound(sound, type, sendToServer = true){
 
 async function listUserSounds(type){
 	try {
-		let res = await fetch("/api/user/sounds/"+type+"/", {
+		let res = await fetch("api/user/sounds/"+type+"/", {
 			headers: {
 				Session: localStorage.getItem("authId")
 			}
@@ -151,7 +151,7 @@ async function listUserSounds(type){
 
 function removeUserSound(button, type){
 	let sound = button.previousSibling.textContent;
-	fetch("/api/user/sounds/"+type+"/" + sound, {
+	fetch("api/user/sounds/"+type+"/" + sound, {
 		method: "delete",
 		headers: {
 			Session: localStorage.getItem("authId")

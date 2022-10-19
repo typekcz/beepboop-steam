@@ -1,11 +1,13 @@
+//@ts-check
+
 const SoundType = {
 	WELCOME: 1,
 	LEAVE: 2
 }
 
-class SoundsDBGW {
+export default class SoundsDbGw {
 	/**
-	 * @param {pgPromise.IMain} db
+	 * @param {import("pg-promise").IDatabase<{}, import("pg-promise/typescript/pg-subset").IClient>} db
 	 */
 	constructor(db){
 		this.db = db;
@@ -68,6 +70,12 @@ class SoundsDBGW {
 		}
 	}
 
+	/**
+	 * 
+	 * @param {string} steamid 
+	 * @param {number} type 
+	 * @returns 
+	 */
 	async selectUserSounds(steamid, type){
 		try {
 			let sounds = await this.db.any(
@@ -82,6 +90,12 @@ class SoundsDBGW {
 		}
 	}
 
+	/**
+	 * 
+	 * @param {string} steamid 
+	 * @param {number} type 
+	 * @returns 
+	 */
 	async selectRandomUserSound(steamid, type){
 		try {
 			let sound = await this.db.oneOrNone(
@@ -118,5 +132,4 @@ class SoundsDBGW {
 	}
 }
 
-SoundsDBGW.prototype.SoundType = SoundsDBGW.SoundType = SoundType;
-module.exports = SoundsDBGW;
+SoundsDbGw.prototype.SoundType = SoundsDbGw.SoundType = SoundType;

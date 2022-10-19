@@ -1,4 +1,6 @@
-class RoomInfo {
+//@ts-check
+
+export default class RoomInfo {
 	constructor(room){
 		this.name = room.name;
 		this.id = room.m_ulChatID;
@@ -6,5 +8,3 @@ class RoomInfo {
 		this.groupName = room.m_group.name;
 	}
 }
-
-module.exports = RoomInfo;

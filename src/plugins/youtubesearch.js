@@ -1,10 +1,15 @@
-const utils = require("../utils");
+//@ts-check
+import * as utils from "../utils.js";
 
 const VIDEO_ID_REGEX = /watch\?v=([a-zA-Z0-9-]*)/g;
 const VIDEO_URL = "https://www.youtube.com/watch?v=";
 const SEARCH_URL = "https://www.youtube.com/results?search_query=";
 
-class YoutubeSearch {
+export default class YoutubeSearch {
+	/**
+	 * 
+	 * @param {import("../beepboop").default} apiGW 
+	 */
 	constructor(apiGW){
 		this.apiGW = apiGW;
 
@@ -26,15 +31,16 @@ class YoutubeSearch {
 
 		apiGW.webApp.addBrowserScript(() => {
 			window.addEventListener("load", () => {
-				document.getElementById("controls").insertAdjacentHTML("beforeend", 
+				document.getElementById("controls")?.insertAdjacentHTML("beforeend", 
 					`<fieldset>
 						<legend>Find YouTube video</legend>
-						<form action="/api/plugins/youtube/find" method="post" data-asyncSubmit>
+						<form action="api/plugins/youtube/find" method="post" data-asyncSubmit>
 							<input type="text" name="name">
 							<input type="submit" value="Play">
 						</form>
 					</fieldset>`
 				);
+				// @ts-ignore
 				registerAsyncSubmitEvents();
 			});
 		});
@@ -43,6 +49,8 @@ class YoutubeSearch {
 	async findVideo(search){
 		const searchRegEx = /^(.*?)(#(\d))?$/;
 		let reRes = searchRegEx.exec(search);
+		if(!reRes || reRes.length <= 1)
+			throw new Error("Bad search string");
 		search = reRes[1];
 		let number = reRes[3] || 1;
 		let url = SEARCH_URL + encodeURIComponent(search);
@@ -56,8 +64,6 @@ class YoutubeSearch {
 		}
 		if(regex_result == null)
 			throw new Error("No video found.");
-		await this.apiGW.steamChat.playSoundUrl(VIDEO_URL + regex_result[1], true);
+		await this.apiGW.steamChatAudio.playSoundUrl(VIDEO_URL + regex_result[1], true);
 	}
 }
-
-module.exports = YoutubeSearch;

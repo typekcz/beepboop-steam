@@ -1,5 +1,6 @@
+//@ts-check
 /* If you are looking for configuration, create file config.json and use example configuration from README.md. */
-const fs = require("fs");
+import fs from "fs";
 
 const helpString = 
 `Usage:
@@ -51,7 +52,14 @@ function loadConfig(){
 	return null;
 }
 
+/** @type {Config} */
 let config = loadConfig();
+
+try {
+	config.version = JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+} catch(e){
+	console.error("Failed to load package.json", e);
+}
 
 if(!config){
 	console.error("Error: Missing config.");
@@ -63,25 +71,14 @@ if(!config.plugins){
 	config.plugins = ["myinstants"];
 }
 
-// Check if all required values are defined
-if(!config.steam.userName){
-	console.log("Missing steam.userName in the configuration.");
-	process.exit(1);
-}
-if(!config.steam.password){
-	console.log("Missing steam.password in the configuration.");
-	process.exit(1);
-}
-if(!config.steam.groupName){
-	console.log("Missing steam.groupName in the configuration.");
-	process.exit(1);
-}
-if(!config.steam.channelName){
-	console.log("Missing steam.channelName in the configuration.");
-	process.exit(1);
-}
-
 // Env var port or default port if missing in config
-config.port = config.port || process.env.PORT || 8080;
+config.port = config.port || Number(process.env.PORT) || 8081;
+config.mode = config.mode || process.env.MODE || "web";
+if(process.env.DB_CONNECTION){
+	if(!config.db)
+		config.db = {connection: process.env.DB_CONNECTION};
+	else if(!config.db?.connection)
+		config.db.connection = process.env.DB_CONNECTION;
+}
 
-module.exports = config;
+export default config;

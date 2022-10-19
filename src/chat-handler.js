@@ -1,7 +1,8 @@
-const {VM} = require('vm2');
-const UserInfo = require("./userinfo");
-const RoomInfo = require("./roominfo");
-const ChatCommandEvent = require("./chatcommandevent");
+//@ts-check
+import {VM} from "vm2";
+import UserInfo from "./dto/user-info.js";
+import RoomInfo from "./dto/room-info.js";
+import ChatCommandEvent from "./chat-command-event.js";
 
 const help_msg = `Commands:
 play sound
@@ -13,15 +14,20 @@ play
 beep
 eval`;
 
-class ChatHandler {
+export default class ChatHandler {
 	/**
-	 * @param {Page} page - Puppeteer page
+	 * @param {import("./beepboop").default} beepboop
 	 */
-	constructor(steamChat){
-		this.steamChat = steamChat;
-		this.page = steamChat.getPage();
+	constructor(beepboop){
+		this.bb = beepboop;
 
-		this.page.evaluate(() => {
+		this.bb.chatPage?.exposeFunction("handleMessage", (room, user, text, rawText) => {
+			this.handleMessage(room, user, text, rawText);
+		});
+
+		let g_FriendsUIApp; // Fake for TS check
+		let handleMessage = (a, b, c, d) => 1;
+		this.bb.chatFrame?.evaluate(() => {
 			g_FriendsUIApp.ChatStore.m_mapChatGroups.values().next().value.m_mapRooms.values().next().value.__proto__.CheckShouldNotify = function(msg, text, rawText){
 				handleMessage(new RoomInfo(this), new UserInfo(this.GetMember(msg.unAccountID)), text, rawText);
 			}
@@ -29,6 +35,13 @@ class ChatHandler {
 				handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
 			}
 		});
+	}
+
+	get frame(){
+		let f = this.bb.chatFrame;
+		if(!f)
+			throw new Error("FriendsUi frame is not available.");
+		return f;
 	}
 
 	async handleMessage(room, user, message, rawMessage){
@@ -44,13 +57,12 @@ class ChatHandler {
 			"/me is currently unavailable.",
 			"No can do."
 		];
-		//message = /.*: "(.*)"/.exec(message)[1];
 		let response = null;
-		if(room == null || rawMessage.startsWith("[mention="+this.steamChat.getLoggedUserInfo().accountid+"]")){
+		if(room == null || rawMessage.startsWith("[mention="+this.bb.steamChat.getLoggedUserInfo()?.accountid+"]")){
 			if(room){
 				console.log("handleMessage", room.groupName, "|", room.name, ":", rawMessage);
 				rawMessage = rawMessage.substr(rawMessage.indexOf("[/mention]") + "[/mention]".length);
-				message = message.substring(this.steamChat.myName.length + 2);
+				message = message.substring((this.bb.steamChat.myName?.length ?? 0) + 2);
 			}
 			let index = message.indexOf(" ");
 			if(index < 0)
@@ -64,41 +76,37 @@ class ChatHandler {
 						break;
 					case "play":
 						if(arg)
-							await this.steamChat.playSound(arg);
+							await this.bb.steamChatAudio.playSound(arg);
 						else
-							await this.steamChat.resumeSound();
+							await this.bb.steamChatAudio.resumeSound();
 						break;
 					case "playurl":
-						await this.steamChat.playSoundUrl(arg);
+						await this.bb.steamChatAudio.playSoundUrl(arg);
 						break;
 					case "say":
-						if(!this.steamChat.ttsUrl)
+						if(!this.bb.config.ttsUrl)
 							throw new Error("Missing text to speech URL.");
-						await this.steamChat.textToSpeech(arg);
+						await this.bb.steamChatAudio.textToSpeech(arg);
 						break;
 					case "stop":
 					case "pause":
-						await this.steamChat.stopSound();
+						await this.bb.steamChatAudio.stopSound();
 						break;
 					case "beep":
 					case "beep?":
 						response = "boop";
 						break;
 					case "eval":
-						const vm = new VM({
-							wrapper: "none"
-						});
+						const vm = new VM({});
 						let result = vm.run(arg);
 						response = "/code " + JSON.stringify(result);
 						break;
 					default:
-						let event = new ChatCommandEvent(this.steamChat, room, user, command, message, arg, rawMessage);
-						for(let listener of this.steamChat.rawListeners("chatCommand")){
-							await Promise.resolve(listener.call(this.steamChat, event));
+						let event = new ChatCommandEvent(this, room, user, command, message, arg, rawMessage);
+						for(let listener of this.bb.steamChat.rawListeners("chatCommand")){
+							await Promise.resolve(listener.call(this, event));
 						}
-						if(event.handled)
-							response = null;
-						else
+						if(!event.handled)
 							response = unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))];
 						break;
 				}
@@ -110,7 +118,7 @@ class ChatHandler {
 		if(response){
 			console.log("response", response);
 			try {
-				await this.steamChat.textToSpeech(response);
+				await this.bb.steamChatAudio.textToSpeech(response);
 			} catch(e){
 				console.error(e);
 			}
@@ -122,9 +130,10 @@ class ChatHandler {
 	}
 
 	async sendGroupMessage(group, room, text){
-		await this.page.evaluate((group, room, text) => {
+		let g_FriendsUIApp; // Fake for TS check
+		await this.frame.evaluate((group, room, text) => {
 			let g;
-			if(/^[0-9]*$/.test(group))
+			if(/^\d*$/.test(group))
 				g = g_FriendsUIApp.ChatStore.m_mapChatGroups.get(group);
 			else {
 				for(let i of g_FriendsUIApp.ChatStore.m_mapChatGroups.values()){
@@ -137,7 +146,7 @@ class ChatHandler {
 				throw new Error("ChatHandler.sendGroupMessage: Group \""+group+"\" not found.");
 			
 			let r;
-			if(/^[0-9]*$/.test(room))
+			if(/^\d*$/.test(room))
 				r = g.m_mapRooms.get(room);
 			else {
 				for(let i of g.m_mapRooms.values()){
@@ -154,10 +163,9 @@ class ChatHandler {
 	}
 
 	async sendDirectMessage(userId, text){
-		await this.page.evaluate((userId, text) => {
+		let g_FriendsUIApp; // Fake for TS check
+		await this.frame.evaluate((userId, text) => {
 			g_FriendsUIApp.ChatStore.GetFriendChat(userId).SendChatMessage(text);
 		}, userId, text);
 	}
 }
-
-module.exports = ChatHandler;
