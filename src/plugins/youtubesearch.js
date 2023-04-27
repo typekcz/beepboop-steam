@@ -1,7 +1,7 @@
 //@ts-check
 import * as utils from "../utils.js";
 
-const VIDEO_ID_REGEX = /watch\?v=([a-zA-Z0-9-]*)/g;
+const VIDEO_ID_REGEX = /watch\?v=([a-zA-Z0-9-_]*)/g;
 const VIDEO_URL = "https://www.youtube.com/watch?v=";
 const SEARCH_URL = "https://www.youtube.com/results?search_query=";
 
