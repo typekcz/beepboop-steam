@@ -29,6 +29,7 @@ Configuration can be put to config.json file in the project's root or in environ
 Example config:
 ```json
 {
+	"mode": "client",
 	"baseUrl": "http://beepboop.example.com/",
 	"steam": {
 		"groupName": "Testy Mc Test Face",
@@ -45,6 +46,7 @@ Explanation of some options:
 
 Option | Description
 ------ | -----------
+mode | `"client"` for using Docker image with Steam client, `"web"` for using headless web browser (currently broken)
 baseUrl| URL where web interface will be accessed. This will be http://localhost:8080/ when running locally.
 steam.groupName | Name of the Steam group chat. See picture below. Bot's account has to be member of the group chat.
 steam.channelName | Name of the voice channel in Steam group chat. See picture below.
