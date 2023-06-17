@@ -1,11 +1,9 @@
 # BeepBoop
 BeepBoop is sound bot for new Steam chat. He connects to group chat voice channel and plays sounds there.
 
-Currently it doesn't work in browser version of Steam chat, because browser version of Steam chat doesn't work. Solution is to run entire Steam client, provided is Docker image that runs Steam client and bot in it.
-
 ## Features
  * Plays all Chromium supported audio formats
- * Support for playing YouTube links, also support search and play with plugin
+ * Support for playing YouTube links, also includes plugin for playing videos found by search phrase
  * Search and play sound from [myinstants.com](https://www.myinstants.com/) (plugin)
  * Multiple user welcome and leave sounds (randomly plays one)
  * Only members of Steam group chat can upload sounds.
@@ -29,7 +27,6 @@ Configuration can be put to config.json file in the project's root or in environ
 Example config:
 ```json
 {
-	"mode": "client",
 	"baseUrl": "http://beepboop.example.com/",
 	"steam": {
 		"groupName": "Testy Mc Test Face",
@@ -46,7 +43,7 @@ Explanation of some options:
 
 Option | Description
 ------ | -----------
-mode | `"client"` for using Docker image with Steam client, `"web"` for using headless web browser (currently broken)
+mode | `"client"` for using Docker image with Steam client, `"web"` for using headless web browser. You don't need to set this if you use supplied docker-compose configs.
 baseUrl| URL where web interface will be accessed. This will be http://localhost:8080/ when running locally.
 steam.groupName | Name of the Steam group chat. See picture below. Bot's account has to be member of the group chat.
 steam.channelName | Name of the voice channel in Steam group chat. See picture below.
@@ -57,7 +54,9 @@ ttsUrl | You can provide URL for text to speech. Needs to be URL where text can 
 
 ### Run
 
-When you are ready, you can start it with: `docker-compose up -d`. This will start container that runs Steam client and BeepBoop Node.js app and database container.
+You have to decide what mode you want to use. Client mode runs whole desktop and Steam client in a container. Web mode just runs headless Chrome with Steam Chat in it. Currently I recommend using web mode, client mode was created because web Steam Chat was broken for a long time, but now it's working again.
+
+When you are ready, you can start it with: `docker-compose -f docker-compose.web.yml up --build`. This will start container for BeepBoop and database container.
 
 On first login, it will be stuck on Steam Guard code, so you need to download some VNC client and connect to localhost:5900 and fill in the Steam Guard code into the login form. If you are running it on server, best way to do this is to setup SSH tunneling for port 5900, because it's only accessible from localhost due to security.
 

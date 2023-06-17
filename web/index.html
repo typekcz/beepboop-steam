@@ -1,6 +1,8 @@
 <!DOCTYPE HTML> 
 <html>
 	<head>
+		<meta charset="UTF-8">
+		<title>BeepBoop</title>
 		<script src="js/script.js"></script>
 		<script src="api/browserScripts"></script>
 		<link rel="stylesheet" type="text/css" href="css/gui.css">
@@ -38,8 +40,11 @@
 		<div id="controls" class="flex">
 			<fieldset>
 				<legend>Controls</legend>
+				<form action="api/play" method="post" data-asyncSubmit>
+					<input type="submit" value="▶">
+				</form>
 				<form action="api/stop" method="post" data-asyncSubmit>
-					<input type="submit" value="Stop">
+					<input type="submit" value="⏸">
 				</form>
 			</fieldset>
 			<fieldset>

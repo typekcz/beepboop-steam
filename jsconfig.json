@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"module": "NodeNext",
+		"target": "ES6",
+		"moduleResolution": "nodenext",
+	},
+	"exclude": [
+		".git",
+		".vscode",
+		"node_modules",
+		"db",
+		"steam"
+	  ]
+}

@@ -14,7 +14,8 @@ import WebApp from "./webapp.js";
 
 const paddedVer = (config?.version || "?").padEnd(13).substring(0, 13);
 const startMessage = 
-` ___               ___                
+`
+ ___               ___                
 | _ ) ___ ___ _ __| _ ) ___  ___ _ __ 
 | _ V/ -_) -_) '_ V _ V/ _ V/ _ V '_ V
 |___/V___V___| .__/___/V___/V___/ .__/
@@ -48,7 +49,7 @@ export default class BeepBoop {
 	async init(){
 		console.info(startMessage);
 		await this.soundsDbGw?.init();
-		setUpPersistence(this.db);
+		setUpPersistence(this.db).catch(console.error);
 		console.info(`Initializing Steam ${config.mode} API.`);
 		await this.steamClient?.init();
 		await this.steamBrowser?.init()
@@ -75,7 +76,7 @@ export default class BeepBoop {
 	}
 
 	/**
-	 * @returns {import("puppeteer-core").Page | import("puppeteer-core").Frame | undefined}
+	 * @returns {import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Page | import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Frame | undefined}
 	 */
 	get chatFrame(){
 		//@ts-ignore my head hurts...
@@ -83,7 +84,7 @@ export default class BeepBoop {
 	}
 
 	/**
-	 * @returns {import("puppeteer-core").Page | undefined}
+	 * @returns {import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Page | undefined}
 	 */
 	get chatPage(){
 		//@ts-ignore

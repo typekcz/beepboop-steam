@@ -2,37 +2,31 @@
 import puppeteer from "puppeteer";
 import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
+import DealWithSteamGuard from "../deal-with-steam-guard.js";
 
 const selectors = {
-	loginUsername: ".newlogindialog_LoginForm_3Tsg9 [type=text]",
-	loginPassword: ".newlogindialog_LoginForm_3Tsg9 [type=password]",
+	loginUsername: "[type=text].newlogindialog_TextInput_2eKVn",
+	loginPassword: "[type=password].newlogindialog_TextInput_2eKVn",
 	loginCaptcha: "#input_captcha",
 	loginCaptchaImg: "#captchaImg",
 	loginError: ".newlogindialog_FormError_1Mcy9",
-	loginButton: ".newlogindialog_LoginForm_3Tsg9 [type=submit]",
-	loading: ".main_throbberContainer-exit-active_24VO6",
-	loggedUsername: ".personanameandstatus_playerName_1uxaf",
-	groupList: ".ChatRoomList .ChatRoomListGroupItem",
-	groupListItem: ".chatRoomName",
-	groupListItemChatroomList: ".ChatRoomListGroupItemChatRooms",
-	groupListItemOpenBtn: ".openGroupButton",
-	groupListItemVoiceChannel: ".chatRoomVoiceChannel .chatRoomVoiceChannelName",
-	groupChatTab: "div.chatDialogs div.chatWindow.MultiUserChat.namedGroup",
-	voiceChannelUsers: ".chatRoomVoiceChannelsGroup", // Extended to entire voice channels list to capture users change even if out of room.
-	loggedOut: ".ConnectionTroubleMessage:not(.NotificationBrowserWarning)",
-	activeVoice: ".activeVoiceControls",
-	fileUpload: ".chatEntry input[name=fileupload]",
-	confirmFileUpload: ".chatFileUploadBtn",
-	audioElementContainer: ".main_SteamPageHeader_3EaXO", // Just some place to put audio element
-	activeVoiceName: ".ActiveVoiceChannel .chatRoomVoiceChannelName",
-	connectionStatus: ".activeVoiceControls .connectionStatus", // Place where reconnecting message appears
-	leaveVoiceBtn: ".VoiceControlPanelButton.chatEndVoiceChat"
+	loginButton: "[type=submit].newlogindialog_SubmitButton_2QgFE",
+	loading: ".WaitingForInterFaceReadyContainer",
+	steamGuardInput: ".segmentedinputs_SegmentedCharacterInput_3PDBF"
 };
+
+const steamChatUrl = "https://steamcommunity.com/chat";
+
+function pageLogFiltered(msg){
+	if(msg.text().startsWith("Mixed Content:"))
+		return;
+	console.log("Page log:", msg.text());
+}
 
 export default class SteamBrowserApi {
 	/**
 	 * 
-	 * @param {import("../beepboop").default} beepboop 
+	 * @param {import("../beepboop.js").default} beepboop 
 	 */
 	constructor(beepboop){
 		this.bb = beepboop;
@@ -50,7 +44,7 @@ export default class SteamBrowserApi {
 			console.error(e.message);
 		}
 		const browser = await puppeteer.launch({
-			headless: false,
+			headless: true,
 			args: [
 				"--disable-client-side-phishing-detection",
 				"--disable-sync",
@@ -71,15 +65,22 @@ export default class SteamBrowserApi {
 		await this.loadCookies();
 		await this.frame.setBypassCSP(true);
 		// Steam won't accept HeadlessChrome
-		await this.frame.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36");
-		this.frame.on("console", msg => console.log("Page log:", msg.text()) );
+		let userAgent = await this.frame.evaluate(() => navigator.userAgent);
+		userAgent = userAgent.replace("HeadlessChrome", "Chrome");
+		await this.frame.setUserAgent(userAgent);
+		this.frame.on("console", msg => pageLogFiltered);
 		this.frame.on("pageerror", error => console.log("Page error:", error.message) );
 		this.frame.on("requestfailed", request => console.log("Page request failed:", request?.failure()?.errorText, request.url));
 
 		let dealWithCaptcha = new DealWithCaptcha(this.bb);
 		this.requestCaptchaSolution = (img) => dealWithCaptcha.getCaptchaSolution(img);
+		this.requestSteamGuardCode = new DealWithSteamGuard(this.bb);
+
+		this.bb.webApp.setupPageScreen(this.frame);
 
 		await this.goToSteamChat();
+		// Wait for Steam Chat loading to finish
+		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
 	}
 
 	async storeCookies(){
@@ -132,13 +133,12 @@ export default class SteamBrowserApi {
 		if(!this.frame)
 			throw new Error("Steam chat frame not loaded.");
 		try {
-			await this.frame.goto("https://steamcommunity.com/chat", {waitUntil : "networkidle2"});
+			await this.frame.goto(steamChatUrl, {waitUntil : "networkidle2"});
 		} catch(e){
 			console.error(e.message);
 		}
 
 		if(this.frame.url().includes("login")){
-			console.log("login");
 			await this.login(this.bb.config.steam?.userName, this.bb.config.steam?.password);
 		}
 	}
@@ -146,38 +146,56 @@ export default class SteamBrowserApi {
 	async login(username, password){
 		if(!this.frame)
 			throw new Error("Steam chat frame not loaded.");
-		try {
-			await this.frame.waitForSelector(selectors.loginButton);
-			await this.frame.type(selectors.loginUsername, username);
-			await this.frame.type(selectors.loginPassword, password);
-			await this.frame.click(selectors.loginButton);
-			this.frame.waitForNavigation({timeout: 1000});
-			if(await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors)){
-				console.log("Login: Success.");
-			} else {
-				console.log("Login: Captcha detected, requesting solution.");
-				// Deal with captcha
-				if(this.requestCaptchaSolution){
-					while(true) {
-						await this.frame.evaluate(SteamBrowserGuiApi.waitForCaptchaImage, selectors);
-						let captchaElement = await this.frame.$(selectors.loginCaptchaImg);
-						let solution = await this.requestCaptchaSolution(await captchaElement?.screenshot({type: "png"}));
-						console.log("Login: Captcha solution received.");
-						await this.frame.evaluate(SteamBrowserGuiApi.fillCaptcha, solution, selectors);
-						try {
-							await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
-							console.log("Login: Captcha solved.");
-							break;
-						} catch(e){
-							console.log("Login: Captcha solution failed. Trying again.");
-						}
-					}
-				} else {
-					throw new Error("Captcha solver is not set.");
+		await this.frame.waitForSelector(selectors.loginButton);
+		await this.frame.type(selectors.loginUsername, username);
+		await this.frame.type(selectors.loginPassword, password);
+		await this.frame.click(selectors.loginButton);
+		await this.frame.waitForNavigation({timeout: 10000}).catch(() => {});
+		// TODO: This is a mess and needs refactor
+		let verifyRes = await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
+		if(verifyRes === true){
+			console.log("Login: Success.");
+			if(!this.frame.url().startsWith(steamChatUrl))
+				await this.frame.waitForNavigation({timeout: 5000, waitUntil: "networkidle2"});
+		} else if(verifyRes === "steamguard"){
+			console.log(`Steam Guard detected! You need to provide Steam Guard code. Visit ${this.bb.config.baseUrl} to fill it out.`);
+			while(true) {
+				let code = await this.requestSteamGuardCode.getSteamGuardCode();
+				console.log("Got code:", code);
+				this.frame.type(selectors.steamGuardInput, code);
+				try {
+					let verifyRes = await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
+					if(verifyRes === true){
+						console.log("Login: Steam Guard completed.");
+						break;
+					} else
+						console.log("Login: Steam Guard failed. Trying again.");
+				} catch(e){
+					console.log("Login: Steam Guard failed. Trying again.");
 				}
+				await this.frame.evaluate(SteamBrowserGuiApi.clearSteamGuard, selectors);
 			}
-		} catch(error){
-			console.log(error);
+		} else if(verifyRes === "captcha"){
+			console.log("Login: Captcha detected, requesting solution.");
+			// Deal with captcha
+			if(this.requestCaptchaSolution){
+				while(true) {
+					await this.frame.evaluate(SteamBrowserGuiApi.waitForCaptchaImage, selectors);
+					let captchaElement = await this.frame.$(selectors.loginCaptchaImg);
+					let solution = await this.requestCaptchaSolution(await captchaElement?.screenshot({type: "png"}));
+					console.log("Login: Captcha solution received.");
+					await this.frame.evaluate(SteamBrowserGuiApi.fillCaptcha, solution, selectors);
+					try {
+						await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
+						console.log("Login: Captcha solved.");
+						break;
+					} catch(e){
+						console.log("Login: Captcha solution failed. Trying again.");
+					}
+				}
+			} else {
+				throw new Error("Captcha solver is not set.");
+			}
 		}
 	}
 

@@ -35,7 +35,10 @@ export default class Main {
 
 	static async shutdown(){
 		console.log("\nShutdown:");
-		await beepboop?.stop();
-		process.exit(0);
+		try {
+			await beepboop?.stop();
+		} finally {
+			process.exit(0);
+		}
 	}
 }

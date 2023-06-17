@@ -9,7 +9,7 @@ import { sleep } from "../utils.js";
 export default class SteamChatApi extends EventEmitter {
 	/**
 	 * 
-	 * @param {import("../beepboop").default} beepboop
+	 * @param {import("../beepboop.js").default} beepboop
 	 */
 	constructor(beepboop) {
 		super();

@@ -7,7 +7,7 @@ export async function setUpPersistence(db_){
 	db = db_;
 
 	try {
-		await db.none(
+		await db?.none(
 			`CREATE TABLE IF NOT EXISTS storage(
 				module	text PRIMARY KEY,
 				data	text NOT NULL

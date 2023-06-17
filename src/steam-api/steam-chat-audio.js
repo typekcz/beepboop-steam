@@ -4,7 +4,7 @@ import ytdl from "ytdl-core";
 export default class SteamChatAudio {
 	/**
 	 * 
-	 * @param {import("../beepboop").default} beepBoop
+	 * @param {import("../beepboop.js").default} beepBoop
 	 * @param {string} soundsBaseUrl
 	 */
 	constructor(beepBoop, soundsBaseUrl) {

@@ -8,7 +8,7 @@ const SEARCH_URL = "https://www.youtube.com/results?search_query=";
 export default class YoutubeSearch {
 	/**
 	 * 
-	 * @param {import("../beepboop").default} apiGW 
+	 * @param {import("../beepboop.js").default} apiGW 
 	 */
 	constructor(apiGW){
 		this.apiGW = apiGW;
@@ -21,7 +21,7 @@ export default class YoutubeSearch {
 		});
 
 		apiGW.webApp.expressApp.post("/api/plugins/youtube/find", async (req, res) => {
-			if(req.body && req.body.name){
+			if(req.body?.name){
 				await this.findVideo(req.body.name);
 			} else {
 				res.status(400);
@@ -35,6 +35,7 @@ export default class YoutubeSearch {
 					`<fieldset>
 						<legend>Find YouTube video</legend>
 						<form action="api/plugins/youtube/find" method="post" data-asyncSubmit>
+							<small>Search and directly play YouTube videos.</small><br>
 							<input type="text" name="name">
 							<input type="submit" value="Play">
 						</form>
@@ -52,7 +53,7 @@ export default class YoutubeSearch {
 		if(!reRes || reRes.length <= 1)
 			throw new Error("Bad search string");
 		search = reRes[1];
-		let number = reRes[3] || 1;
+		let number = Number(reRes[3]) || 1;
 		let url = SEARCH_URL + encodeURIComponent(search);
 
 		let response = await utils.request(url);

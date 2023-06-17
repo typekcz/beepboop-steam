@@ -3,9 +3,9 @@
 export default class ChatCommandEvent {
 	/**
 	 * 
-	 * @param {import("./chat-handler").default} steamChat 
-	 * @param {import("./dto/room-info").default} roomInfo 
-	 * @param {import("./dto/user-info").default} userInfo 
+	 * @param {import("./chat-handler.js").default} steamChat 
+	 * @param {import("./dto/room-info.js").default} roomInfo 
+	 * @param {import("./dto/user-info.js").default} userInfo 
 	 * @param {string} command 
 	 * @param {string} message 
 	 * @param {string} argument 

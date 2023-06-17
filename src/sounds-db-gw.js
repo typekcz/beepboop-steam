@@ -7,7 +7,7 @@ const SoundType = {
 
 export default class SoundsDbGw {
 	/**
-	 * @param {import("pg-promise").IDatabase<{}, import("pg-promise/typescript/pg-subset").IClient>} db
+	 * @param {import("pg-promise").IDatabase<{}, import("pg-promise/typescript/pg-subset.js").IClient>} db
 	 */
 	constructor(db){
 		this.db = db;

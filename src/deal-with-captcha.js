@@ -3,7 +3,7 @@
 export default class DealWithCaptcha {
 	/**
 	 * 
-	 * @param {import("./beepboop").default} beepboop 
+	 * @param {import("./beepboop.js").default} beepboop 
 	 */
 	constructor(beepboop){
 		this.beepboop = beepboop;

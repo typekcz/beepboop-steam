@@ -4,7 +4,7 @@ import * as utils from "../utils.js";
 export default class MyInstantsPlugin {
 	/**
 	 * 
-	 * @param {import("../beepboop").default} apiGW 
+	 * @param {import("../beepboop.js").default} apiGW 
 	 */
 	constructor(apiGW){
 		this.apiGW = apiGW;
@@ -17,7 +17,7 @@ export default class MyInstantsPlugin {
 		});
 
 		apiGW.webApp.expressApp.post("/api/plugins/myinstants/play", async (req, res) => {
-			if(req.body && req.body.name){
+			if(req.body?.name){
 				await this.playInstant(req.body.name);
 			} else {
 				res.status(400);
@@ -49,7 +49,7 @@ export default class MyInstantsPlugin {
 		if(!reRes || reRes.length <= 1)
 			throw new Error("Bad search string");
 		search = reRes[1];
-		let number = reRes[3] || 1;
+		let number = Number(reRes[3]) || 1;
 		let url = "https://www.myinstants.com/search/?name=" + encodeURIComponent(search);
 		console.log("instant search url", url);
 

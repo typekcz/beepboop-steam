@@ -1,27 +1,18 @@
 version: '3.5'
 services:
-  steam:
+  node-chrome:
     build:
       context: .
-      shm_size: '500mb'
-    shm_size: '500mb'
+      dockerfile: Dockerfile.web
     ports:
-      - 127.0.0.1:5900:5900 # VNC LAN only
       - 8080:8081 # Node web server
     volumes:
       - ./config.json:/beepboop/config.json:ro
-      - ./steam/:/home/beepboop/.steam/:rw
     environment:
       - STEAM_USERNAME=${STEAM_USERNAME}
       - STEAM_PASSWORD=${STEAM_PASSWORD}
-      - MODE=client
+      - MODE=web
       - DB_CONNECTION=postgres://beepboop:beepboop@db/beepboop
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    healthcheck:
-      test: "exit 0"
   db:
     image: postgres:latest
     environment:

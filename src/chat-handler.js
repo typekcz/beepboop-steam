@@ -16,14 +16,14 @@ eval`;
 
 export default class ChatHandler {
 	/**
-	 * @param {import("./beepboop").default} beepboop
+	 * @param {import("./beepboop.js").default} beepboop
 	 */
 	constructor(beepboop){
 		this.bb = beepboop;
 
 		this.bb.chatPage?.exposeFunction("handleMessage", (room, user, text, rawText) => {
-			this.handleMessage(room, user, text, rawText);
-		});
+			this.handleMessage(room, user, text, rawText).catch(console.error);
+		}).catch(console.error);
 
 		let g_FriendsUIApp; // Fake for TS check
 		let handleMessage = (a, b, c, d) => 1;
@@ -34,7 +34,7 @@ export default class ChatHandler {
 			g_FriendsUIApp.ChatStore.FriendChatStore.GetFriendChat(g_FriendsUIApp.FriendStore.m_self.accountid).__proto__.CheckShouldNotify = function(msg, text, rawText){
 				handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
 			}
-		});
+		}).catch(console.error);
 	}
 
 	get frame(){
@@ -129,9 +129,17 @@ export default class ChatHandler {
 		}
 	}
 
+	/**
+	 * 
+	 * @param {string} group 
+	 * @param {string} room 
+	 * @param {string} text 
+	 */
 	async sendGroupMessage(group, room, text){
 		let g_FriendsUIApp; // Fake for TS check
-		await this.frame.evaluate((group, room, text) => {
+		await this.frame.evaluate(
+			/** @type {(group: string, room: string, text: string) => void} */
+			(group, room, text) => {
 			let g;
 			if(/^\d*$/.test(group))
 				g = g_FriendsUIApp.ChatStore.m_mapChatGroups.get(group);

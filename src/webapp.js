@@ -109,6 +109,7 @@ export default class WebApp {
 				</head>`;
 			html += await page.evaluate(() => document.body.outerHTML);
 			html += `</html>`;
+			res.setHeader("Content-Type", "utf8");
 			res.write(html);
 			res.end();
 		});
@@ -124,11 +125,11 @@ export default class WebApp {
 
 	/**
 	 * 
-	 * @param {import("./beepboop").default} beepboop
+	 * @param {import("./beepboop.js").default} beepboop
 	 */
 	startRestApi(beepboop){
 		this.expressApp.post("/api/playSoundUrl", async (req, res) => {
-			if(req.body && req.body.url){
+			if(req.body?.url){
 				await beepboop.steamChatAudio.playSoundUrl(req.body.url);
 			} else {
 				res.status(400);
@@ -136,14 +137,19 @@ export default class WebApp {
 			res.end();
 		});
 
+		this.expressApp.post("/api/play", (req, res) => {
+			beepboop.steamChatAudio.resumeSound().catch(console.error);
+			res.end();
+		});
+
 		this.expressApp.post("/api/stop", (req, res) => {
-			beepboop.steamChatAudio.stopSound();
+			beepboop.steamChatAudio.stopSound().catch(console.error);
 			res.end();
 		});
 
 		this.expressApp.post("/api/uploadSound", async (req, res) => {
 			try {
-				if(req.body && req.body.name && req.files){
+				if(req.body?.name && req.files){
 					let steamid = this.sessions.get(req.get("Session"));
 					if(!steamid)
 						return res.status(401).send("Not logged in.").end();
@@ -243,7 +249,7 @@ export default class WebApp {
 				let type = beepboop.soundsDbGw?.SoundType[req.params.type.toUpperCase()];
 				if(typeof(type) === "undefined")
 					return res.status(400).send("Unknown type.").end();
-				beepboop.soundsDbGw?.deleteUserSound(steamid, req.params.soundName, type);
+				beepboop.soundsDbGw?.deleteUserSound(steamid, req.params.soundName, type).catch(console.error);
 			}
 			res.status(200);
 			res.end();

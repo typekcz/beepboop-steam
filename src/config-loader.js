@@ -1,6 +1,7 @@
 //@ts-check
 /* If you are looking for configuration, create file config.json and use example configuration from README.md. */
 import fs from "fs";
+import "dotenv/config";
 
 const helpString = 
 `Usage:
@@ -73,12 +74,27 @@ if(!config.plugins){
 
 // Env var port or default port if missing in config
 config.port = config.port || Number(process.env.PORT) || 8081;
-config.mode = config.mode || process.env.MODE || "web";
+
+let mode = config.mode || process.env.MODE || "web";
+if(["client", "web"].includes(mode)){
+	//@ts-ignore Dude, I just checked it...
+	config.mode = mode;
+} else {
+	console.error(`Error: Unknown mode configured: ${mode}.`);
+	process.exit(1);
+}
+
 if(process.env.DB_CONNECTION){
 	if(!config.db)
 		config.db = {connection: process.env.DB_CONNECTION};
 	else if(!config.db?.connection)
 		config.db.connection = process.env.DB_CONNECTION;
 }
+if(!config.steam)
+	config.steam = {};
+if(process.env.STEAM_USERNAME)
+	config.steam.userName = process.env.STEAM_USERNAME;
+if(process.env.STEAM_PASSWORD)
+	config.steam.password = process.env.STEAM_PASSWORD;
 
 export default config;

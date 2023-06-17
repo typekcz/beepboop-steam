@@ -6,3 +6,10 @@ Dockerfile
 config.js
 steam
 db
+.eslintrc.json
+.dockerignore
+.gitignore
+jsconfig.json
+Dockerfile.*
+docker-compose.*
+.env
