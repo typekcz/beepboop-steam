@@ -87,6 +87,3 @@ Command | Description
 **play** | (Without argument) resume playing stopped/paused sound.
 **beep** | Boop.
 **eval** *[3,2,1].sort()* | Safely runs JavaScript code. Don't ask me why.
-
-## Known issues
- * Running through just browser without full Steam client is supported, but browser Steam chat is not functioning properly.
