@@ -4,8 +4,15 @@ const SteamBrowserGuiApi =  {
 		document.querySelector(selectors.loginPassword).value = pass;
 	},
 
+	rememberMe: (selectors) => {
+		let remember = document.querySelector(selectors.loginRememberMe);
+		if(remember.querySelector(selectors.loginRememberMeCheck))
+			remember.click();
+	},
+
 	verifyLogin: (selectors) => {
 		return new Promise((resolve, reject) => {
+			let steamGuardCounter = 0;
 			let checkInt = setInterval(() => {
 				let errorMsg = document.querySelector(selectors.loginError);
 				if(errorMsg && !errorMsg.innerText.blank()){
@@ -15,9 +22,18 @@ const SteamBrowserGuiApi =  {
 				}
 
 				if(document.querySelector(selectors.steamGuardInput)){
-					resolve("steamguard");
+					// Delay Steam Guard detection, because when we check after typing code, it take a while to disappear
+					if(steamGuardCounter++ > 10)
+						resolve("steamguard");
 				}
+
+				if(window.g_FriendsUIApp)
+					resolve(true); // Already in the chat
 			}, 200);
+			setTimeout(() => {
+				clearInterval(checkInt);
+				reject(new Error("Verify login timeout."));
+			}, 20000);
 			window.addEventListener("beforeunload", () => {
 				clearInterval(checkInt);
 				resolve(true);

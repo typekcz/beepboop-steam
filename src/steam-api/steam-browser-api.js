@@ -7,6 +7,8 @@ import DealWithSteamGuard from "../deal-with-steam-guard.js";
 const selectors = {
 	loginUsername: "[type=text].newlogindialog_TextInput_2eKVn",
 	loginPassword: "[type=password].newlogindialog_TextInput_2eKVn",
+	loginRememberMe: ".newlogindialog_Checkbox_3tTFg",
+	loginRememberMeCheck: ".newlogindialog_Check_6EoZE",
 	loginCaptcha: "#input_captcha",
 	loginCaptchaImg: "#captchaImg",
 	loginError: ".newlogindialog_FormError_1Mcy9",
@@ -149,6 +151,7 @@ export default class SteamBrowserApi {
 		await this.frame.waitForSelector(selectors.loginButton);
 		await this.frame.type(selectors.loginUsername, username);
 		await this.frame.type(selectors.loginPassword, password);
+		await this.frame.evaluate(SteamBrowserGuiApi.rememberMe, selectors);
 		await this.frame.click(selectors.loginButton);
 		await this.frame.waitForNavigation({timeout: 10000}).catch(() => {});
 		// TODO: This is a mess and needs refactor
@@ -162,11 +165,12 @@ export default class SteamBrowserApi {
 			while(true) {
 				let code = await this.requestSteamGuardCode.getSteamGuardCode();
 				await this.frame.type(selectors.steamGuardInput, code);
-				await this.frame.waitForTimeout(3000);
 				try {
 					let verifyRes = await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
 					if(verifyRes === true){
 						console.log("Login: Steam Guard completed.");
+						// IDK let's just wait, this need refactor anyway
+						await this.frame.waitForTimeout(10000);
 						break;
 					} else
 						console.log("Login: Steam Guard failed. Trying again.");
