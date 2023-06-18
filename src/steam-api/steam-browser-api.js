@@ -161,8 +161,8 @@ export default class SteamBrowserApi {
 			console.log(`Steam Guard detected! You need to provide Steam Guard code. Visit ${this.bb.config.baseUrl} to fill it out.`);
 			while(true) {
 				let code = await this.requestSteamGuardCode.getSteamGuardCode();
-				console.log("Got code:", code);
-				this.frame.type(selectors.steamGuardInput, code);
+				await this.frame.type(selectors.steamGuardInput, code);
+				await this.frame.waitForTimeout(3000);
 				try {
 					let verifyRes = await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
 					if(verifyRes === true){
