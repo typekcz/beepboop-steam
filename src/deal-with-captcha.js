@@ -1,5 +1,7 @@
 //@ts-check
 
+import { unpromisify } from "./utils.js";
+
 export default class DealWithCaptcha {
 	/**
 	 * 
@@ -30,7 +32,7 @@ export default class DealWithCaptcha {
 		});
 
 		beepboop.webApp.addBrowserScript(() => {
-			window.addEventListener("load", async () => {
+			window.addEventListener("load", unpromisify(async () => {
 				let res = await fetch("/api/plugins/dealwithcaptcha");
 				let json = await res.json();
 				if(json.pending){
@@ -49,7 +51,7 @@ export default class DealWithCaptcha {
 					//@ts-ignore available on the page
 					registerAsyncSubmitEvents();
 				}
-			});
+			}));
 		});
 	}
 

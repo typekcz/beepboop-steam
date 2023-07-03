@@ -1,5 +1,7 @@
 //@ts-check
 
+import { unpromisify } from "./utils.js";
+
 export default class DealWithSteamGuard {
 	/**
 	 * 
@@ -24,7 +26,7 @@ export default class DealWithSteamGuard {
 		});
 
 		beepboop.webApp.addBrowserScript(() => {
-			window.addEventListener("load", async () => {
+			window.addEventListener("load", unpromisify(async () => {
 				let res = await fetch("/api/plugins/dealwithsteamguard");
 				let json = await res.json();
 				if(json.pending){
@@ -42,7 +44,7 @@ export default class DealWithSteamGuard {
 					//@ts-ignore available on the page
 					registerAsyncSubmitEvents();
 				}
-			});
+			}));
 		});
 	}
 

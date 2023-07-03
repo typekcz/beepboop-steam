@@ -1,3 +1,5 @@
+import { unpromisify } from "./utils.js";
+
 //@ts-check
 let db = null;
 let storages = new Map();
@@ -40,7 +42,7 @@ async function syncStorage(moduleName){
 	if(db && storages.has(moduleName)){
 		if(!updates.includes(moduleName)){
 			updates.push(moduleName);
-			setTimeout(async () => {
+			setTimeout(unpromisify(async () => {
 				try {
 					await db.none("INSERT INTO storage(module, data) VALUES($1, $2) ON CONFLICT (module) DO UPDATE SET data = EXCLUDED.data", [moduleName, JSON.stringify(storages.get(moduleName))]);
 				} catch(e){
@@ -49,7 +51,7 @@ async function syncStorage(moduleName){
 				let i = updates.indexOf(moduleName);
 				if(i >= 0)
 					updates.splice(i);
-			}, 10000);
+			}), 10000);
 		}
 	}
 }

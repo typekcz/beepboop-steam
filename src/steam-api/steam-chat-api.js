@@ -4,7 +4,7 @@ import RoomInfo from "../dto/room-info.js";
 import UserInfo from "../dto/user-info.js";
 import SteamFriendsUiApi from "./steam-friends-ui-api.js";
 import EventEmitter from "events";
-import { sleep } from "../utils.js";
+import { sleep, unpromisify } from "../utils.js";
 
 export default class SteamChatApi extends EventEmitter {
 	/**
@@ -173,12 +173,12 @@ export default class SteamChatApi extends EventEmitter {
 			"I really like cheese.",
 			"Knock, knock."
 		];
-		setTimeout(async () => {
+		setTimeout(unpromisify(async () => {
 			try {
 				await this.bb.steamChatAudio.textToSpeech(greetingMessages[Math.round(Math.random()*(greetingMessages.length - 1))]);
 			} catch(e){
 				console.error(e);
 			}
-		}, 5000);
+		}), 5000);
 	}
 }

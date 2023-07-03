@@ -1,4 +1,19 @@
-window.addEventListener("load", async () => {
+/**
+ * Handles promise rejection of the function by writing the error to the console.
+ * @template {(...args: any[]) => Promise<?>} T
+ * @param {T} func
+ * @returns {(...args: Parameters<T>) => void}
+ */
+function unpromisify(func) {
+	return function (...args) {
+		func(...args).catch(e => {
+			console.error(e);
+			alert(`&#9888;&#65039; Error\n${e?.message ?? e}`);
+		});
+	};
+}
+
+window.addEventListener("load", unpromisify(async () => {
 	let authId = localStorage.getItem("authId");
 	if(authId){
 		let res = await fetch("api/steam/check", {
@@ -16,7 +31,7 @@ window.addEventListener("load", async () => {
 	}
 	listSounds();
 	registerAsyncSubmitEvents();
-});
+}));
 
 window.addEventListener("storage", (e) => {
 	if(e.key == "authId"){
@@ -101,12 +116,12 @@ async function listSounds(){
 			btn.draggable = true;
 			btn.ondragstart = soundDragStart;
 			btn.innerText = sound;
-			btn.addEventListener("click", async () => {
+			btn.addEventListener("click", unpromisify(async () => {
 				let res = await fetch("api/sounds/" + encodeURIComponent(sound) + "/play", {
 					method: "POST"
 				});
 				console.log(res);
-			});
+			}));
 			soundsElement.appendChild(btn);
 		}
 	} catch(e){

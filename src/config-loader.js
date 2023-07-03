@@ -2,6 +2,7 @@
 /* If you are looking for configuration, create file config.json and use example configuration from README.md. */
 import fs from "fs";
 import "dotenv/config";
+import { parseArgs } from "node:util";
 
 const helpString = 
 `Usage:
@@ -20,27 +21,41 @@ function loadConfig(){
 		}
 	}
 
-	let configFilename = process.env.CONFIGFILE || "config.json";
+	let configFilename = process.env.CONFIGFILE ?? "config.json";
 
 	// Handle process arguments
-	for(let i = 2; i < process.argv.length; i++) {
-		let arg = process.argv[i];
-		
-		if((arg == "--config" || arg == "-c") && process.argv.length >= i){
-			try {
-				return JSON.parse(process.argv[++i]);
-			} catch(error){
-				console.error("Error: Parsing config from process argument failed.");
-				console.error(error);
+	let args = parseArgs({
+		options: {
+			config: {
+				type: "string",
+				short: "c"
+			},
+			"config-file": {
+				type: "string",
+				short: "C"
+			},
+			help: {
+				type: "boolean",
+				short: "h"
 			}
-		} else if((arg == "--config-file" || arg == "-C") && process.argv.length >= i){
-			configFilename = process.argv[++i];
-		} else {
-			console.error("Unknown parameter \"" + arg + "\"");
-			console.log(helpString);
-			process.exit(1);
+		}
+	});
+
+	if(args.values.help){
+		console.log(helpString);
+		process.exit(1);
+	}
+
+	if(args.values.config){
+		try {
+			return JSON.parse(process.argv[args.values.config]);
+		} catch(error){
+			console.error("Error: Parsing config from process argument failed.");
+			console.error(error);
 		}
 	}
+
+	configFilename = args.values["config-file"] ?? configFilename;
 
 	// Load config file
 	try {
@@ -50,7 +65,8 @@ function loadConfig(){
 		console.error("Error: Parsing config from file \"" + configFilename + "\" failed.");
 		console.error(error);
 	}
-	return null;
+
+	throw new Error("No config was loaded!");
 }
 
 /** @type {Config} */
