@@ -1,5 +1,6 @@
 //@ts-check
 import BeepBoop from "./beepboop.js";
+import { unpromisify } from "./utils.js";
 
 /** @type {import("./beepboop.js").default?} */
 let beepboop;
@@ -9,10 +10,11 @@ export default class Main {
 		process.on("unhandledRejection", (error, p) => {
 			console.error("Unhandled Promise Rejection", p, error);
 		});
-	
-		process.on("SIGINT", Main.shutdown);
-		process.on("SIGUSR1", Main.shutdown);
-		process.on("SIGUSR2", Main.shutdown);
+
+		/** @type {NodeJS.Signals[]} */
+		let stopSignals = ["SIGINT", "SIGUSR1", "SIGUSR2", "SIGABRT", "SIGTERM"];
+		for(let signal of stopSignals)
+			process.on(signal, unpromisify(Main.shutdown));
 
 		// Start
 		beepboop = new BeepBoop();

@@ -45,7 +45,7 @@ export default class SteamBrowserApi {
 		} catch(e){
 			console.error(e.message);
 		}
-		const browser = await puppeteer.launch({
+		this.browser = await puppeteer.launch({
 			headless: true,
 			args: [
 				"--disable-client-side-phishing-detection",
@@ -63,7 +63,7 @@ export default class SteamBrowserApi {
 				"--allow-http-background-page"
 			]
 		});
-		this.frame = (await browser.pages())[0];
+		this.frame = (await this.browser.pages())[0];
 		await this.loadCookies();
 		await this.frame.setBypassCSP(true);
 		// Steam won't accept HeadlessChrome
@@ -142,6 +142,7 @@ export default class SteamBrowserApi {
 
 		if(this.frame.url().includes("login")){
 			await this.login(this.bb.config.steam?.userName, this.bb.config.steam?.password);
+			await this.storeCookies();
 		}
 	}
 

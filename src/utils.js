@@ -43,6 +43,18 @@ export function sleep(ms){
 }
 
 /**
+ * Handles promise rejection of the function by writing the error to the console.
+ * @template {(...args: any[]) => Promise<?>} T
+ * @param {T} func
+ * @returns {(...args: Parameters<T>) => void}
+ */
+export function unpromisify(func) {
+	return function (...args) {
+		func(...args).catch(console.error);
+	};
+}
+
+/**
  * 
  * @template T
  * @param {function():Promise<T>} promise promise generator
