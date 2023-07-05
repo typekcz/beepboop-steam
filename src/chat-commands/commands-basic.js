@@ -3,17 +3,6 @@
 import { VM } from "vm2";
 import { formatDuration } from "../utils.js";
 
-const helpMsg = `Commands:
-play sound/url
-playurl url
-say text
-tts text
-pause
-stop
-play
-beep
-eval code`;
-
 /**
  * 
  * @param {[string, import("../chat-handler.js").ChatCommand]} param0 
