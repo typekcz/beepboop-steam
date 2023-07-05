@@ -50,7 +50,7 @@ window.addEventListener("storage", (e) => {
 function registerAsyncSubmitEvents(){
 	for(let form of document.querySelectorAll("form[data-asyncSubmit]")){
 		form.removeAttribute("data-asyncSubmit");
-		form.addEventListener("submit", async (event) => {
+		form.addEventListener("submit", unpromisify(async (event) => {
 			event.preventDefault();
 			let form = event.target;
 
@@ -85,7 +85,7 @@ function registerAsyncSubmitEvents(){
 			let afterScript = form.getAttribute("data-aftersubmit");
 			if(afterScript)
 				eval(afterScript);
-		});
+		}));
 	}
 }
 

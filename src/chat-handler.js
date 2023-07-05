@@ -1,8 +1,24 @@
 //@ts-check
-import {VM} from "vm2";
 import UserInfo from "./dto/user-info.js";
 import RoomInfo from "./dto/room-info.js";
 import ChatCommandEvent from "./chat-command-event.js";
+import { unpromisify } from "./utils.js";
+import createSteamChatAudioCommands from "./chat-commands/commands-steam-chat-audio.js";
+import { createBasicCommands } from "./chat-commands/commands-basic.js";
+import { createAdminCommands } from "./chat-commands/commands-admin.js";
+
+/**
+ * @typedef {(e: ChatCommandEvent) => Promise<?>|void} ChatCommandHandler
+ */
+
+/**
+ * @typedef ChatCommand
+ * @property {string|string[]} command
+ * @property {ChatCommandHandler} handler
+ * @property {string} [argsHelp]
+ * @property {string} [help]
+ * @property {string} [longHelp]
+ */
 
 const help_msg = `Commands:
 play sound
@@ -15,6 +31,11 @@ beep
 eval`;
 
 export default class ChatHandler {
+	/** @type {ChatCommand[]} */
+	#chatCommands = [];
+	/** @type {Map<string, ChatCommand>} */
+	#chatCommandsMap = new Map();
+
 	/**
 	 * @param {import("./beepboop.js").default} beepboop
 	 */
@@ -35,6 +56,10 @@ export default class ChatHandler {
 				handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
 			}
 		}).catch(console.error);
+
+		this.addCommands(...createBasicCommands(this.#chatCommandsMap));
+		this.addCommands(...createSteamChatAudioCommands(this.bb.steamChatAudio));
+		this.addCommands(...createAdminCommands(this.bb.chatFrame));
 	}
 
 	get frame(){
@@ -44,6 +69,13 @@ export default class ChatHandler {
 		return f;
 	}
 
+	/**
+	 * 
+	 * @param {RoomInfo} room 
+	 * @param {UserInfo} user 
+	 * @param {string} message 
+	 * @param {string} rawMessage 
+	 */
 	async handleMessage(room, user, message, rawMessage){
 		const unknownMessages = [
 			"The fuck you want?",
@@ -57,75 +89,61 @@ export default class ChatHandler {
 			"/me is currently unavailable.",
 			"No can do."
 		];
-		let response = null;
-		if(room == null || rawMessage.startsWith("[mention="+this.bb.steamChat.getLoggedUserInfo()?.accountid+"]")){
-			if(room){
-				console.log("handleMessage", room.groupName, "|", room.name, ":", rawMessage);
-				rawMessage = rawMessage.substr(rawMessage.indexOf("[/mention]") + "[/mention]".length);
-				message = message.substring((this.bb.steamChat.myName?.length ?? 0) + 2);
-			}
-			let index = message.indexOf(" ");
-			if(index < 0)
-				index = message.length;
-			let command = message.substr(0, index).trim();
-			let arg = message.substr(index + 1);
-			try {
-				switch(command.toLowerCase()){
-					case "help":
-						response = help_msg;
-						break;
-					case "play":
-						if(arg)
-							await this.bb.steamChatAudio.playSound(arg);
-						else
-							await this.bb.steamChatAudio.resumeSound();
-						break;
-					case "playurl":
-						await this.bb.steamChatAudio.playSoundUrl(arg);
-						break;
-					case "say":
-						if(!this.bb.config.ttsUrl)
-							throw new Error("Missing text to speech URL.");
-						await this.bb.steamChatAudio.textToSpeech(arg);
-						break;
-					case "stop":
-					case "pause":
-						await this.bb.steamChatAudio.stopSound();
-						break;
-					case "beep":
-					case "beep?":
-						response = "boop";
-						break;
-					case "eval":
-						const vm = new VM({});
-						let result = vm.run(arg);
-						response = "/code " + JSON.stringify(result);
-						break;
-					default:
-						let event = new ChatCommandEvent(this, room, user, command, message, arg, rawMessage);
-						for(let listener of this.bb.steamChat.rawListeners("chatCommand")){
-							await Promise.resolve(listener.call(this, event));
-						}
-						if(!event.handled)
-							response = unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))];
-						break;
-				}
-			} catch(e){
-				console.log("command error", e.message);
-				response = errorMessages[Math.round(Math.random()*(errorMessages.length - 1))] + "\n" + e.message;
-			}
+
+		if(room != null && !rawMessage.startsWith("[mention="+this.bb.steamChat.getLoggedUserInfo()?.accountid+"]"))
+			return;
+
+		if(room){
+			console.log("handleMessage", room.groupName, "|", room.name, ":", rawMessage);
+			rawMessage = rawMessage.substring(rawMessage.indexOf("[/mention]") + "[/mention]".length);
+			message = message.substring((this.bb.steamChat.myName?.length ?? 0) + 2);
 		}
-		if(response){
-			console.log("response", response);
-			try {
-				await this.bb.steamChatAudio.textToSpeech(response);
-			} catch(e){
-				console.error(e);
+		let index = message.indexOf(" ");
+		if(index < 0)
+			index = message.length;
+		let command = message.substring(0, index).trim();
+		let arg = message.substring(index + 1);
+		let event = new ChatCommandEvent(this, room, user, command, message, arg, rawMessage);
+		try {
+			command = command.toLowerCase();
+			let chatCommand = this.#chatCommandsMap.get(command);
+			if(chatCommand){
+				unpromisify(chatCommand.handler)(event);
+				event.setAsHandled();
 			}
-			if(room)
-				await this.sendGroupMessage(room.groupId, room.id, response);
+
+			for(let listener of this.bb.steamChat.rawListeners("chatCommand")){
+				await Promise.resolve(listener.call(this, event));
+			}
+			if(!event.handled)
+				event.sendResponse(unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))]);
+		} catch(e){
+			console.log("command error", e.message);
+			event.sendResponse(errorMessages[Math.round(Math.random()*(errorMessages.length - 1))] + "\n" + e.message);
+		}
+	}
+
+	/**
+	 * 
+	 * @param {ChatCommand[]} chatCommands
+	 */
+	addCommands(...chatCommands){
+		for(let chatCommand of chatCommands){
+			let commands = Array.isArray(chatCommand.command)? chatCommand.command: [chatCommand.command];
+			commands = commands.map(s => s.toLowerCase());
+			let anySet = false;
+			for(let command of commands){
+				if(!/^[^\s]+$/.test(command))
+					throw new Error(`Cannot use word "${command}" as command. No whitespace characters are allowed.`);
+				if(this.#chatCommandsMap.has(command))
+					console.warn(`Command "${command}" is already used. Skipping.`);
+				this.#chatCommandsMap.set(command, chatCommand);
+				anySet = true;
+			}
+			if(anySet)
+				this.#chatCommands.push(chatCommand);
 			else
-				await this.sendDirectMessage(user.accountid, response);
+				console.error(`Command was not added. All command words (${commands.join(", ")}) are already used.`);
 		}
 	}
 

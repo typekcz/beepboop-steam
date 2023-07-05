@@ -24,22 +24,28 @@ function loadConfig(){
 	let configFilename = process.env.CONFIGFILE ?? "config.json";
 
 	// Handle process arguments
-	let args = parseArgs({
-		options: {
-			config: {
-				type: "string",
-				short: "c"
-			},
-			"config-file": {
-				type: "string",
-				short: "C"
-			},
-			help: {
-				type: "boolean",
-				short: "h"
+	let args;
+	try {
+		args = parseArgs({
+			options: {
+				config: {
+					type: "string",
+					short: "c"
+				},
+				"config-file": {
+					type: "string",
+					short: "C"
+				},
+				help: {
+					type: "boolean",
+					short: "h"
+				}
 			}
-		}
-	});
+		});
+	} catch(e){
+		console.error(e.message);
+		process.exit(1);
+	}
 
 	if(args.values.help){
 		console.log(helpString);
@@ -66,7 +72,8 @@ function loadConfig(){
 		console.error(error);
 	}
 
-	throw new Error("No config was loaded!");
+	console.error("No config was loaded!");
+	process.exit(1);
 }
 
 /** @type {Config} */

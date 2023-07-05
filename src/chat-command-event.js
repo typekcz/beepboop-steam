@@ -1,9 +1,11 @@
 //@ts-check
 
 export default class ChatCommandEvent {
+	#handled = false;
+
 	/**
 	 * 
-	 * @param {import("./chat-handler.js").default} steamChat 
+	 * @param {import("./chat-handler.js").default} chatHandler 
 	 * @param {import("./dto/room-info.js").default} roomInfo 
 	 * @param {import("./dto/user-info.js").default} userInfo 
 	 * @param {string} command 
@@ -11,8 +13,8 @@ export default class ChatCommandEvent {
 	 * @param {string} argument 
 	 * @param {string} rawMessage 
 	 */
-	constructor(steamChat, roomInfo, userInfo, command, message, argument, rawMessage){
-		this.steamChat = steamChat;
+	constructor(chatHandler, roomInfo, userInfo, command, message, argument, rawMessage){
+		this.chatHandler = chatHandler;
 		this.roomInfo = roomInfo;
 		this.groupName = (roomInfo != null)? roomInfo.groupName : null;
 		this.roomName = (roomInfo != null)? roomInfo.name : null;
@@ -20,19 +22,38 @@ export default class ChatCommandEvent {
 		this.message = message;
 		this.rawMessage = rawMessage;
 		this.argument = argument;
-		this.handled = false;
 		this.userinfo = userInfo;
 	}
 
-	async sendResponse(response){
+	/**
+	 * 
+	 * @param {string} response 
+	 * @param {string|boolean} ttsText 
+	 */
+	async sendResponse(response, ttsText = true){
 		this.handled = true;
 		if(this.roomInfo != null)
-			await this.steamChat.sendGroupMessage(this.roomInfo.groupId, this.roomInfo.id, response);
+			await this.chatHandler.sendGroupMessage(this.roomInfo.groupId, this.roomInfo.id, response);
 		else
-			await this.steamChat.sendDirectMessage(this.userinfo.accountid, response);
+			await this.chatHandler.sendDirectMessage(this.userinfo.accountid, response);
+		let isUserInRoom = (await this.chatHandler.bb.steamChat.getVoiceChannelUsers()).some(u => u.steamid === this.userinfo.steamid);
+		if(ttsText && isUserInRoom){
+			if(ttsText === true)
+				ttsText = response;
+			this.chatHandler.bb.steamChatAudio.textToSpeech(ttsText);
+		}
 	}
 
 	setAsHandled(){
-		this.handled = true;
+		this.#handled = true;
+	}
+
+	set handled(val){
+		if(val)
+			this.#handled = true;
+	}
+
+	get handled(){
+		return this.#handled;
 	}
 }

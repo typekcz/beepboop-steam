@@ -44,13 +44,14 @@ export function sleep(ms){
 
 /**
  * Handles promise rejection of the function by writing the error to the console.
- * @template {(...args: any[]) => Promise<?>} T
+ * @template {(...args: any[]) => Promise<?>|void} T
  * @param {T} func
  * @returns {(...args: Parameters<T>) => void}
  */
 export function unpromisify(func) {
 	return function (...args) {
-		func(...args).catch(console.error);
+		// @ts-ignore Property 'catch' does not exist on type 'void'.
+		func(...args)?.catch(console.error);
 	};
 }
 
@@ -97,4 +98,29 @@ export async function retryPromise(promise, intervalMs = 1000, maxRetries = Numb
 		}
 	}
 	throw new Error("This should be unreachable code.");
+}
+
+/**
+ * 
+ * @param {number} seconds 
+ * @returns {string}
+ */
+export function formatDuration(seconds) {
+	const timeUnits = [
+		{unit: 'day', duration: 24 * 60 * 60},
+		{unit: 'hour', duration: 60 * 60},
+		{unit: 'minute', duration: 60},
+		{unit: 'second', duration: 1}
+	];
+	
+	const formattedTime = [];
+	for (const { unit, duration } of timeUnits) {
+		if (seconds >= duration) {
+			const count = Math.floor(seconds / duration);
+			seconds %= duration;
+			formattedTime.push(`${count} ${unit}${count > 1 ? 's' : ''}`);
+		}
+	}
+	
+	return formattedTime.length > 0 ? formattedTime.join(', ') : '0 seconds';
 }

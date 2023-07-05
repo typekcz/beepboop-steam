@@ -15,4 +15,5 @@ interface Config {
 	volume?: number;
 	plugins?: string[];
 	ttsUrl?: string;
+	admins?: string[]; // SteamID64
 }

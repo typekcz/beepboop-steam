@@ -13,6 +13,9 @@ services:
       - STEAM_PASSWORD=${STEAM_PASSWORD}
       - MODE=web
       - DB_CONNECTION=postgres://beepboop:beepboop@db/beepboop
+    deploy:
+      restart_policy:
+        condition: any
   db:
     image: postgres:latest
     environment:

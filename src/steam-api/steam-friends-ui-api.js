@@ -67,12 +67,16 @@ const SteamFriendsUiApi =  {
 		return members;
 	},
 
+	/**
+	 * @returns {import("../dto/user-info.js").default[]}
+	 */
 	getVoiceRoomUsers: () => {
 		let users = [];
 		// This won't work when bot leaves room: let voiceChat = g_FriendsUIApp.ChatStore.GetActiveVoiceChat();
-		let voiceChat = g_FriendsUIApp.ChatStore.GetChatRoomGroup(g_FriendsUIApp.VoiceStore.GetActiveChatRoomGroupID()).GetChatRoom(g_FriendsUIApp.VoiceStore.GetActiveVoiceChatID());
-		for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
-			users.push(new UserInfo(m));
+		let voiceChat = g_FriendsUIApp.ChatStore.GetChatRoomGroup(g_FriendsUIApp.VoiceStore.GetActiveChatRoomGroupID())?.GetChatRoom(g_FriendsUIApp.VoiceStore.GetActiveVoiceChatID());
+		if(voiceChat)
+			for(let m of voiceChat.m_groupVoiceActiveMembers.GetRawMemberList)
+				users.push(new UserInfo(m));
 		return users;
 	},
 
