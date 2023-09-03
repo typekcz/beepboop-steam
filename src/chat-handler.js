@@ -59,7 +59,7 @@ export default class ChatHandler {
 
 		this.addCommands(...createBasicCommands(this.#chatCommandsMap));
 		this.addCommands(...createSteamChatAudioCommands(this.bb.steamChatAudio));
-		this.addCommands(...createAdminCommands(this.bb.chatFrame));
+		this.addCommands(...createAdminCommands(this.bb.chatFrame, this.bb));
 	}
 
 	get frame(){
@@ -77,6 +77,7 @@ export default class ChatHandler {
 	 * @param {string} rawMessage 
 	 */
 	async handleMessage(room, user, message, rawMessage){
+		console.log("chatHandle", arguments);
 		const unknownMessages = [
 			"The fuck you want?",
 			"I'm not fluent in meatbag language.",
