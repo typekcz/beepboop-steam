@@ -3,10 +3,10 @@ import ChatHandler from "../chat-handler.js";
 import RoomInfo from "../dto/room-info.js";
 import UserInfo from "../dto/user-info.js";
 import SteamFriendsUiApi from "./steam-friends-ui-api.js";
-import EventEmitter from "events";
+import Events from "node:events";
 import { sleep, unpromisify } from "../utils.js";
 
-export default class SteamChatApi extends EventEmitter {
+export default class SteamChatApi extends Events.EventEmitter {
 	/**
 	 * 
 	 * @param {import("../beepboop.js").default} beepboop
