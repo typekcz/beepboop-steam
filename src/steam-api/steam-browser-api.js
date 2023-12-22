@@ -204,6 +204,15 @@ export default class SteamBrowserApi {
 		}
 	}
 
+	getState(){
+		let url = new URL(this.frame.url());
+		if(url.pathname.startsWith("/login/")){
+			
+		} else if(url.pathname){
+
+		}
+	}
+
 	getFriendsUiFrame(){
 		return this.getFriendsUiPage();
 	}

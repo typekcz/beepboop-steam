@@ -10,6 +10,16 @@ const SteamBrowserGuiApi =  {
 			remember.click();
 	},
 
+	detectState: (selectors) => {
+		if(location.pathname.startsWith("/login/")){
+			if(document.querySelector(selectors.steamGuardInput)){
+				
+			}
+		} else if(location.pathname){
+
+		}
+	},
+
 	verifyLogin: (selectors) => {
 		return new Promise((resolve, reject) => {
 			let steamGuardCounter = 0;
