@@ -13,3 +13,4 @@ jsconfig.json
 Dockerfile.*
 docker-compose.*
 .env
+chromium-user-data

@@ -71,10 +71,7 @@ export default class BeepBoop {
 	}
 
 	async stop(){
-		await Promise.all([
-			this.steamChat.leaveVoiceChannel(),
-			this.steamBrowser?.storeCookies()
-		]);
+		await this.steamChat.leaveVoiceChannel();
 		await this.steamBrowser.browser.close();
 	}
 

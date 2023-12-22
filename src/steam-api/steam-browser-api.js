@@ -60,8 +60,7 @@ export default class SteamBrowserApi {
 				"--disable-setuid-sandbox",
 				"--incognito",
 				"--disable-site-isolation-for-policy",
-				"--allow-http-background-page"
-			]
+			userDataDir: "./chromium-user-data"
 		});
 		this.frame = (await this.browser.pages())[0];
 		await this.loadCookies();
@@ -85,52 +84,6 @@ export default class SteamBrowserApi {
 		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
 	}
 
-	async storeCookies(){
-		if(!this.frame)
-			throw new Error("Steam chat frame not loaded");
-		try {
-			let localStorageJson = await this.frame.evaluate(() => {
-				return JSON.stringify(window.localStorage);
-			});
-			await this.bb.db?.none(
-				"INSERT INTO variable(name, value) VALUES('localStorage', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-				[ localStorageJson ]
-			);
-
-			await this.bb.db?.none(
-				"INSERT INTO variable(name, value) VALUES('cookies', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-				[ JSON.stringify(await this.frame.cookies()) ]
-			);
-		} catch(e){
-			console.error(e.message);
-			return null;
-		}
-	}
-
-	async loadCookies(){
-		if(!this.frame)
-			throw new Error("Steam chat frame not loaded.");
-		try {
-			await this.frame.goto("https://steamcommunity.com/comment/ForumTopic/formattinghelp?ajax=1");
-			let localStorageRow = await this.bb.db?.oneOrNone("SELECT value FROM variable WHERE name = 'localStorage'");
-			if(localStorageRow){
-				let localStorageData = JSON.parse(localStorageRow.value.toString());
-				await this.frame.evaluate((localStorageData) => {
-					Object.assign(window.localStorage, localStorageData);
-				}, localStorageData);
-			}
-
-			let cookiesRow = await this.bb.db?.oneOrNone("SELECT value FROM variable WHERE name = 'cookies'");
-			if(cookiesRow){
-				let cookies = JSON.parse(cookiesRow.value.toString());
-				for(let cookie of cookies)
-					await this.frame.setCookie(cookie);
-			}
-		} catch(e){
-			console.error(e.message);
-		}
-	}
-
 	async goToSteamChat(){
 		if(!this.frame)
 			throw new Error("Steam chat frame not loaded.");
@@ -142,7 +95,6 @@ export default class SteamBrowserApi {
 
 		if(this.frame.url().includes("login")){
 			await this.login(this.bb.config.steam?.userName, this.bb.config.steam?.password);
-			await this.storeCookies();
 		}
 	}
 
