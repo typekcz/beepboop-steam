@@ -58,12 +58,27 @@ export default class SteamBrowserApi {
 				"--reduce-security-for-testing",
 				"--no-sandbox",
 				"--disable-setuid-sandbox",
-				"--incognito",
 				"--disable-site-isolation-for-policy",
+				"--allow-http-background-page",
+				// Optimizations
+				"--disable-site-isolation-trials",
+				"--wm-window-animations-disabled",
+				"--renderer-process-limit=1",
+				"--enable-low-end-device-mode",
+				"--single-process"
+			],
 			userDataDir: "./chromium-user-data"
 		});
 		this.frame = (await this.browser.pages())[0];
-		await this.loadCookies();
+		await this.frame.setRequestInterception(true);
+		this.frame.on("request", /** @type {(req: import("puppeteer/lib/cjs/puppeteer/api-docs-entry.js").HTTPRequest) => void} */
+			req => {
+				if(["image", "font"].includes(req.resourceType()))
+					req.abort();
+				else
+					req.continue();
+			}
+		);
 		await this.frame.setBypassCSP(true);
 		// Steam won't accept HeadlessChrome
 		let userAgent = await this.frame.evaluate(() => navigator.userAgent);
@@ -71,8 +86,6 @@ export default class SteamBrowserApi {
 		await this.frame.setUserAgent(userAgent);
 		this.frame.on("console", msg => pageLogFiltered);
 		this.frame.on("pageerror", error => console.log("Page error:", error.message) );
-		this.frame.on("requestfailed", request => console.log("Page request failed:", request?.failure()?.errorText, request.url));
-
 		let dealWithCaptcha = new DealWithCaptcha(this.bb);
 		this.requestCaptchaSolution = (img) => dealWithCaptcha.getCaptchaSolution(img);
 		this.requestSteamGuardCode = new DealWithSteamGuard(this.bb);
