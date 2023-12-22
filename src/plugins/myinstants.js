@@ -56,7 +56,7 @@ export default class MyInstantsPlugin {
 		let response = await utils.request(url);
 
 		let body = response.body.toString();
-		let search_regex = /<button class="small-button" onclick="play\('([\w./\-%]*)'\)/g;
+		let search_regex = /<button class="small-button" onclick="play\('([\w./\-%]*)'/g;
 		let regex_result;
 		for(let i = 0; i < number; i++){
 			regex_result = search_regex.exec(body);
