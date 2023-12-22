@@ -59,7 +59,7 @@ export default class ChatHandler {
 
 		this.addCommands(...createBasicCommands(this.#chatCommandsMap));
 		this.addCommands(...createSteamChatAudioCommands(this.bb.steamChatAudio));
-		this.addCommands(...createAdminCommands(this.bb.chatFrame));
+		this.addCommands(...createAdminCommands(this.bb.chatFrame, this.bb));
 	}
 
 	get frame(){
@@ -112,9 +112,6 @@ export default class ChatHandler {
 				event.setAsHandled();
 			}
 
-			for(let listener of this.bb.steamChat.rawListeners("chatCommand")){
-				await Promise.resolve(listener.call(this, event));
-			}
 			if(!event.handled)
 				event.sendResponse(unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))]);
 		} catch(e){

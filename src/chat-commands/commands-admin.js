@@ -20,17 +20,17 @@ export function wrapAdminCheckCommandHandler(handler){
  * @param {import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Page | import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Frame} chatFrame 
  * @returns {import("../chat-handler.js").ChatCommand[]}
  */
-export function createAdminCommands(chatFrame){
+export function createAdminCommands(chatFrame, bb){
 	return [
 		{
 			command: "die",
 			handler: wrapAdminCheckCommandHandler(e => Main.shutdown())
 		}, {
 			command: "pupeval",
-			handler: wrapAdminCheckCommandHandler(e => {
-				let result = chatFrame.evaluate(
+			handler: wrapAdminCheckCommandHandler(async e => {
+				let result = await chatFrame.evaluate(
 					/** @type {(code: string) => any} */ 
-					code => eval(code), e.argument
+					code => eval( `(async () => ${code})()`), e.argument
 				);
 				e.sendResponse("/code " + JSON.stringify(result));
 			})
