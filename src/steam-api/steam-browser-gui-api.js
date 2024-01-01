@@ -6,7 +6,7 @@ const SteamBrowserGuiApi =  {
 
 	rememberMe: (selectors) => {
 		let remember = document.querySelector(selectors.loginRememberMe);
-		if(remember.querySelector(selectors.loginRememberMeCheck))
+		if(!remember.querySelector(selectors.loginRememberMeCheck))
 			remember.click();
 	},
 

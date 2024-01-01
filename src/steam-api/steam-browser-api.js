@@ -58,13 +58,27 @@ export default class SteamBrowserApi {
 				"--reduce-security-for-testing",
 				"--no-sandbox",
 				"--disable-setuid-sandbox",
-				"--incognito",
 				"--disable-site-isolation-for-policy",
-				"--allow-http-background-page"
-			]
+				"--allow-http-background-page",
+				// Optimizations
+				"--disable-site-isolation-trials",
+				"--wm-window-animations-disabled",
+				"--renderer-process-limit=1",
+				"--enable-low-end-device-mode",
+				"--single-process"
+			],
+			userDataDir: "./chromium-user-data"
 		});
 		this.frame = (await this.browser.pages())[0];
-		await this.loadCookies();
+		await this.frame.setRequestInterception(true);
+		this.frame.on("request", /** @type {(req: import("puppeteer/lib/cjs/puppeteer/api-docs-entry.js").HTTPRequest) => void} */
+			req => {
+				if(["image", "font"].includes(req.resourceType()))
+					req.abort();
+				else
+					req.continue();
+			}
+		);
 		await this.frame.setBypassCSP(true);
 		// Steam won't accept HeadlessChrome
 		let userAgent = await this.frame.evaluate(() => navigator.userAgent);
@@ -72,8 +86,6 @@ export default class SteamBrowserApi {
 		await this.frame.setUserAgent(userAgent);
 		this.frame.on("console", msg => pageLogFiltered);
 		this.frame.on("pageerror", error => console.log("Page error:", error.message) );
-		this.frame.on("requestfailed", request => console.log("Page request failed:", request?.failure()?.errorText, request.url));
-
 		let dealWithCaptcha = new DealWithCaptcha(this.bb);
 		this.requestCaptchaSolution = (img) => dealWithCaptcha.getCaptchaSolution(img);
 		this.requestSteamGuardCode = new DealWithSteamGuard(this.bb);
@@ -83,52 +95,6 @@ export default class SteamBrowserApi {
 		await this.goToSteamChat();
 		// Wait for Steam Chat loading to finish
 		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
-	}
-
-	async storeCookies(){
-		if(!this.frame)
-			throw new Error("Steam chat frame not loaded");
-		try {
-			let localStorageJson = await this.frame.evaluate(() => {
-				return JSON.stringify(window.localStorage);
-			});
-			await this.bb.db?.none(
-				"INSERT INTO variable(name, value) VALUES('localStorage', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-				[ localStorageJson ]
-			);
-
-			await this.bb.db?.none(
-				"INSERT INTO variable(name, value) VALUES('cookies', $1) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value",
-				[ JSON.stringify(await this.frame.cookies()) ]
-			);
-		} catch(e){
-			console.error(e.message);
-			return null;
-		}
-	}
-
-	async loadCookies(){
-		if(!this.frame)
-			throw new Error("Steam chat frame not loaded.");
-		try {
-			await this.frame.goto("https://steamcommunity.com/comment/ForumTopic/formattinghelp?ajax=1");
-			let localStorageRow = await this.bb.db?.oneOrNone("SELECT value FROM variable WHERE name = 'localStorage'");
-			if(localStorageRow){
-				let localStorageData = JSON.parse(localStorageRow.value.toString());
-				await this.frame.evaluate((localStorageData) => {
-					Object.assign(window.localStorage, localStorageData);
-				}, localStorageData);
-			}
-
-			let cookiesRow = await this.bb.db?.oneOrNone("SELECT value FROM variable WHERE name = 'cookies'");
-			if(cookiesRow){
-				let cookies = JSON.parse(cookiesRow.value.toString());
-				for(let cookie of cookies)
-					await this.frame.setCookie(cookie);
-			}
-		} catch(e){
-			console.error(e.message);
-		}
 	}
 
 	async goToSteamChat(){
@@ -142,7 +108,6 @@ export default class SteamBrowserApi {
 
 		if(this.frame.url().includes("login")){
 			await this.login(this.bb.config.steam?.userName, this.bb.config.steam?.password);
-			await this.storeCookies();
 		}
 	}
 

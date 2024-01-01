@@ -113,9 +113,6 @@ export default class ChatHandler {
 				event.setAsHandled();
 			}
 
-			for(let listener of this.bb.steamChat.rawListeners("chatCommand")){
-				await Promise.resolve(listener.call(this, event));
-			}
 			if(!event.handled)
 				event.sendResponse(unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))]);
 		} catch(e){
