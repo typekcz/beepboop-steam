@@ -14,7 +14,8 @@ const selectors = {
 	loginError: ".newlogindialog_FormError_1Mcy9",
 	loginButton: "[type=submit].newlogindialog_SubmitButton_2QgFE",
 	loading: ".WaitingForInterFaceReadyContainer",
-	steamGuardInput: ".segmentedinputs_SegmentedCharacterInput_3PDBF"
+	steamGuardInput: ".segmentedinputs_SegmentedCharacterInput_3PDBF",
+	connectionTroubleButton: ".ConnectionTroubleReconnectMessage button"
 };
 
 const steamChatUrl = "https://steamcommunity.com/chat";
@@ -100,6 +101,8 @@ export default class SteamBrowserApi {
 		await this.goToSteamChat();
 		// Wait for Steam Chat loading to finish
 		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
+
+		setInterval(() => this.detectStateAndAct, 1000);
 	}
 
 	async goToSteamChat(){
@@ -174,12 +177,19 @@ export default class SteamBrowserApi {
 		}
 	}
 
-	getState(){
-		let url = new URL(this.frame.url());
-		if(url.pathname.startsWith("/login/")){
-			
-		} else if(url.pathname){
+	async detectStateAndAct(){
+		const readyState = await this.frame.evaluate(() => document.readyState);
+		if(readyState != "complete")
+			return;
 
+		let state = await this.frame.evaluate(SteamBrowserGuiApi.detectState, selectors);
+		switch(state){
+			case "chat-disconnected":
+				await this.frame.evaluate(SteamBrowserGuiApi.reconnect, selectors);
+				break;
+			default:
+				// TODO: do the rest, move whole login extravaganza here
+				break;
 		}
 	}
 
