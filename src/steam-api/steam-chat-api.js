@@ -14,6 +14,7 @@ export default class SteamChatApi extends Events.EventEmitter {
 	constructor(beepboop) {
 		super();
 		this.bb = beepboop;
+		this.chatHandler = new ChatHandler(this.bb);
 	}
 
 	get frame(){
@@ -26,11 +27,18 @@ export default class SteamChatApi extends Events.EventEmitter {
 	async init(){
 		await this.frame.evaluate(SteamFriendsUiApi.define, "UserInfo", UserInfo.toString());
 		await this.frame.evaluate(SteamFriendsUiApi.define, "RoomInfo", RoomInfo.toString());
-		await this.bb.chatPage?.exposeFunction("handleUsersChanged", (usersBefore, usersAfter) => {
-			this.voiceChannelUsersChanged(usersBefore, usersAfter);
-		});
 
-		this.chatHandler = new ChatHandler(this.bb);
+		try {
+			await this.bb.chatPage?.exposeFunction("handleUsersChanged", (usersBefore, usersAfter) => {
+				this.voiceChannelUsersChanged(usersBefore, usersAfter);
+			});
+		} catch(e){
+			// Ignore error when binding already exists
+			if(!(e instanceof Error) || e.message.endsWith("already exists"))
+				throw e;
+		}
+
+		this.chatHandler.init();
 
 		/** @type {UserInfo} */
 		this.loggedUser = await this.frame.evaluate(SteamFriendsUiApi.getLoggedUserInfo);

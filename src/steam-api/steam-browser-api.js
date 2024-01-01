@@ -45,28 +45,33 @@ export default class SteamBrowserApi {
 		} catch(e){
 			console.error(e.message);
 		}
+		let browserArgs = [
+			"--disable-client-side-phishing-detection",
+			"--disable-sync",
+			"--use-fake-ui-for-media-stream",
+			"--use-fake-device-for-media-stream",
+			"--enable-local-file-accesses",
+			"--allow-file-access-from-files",
+			"--disable-web-security",
+			"--reduce-security-for-testing",
+			"--no-sandbox",
+			"--disable-setuid-sandbox",
+			"--disable-site-isolation-for-policy",
+			"--allow-http-background-page",
+			// Optimizations
+			"--disable-site-isolation-trials",
+			"--wm-window-animations-disabled",
+			"--renderer-process-limit=1",
+			"--enable-low-end-device-mode"
+		];
+
+		// Add this argument only when headless is enabled, otherwise it crashes.
+		if(this.bb.config.headless ?? true) 
+			browserArgs.push("--single-process");
+
 		this.browser = await puppeteer.launch({
-			headless: true,
-			args: [
-				"--disable-client-side-phishing-detection",
-				"--disable-sync",
-				"--use-fake-ui-for-media-stream",
-				"--use-fake-device-for-media-stream",
-				"--enable-local-file-accesses",
-				"--allow-file-access-from-files",
-				"--disable-web-security",
-				"--reduce-security-for-testing",
-				"--no-sandbox",
-				"--disable-setuid-sandbox",
-				"--disable-site-isolation-for-policy",
-				"--allow-http-background-page",
-				// Optimizations
-				"--disable-site-isolation-trials",
-				"--wm-window-animations-disabled",
-				"--renderer-process-limit=1",
-				"--enable-low-end-device-mode",
-				"--single-process"
-			],
+			headless: this.bb.config.headless ?? true,
+			args: browserArgs,
 			userDataDir: "./chromium-user-data"
 		});
 		this.frame = (await this.browser.pages())[0];

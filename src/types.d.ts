@@ -2,6 +2,7 @@ interface Config {
 	version?: string;
 	port: number;
 	mode: "client" | "web";
+	headless?: boolean;
 	baseUrl?: string;
 	steam?: {
 		userName?: string;

@@ -42,6 +42,12 @@ export default class ChatHandler {
 	constructor(beepboop){
 		this.bb = beepboop;
 
+		this.addCommands(...createBasicCommands(this.#chatCommandsMap));
+		this.addCommands(...createSteamChatAudioCommands(this.bb));
+		this.addCommands(...createAdminCommands(this.bb));
+	}
+
+	init(){
 		this.bb.chatPage?.exposeFunction("handleMessage", (room, user, text, rawText) => {
 			this.handleMessage(room, user, text, rawText).catch(console.error);
 		}).catch(console.error);
@@ -56,10 +62,6 @@ export default class ChatHandler {
 				handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
 			}
 		}).catch(console.error);
-
-		this.addCommands(...createBasicCommands(this.#chatCommandsMap));
-		this.addCommands(...createSteamChatAudioCommands(this.bb.steamChatAudio));
-		this.addCommands(...createAdminCommands(this.bb.chatFrame, this.bb));
 	}
 
 	get frame(){
@@ -77,7 +79,6 @@ export default class ChatHandler {
 	 * @param {string} rawMessage 
 	 */
 	async handleMessage(room, user, message, rawMessage){
-		console.log("chatHandle", arguments);
 		const unknownMessages = [
 			"The fuck you want?",
 			"I'm not fluent in meatbag language.",
