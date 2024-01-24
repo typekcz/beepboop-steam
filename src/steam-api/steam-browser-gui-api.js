@@ -12,7 +12,7 @@ const SteamBrowserGuiApi =  {
 
 	/** @type {(selectors: any) => "login"|"login-guard"|"chat"|"chat-disconnected"} */
 	detectState: (selectors) => {
-		if(location.pathname.startsWith("/login/")){
+		if(location.pathname.startsWith("/login")){
 			// On login page
 
 			if(document.querySelector(selectors.steamGuardInput)){
@@ -20,7 +20,7 @@ const SteamBrowserGuiApi =  {
 			} else {
 				return "login";
 			}
-		} else if(location.pathname.startsWith("/chat/")){
+		} else if(location.pathname.startsWith("/chat")){
 			// In chat
 
 			let reconnectButton = document.querySelector(selectors.connectionTroubleButton);
@@ -30,6 +30,7 @@ const SteamBrowserGuiApi =  {
 				return "chat";
 			}
 		}
+		return "unknown";
 	},
 
 	verifyLogin: (selectors) => {

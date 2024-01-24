@@ -3,6 +3,7 @@ import puppeteer from "puppeteer";
 import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 import DealWithSteamGuard from "../deal-with-steam-guard.js";
+import { unpromisify } from "../utils.js";
 
 const selectors = {
 	loginUsername: "[type=text].newlogindialog_TextInput_2eKVn",
@@ -102,7 +103,7 @@ export default class SteamBrowserApi {
 		// Wait for Steam Chat loading to finish
 		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
 
-		setInterval(() => this.detectStateAndAct, 1000);
+		setInterval(() => unpromisify(this.detectStateAndAct)(), 1000);
 	}
 
 	async goToSteamChat(){
@@ -185,6 +186,7 @@ export default class SteamBrowserApi {
 		let state = await this.frame.evaluate(SteamBrowserGuiApi.detectState, selectors);
 		switch(state){
 			case "chat-disconnected":
+				console.log("Disconnect detected. Attempting reconnect.")
 				await this.frame.evaluate(SteamBrowserGuiApi.reconnect, selectors);
 				break;
 			default:
