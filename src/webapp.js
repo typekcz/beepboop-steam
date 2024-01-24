@@ -284,8 +284,13 @@ export default class WebApp {
 				let uid = await generateUid(18);
 				this.sessions.set(uid, result?.claimedIdentifier?.substring(steamOpenId.length + 4)); // 4 == "/id/".length
 				res.write(`<!DOCTYPE HTML><html><head>
-					<script>localStorage.setItem("authId", ${JSON.stringify(uid)});close();</script>
-				</head></html>`);
+					<script>
+						localStorage.setItem("authId", ${JSON.stringify(uid)});
+						close();
+					</script>
+				</head><body>
+					You are logged in and you can close this window.
+				</body></html>`);
 				res.end();
 			});
 		});
