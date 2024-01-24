@@ -11,6 +11,6 @@ export default class UserInfo {
 		/** @type {string} */
 		this.gamename = user.current_game_name;
 		/** @type {string} */
-		this.appid = user.persona.m_gameid
+		this.appid = user.persona?.m_gameid
 	}
 }

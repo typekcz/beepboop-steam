@@ -8,6 +8,8 @@ import BodyParser from "body-parser";
 import fileUpload from "express-fileupload";
 import openid from "openid";
 import generateUid from "uid-safe";
+import config from "./config-loader.js";
+import UserInfo from "./dto/user-info.js";
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";
@@ -36,6 +38,7 @@ export default class WebApp {
 			next();
 		});
 		this.expressApp.use(BodyParser.json());
+		this.expressApp.use(BodyParser.text());
 		this.expressApp.use(fileUpload());
 		this.expressApp.use(Express.static(webDir));
 
@@ -252,6 +255,22 @@ export default class WebApp {
 				beepboop.soundsDbGw?.deleteUserSound(steamid, req.params.soundName, type).catch(console.error);
 			}
 			res.status(200);
+			res.end();
+		});
+
+		this.expressApp.post("/api/messages", async (req, res) => {
+			let steamid = this.sessions.get(req.get("Session"));
+			if(!steamid)
+				return res.status(401).send("Not logged in.").end();
+			if(!config.admins.includes(steamid))
+				return res.status(403).send("Forbidden.").end();
+			await beepboop.steamChat.chatHandler.handleMessage(
+				null, new UserInfo({steamid64: steamid}), req.body, req.body,
+				async (response) => {
+					res.status(200);
+					res.write(response);
+				}
+			);
 			res.end();
 		});
 	}

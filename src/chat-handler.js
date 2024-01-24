@@ -77,8 +77,9 @@ export default class ChatHandler {
 	 * @param {UserInfo} user 
 	 * @param {string} message 
 	 * @param {string} rawMessage 
+	 * @param {(response: string) => Promise<void> | null} [customResponseHandler]
 	 */
-	async handleMessage(room, user, message, rawMessage){
+	async handleMessage(room, user, message, rawMessage, customResponseHandler = null){
 		const unknownMessages = [
 			"The fuck you want?",
 			"I'm not fluent in meatbag language.",
@@ -106,11 +107,13 @@ export default class ChatHandler {
 		let command = message.substring(0, index).trim();
 		let arg = message.substring(index + 1);
 		let event = new ChatCommandEvent(this, room, user, command, message, arg, rawMessage);
+		if(customResponseHandler)
+			event.customResponseHandler = customResponseHandler;
 		try {
 			command = command.toLowerCase();
 			let chatCommand = this.#chatCommandsMap.get(command);
 			if(chatCommand){
-				unpromisify(chatCommand.handler)(event);
+				await chatCommand.handler(event);
 				event.setAsHandled();
 			}
 
