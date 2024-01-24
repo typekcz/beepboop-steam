@@ -103,7 +103,7 @@ export default class SteamBrowserApi {
 		// Wait for Steam Chat loading to finish
 		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
 
-		setInterval(() => unpromisify(this.detectStateAndAct)(), 1000);
+		setInterval(unpromisify(async () => this.detectStateAndAct), 1000);
 	}
 
 	async goToSteamChat(){
@@ -179,6 +179,9 @@ export default class SteamBrowserApi {
 	}
 
 	async detectStateAndAct(){
+		if(!this.frame)
+			return;
+
 		const readyState = await this.frame.evaluate(() => document.readyState);
 		if(readyState != "complete")
 			return;
