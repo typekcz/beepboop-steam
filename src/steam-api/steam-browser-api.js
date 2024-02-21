@@ -6,16 +6,17 @@ import DealWithSteamGuard from "../deal-with-steam-guard.js";
 import { unpromisify } from "../utils.js";
 
 const selectors = {
-	loginUsername: "[type=text].newlogindialog_TextInput_2eKVn",
-	loginPassword: "[type=password].newlogindialog_TextInput_2eKVn",
-	loginRememberMe: ".newlogindialog_Checkbox_3tTFg",
-	loginRememberMeCheck: ".newlogindialog_Check_6EoZE",
-	loginCaptcha: "#input_captcha",
+	// Steam login selectors:
+	loginUsername: "[data-featuretarget=login] input[type=text]",
+	loginPassword: "[data-featuretarget=login] input[type=password]",
+	loginRememberMe: "[data-featuretarget=login] div[tabindex]",
+	loginCaptcha: "#input_captcha", // Captcha selectors are probably wrong, haven't seen the captcha in a while...
 	loginCaptchaImg: "#captchaImg",
-	loginError: ".newlogindialog_FormError_1Mcy9",
-	loginButton: "[type=submit].newlogindialog_SubmitButton_2QgFE",
+	loginError: "[data-featuretarget=login] form > div:last-of-type:not(:first-of-type)",
+	loginButton: "[data-featuretarget=login] [type=submit]",
+	steamGuardInput: "[data-featuretarget=login] div:has(> input)",
+	// Steam Chat selectors:
 	loading: ".WaitingForInterFaceReadyContainer",
-	steamGuardInput: ".segmentedinputs_SegmentedCharacterInput_3PDBF",
 	connectionTroubleButton: ".ConnectionTroubleReconnectMessage button"
 };
 
