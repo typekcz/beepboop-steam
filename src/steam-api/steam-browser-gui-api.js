@@ -6,7 +6,7 @@ const SteamBrowserGuiApi =  {
 
 	rememberMe: (selectors) => {
 		let remember = document.querySelector(selectors.loginRememberMe);
-		if(!remember.querySelector(selectors.loginRememberMeCheck))
+		if(remember.childElementCount == 0)
 			remember.click();
 	},
 
@@ -15,7 +15,7 @@ const SteamBrowserGuiApi =  {
 			let steamGuardCounter = 0;
 			let checkInt = setInterval(() => {
 				let errorMsg = document.querySelector(selectors.loginError);
-				if(errorMsg && !errorMsg.innerText.blank()){
+				if(errorMsg && errorMsg.childElementCount == 0 && !errorMsg.innerText.blank()){
 					console.error("Login error:", errorMsg.innerText);
 					clearInterval(checkInt);
 					reject(new Error("Login failed."));
