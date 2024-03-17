@@ -5,5 +5,6 @@ ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
 COPY --chown=chrome . /beepboop
 WORKDIR /beepboop
 RUN npm install
+RUN npm install ytdl-core@latest
 ENTRYPOINT ["tini", "--"]
-CMD ["npm", "start"]
+CMD ["npm", "run", "update-ytdl-start"]

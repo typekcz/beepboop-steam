@@ -1,9 +1,10 @@
 //@ts-check
-import puppeteer from "puppeteer";
+import puppeteer, { executablePath } from "puppeteer-core";
 import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 import DealWithSteamGuard from "../deal-with-steam-guard.js";
 import { unpromisify } from "../utils.js";
+import timers from "node:timers/promises";
 
 const selectors = {
 	// Steam login selectors:
@@ -75,11 +76,12 @@ export default class SteamBrowserApi {
 		this.browser = await puppeteer.launch({
 			headless: this.bb.config.headless ?? true,
 			args: browserArgs,
-			userDataDir: "./chromium-user-data"
+			userDataDir: "./chromium-user-data",
+			executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
 		});
 		this.frame = (await this.browser.pages())[0];
 		await this.frame.setRequestInterception(true);
-		this.frame.on("request", /** @type {(req: import("puppeteer/lib/cjs/puppeteer/api-docs-entry.js").HTTPRequest) => void} */
+		this.frame.on("request",
 			req => {
 				if(["image", "font"].includes(req.resourceType()))
 					req.abort();
@@ -93,7 +95,11 @@ export default class SteamBrowserApi {
 		userAgent = userAgent.replace("HeadlessChrome", "Chrome");
 		await this.frame.setUserAgent(userAgent);
 		this.frame.on("console", msg => pageLogFiltered);
-		this.frame.on("pageerror", error => console.log("Page error:", error.message) );
+		this.frame.on("pageerror", error => {
+			if(error.message.startsWith("Failed to execute 'getStats' on 'RTCPeerConnection'"))
+				return; // Ignore this message, because it's spamming the log
+			console.log("Page error:", error.message)
+		});
 		let dealWithCaptcha = new DealWithCaptcha(this.bb);
 		this.requestCaptchaSolution = (img) => dealWithCaptcha.getCaptchaSolution(img);
 		this.requestSteamGuardCode = new DealWithSteamGuard(this.bb);
@@ -146,7 +152,7 @@ export default class SteamBrowserApi {
 					if(verifyRes === true){
 						console.log("Login: Steam Guard completed.");
 						// IDK let's just wait, this need refactor anyway
-						await this.frame.waitForTimeout(10000);
+						await timers.setTimeout(10000);
 						break;
 					} else
 						console.log("Login: Steam Guard failed. Trying again.");

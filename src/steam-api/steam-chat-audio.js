@@ -119,7 +119,9 @@ export default class SteamChatAudio {
 				}));
 			}, url);
 		} catch(e){
-			throw new Error(e.message.replace("Evaluation failed: ", ""));
+			if(e.message)
+				throw new Error(e.message.replace("Evaluation failed: ", ""));
+			throw e;
 		}
 	}
 

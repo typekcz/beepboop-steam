@@ -5,7 +5,8 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-		"start": "node index"
+		"start": "node index",
+		"update-ytdl-start": "npm install ytdl-core@latest & node index"
 	},
 	"repository": {
 		"type": "git",
@@ -21,11 +22,10 @@
 		"express-fileupload": "^1.2.0",
 		"openid": "^2.0.10",
 		"pg-promise": "^10.12.0",
-		"puppeteer": "^5.5.0",
-		"puppeteer-core": "~5.2.1",
+		"puppeteer-core": "^22.5.0",
 		"require-from-string": "^2.0.2",
 		"uid-safe": "^2.1.5",
 		"vm2": "^3.9.2",
-		"ytdl-core": "^4.11.4"
+		"ytdl-core": "^4.11.5"
 	}
 }

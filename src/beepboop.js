@@ -90,7 +90,7 @@ export default class BeepBoop {
 	}
 
 	/**
-	 * @returns {import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Page | import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Frame | undefined}
+	 * @returns {import("puppeteer-core/lib/cjs/puppeteer/api/Page.js").Page | import("puppeteer-core/lib/cjs/puppeteer/api/Frame.js").Frame | undefined}
 	 */
 	get chatFrame(){
 		//@ts-ignore my head hurts...
@@ -98,7 +98,7 @@ export default class BeepBoop {
 	}
 
 	/**
-	 * @returns {import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Page | undefined}
+	 * @returns {import("puppeteer-core/lib/cjs/puppeteer/api/Page.js").Page | undefined}
 	 */
 	get chatPage(){
 		//@ts-ignore
