@@ -1,5 +1,5 @@
 //@ts-check
-import puppeteer, { executablePath } from "puppeteer-core";
+import puppeteer, { executablePath } from "puppeteer";
 import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 import DealWithSteamGuard from "../deal-with-steam-guard.js";
@@ -59,19 +59,19 @@ export default class SteamBrowserApi {
 			"--disable-web-security",
 			"--reduce-security-for-testing",
 			"--no-sandbox",
-			"--disable-setuid-sandbox",
-			"--disable-site-isolation-for-policy",
-			"--allow-http-background-page",
+			//"--disable-setuid-sandbox",
+			//"--disable-site-isolation-for-policy",
+			//"--allow-http-background-page",
 			// Optimizations
-			"--disable-site-isolation-trials",
-			"--wm-window-animations-disabled",
-			"--renderer-process-limit=1",
-			"--enable-low-end-device-mode"
+			//"--disable-site-isolation-trials",
+			//"--wm-window-animations-disabled",
+			//"--renderer-process-limit=1",
+			//"--enable-low-end-device-mode"
 		];
 
 		// Add this argument only when headless is enabled, otherwise it crashes.
-		if(this.bb.config.headless ?? true) 
-			browserArgs.push("--single-process");
+		//if(this.bb.config.headless ?? true) 
+		//	browserArgs.push("--single-process");
 
 		this.browser = await puppeteer.launch({
 			headless: this.bb.config.headless ?? true,

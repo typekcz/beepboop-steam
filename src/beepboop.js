@@ -41,6 +41,8 @@ export default class BeepBoop {
 			case "web":
 				this.steamBrowser = new SteamBrowserApi(this);
 				break;
+			default:
+				throw new Error("No mode selected.");
 		}
 		this.steamChat = new SteamChatApi(this);
 		this.steamChatAudio = new SteamChatAudio(this, "http://localhost:" + config.port);
