@@ -2,8 +2,8 @@ FROM node:21-bookworm
 
 #RUN apt update && apt install -y chromium
 # https://software.opensuse.org//download.html?project=home%3Aungoogled_chromium&package=ungoogled-chromium
-RUN wget -q -O /tmp/pkg.deb https://download.opensuse.org/repositories/home:/ungoogled_chromium/Debian_Sid/amd64/ungoogled-chromium_112.0.5615.165-1_amd64.deb && \
-	apt update && apt install -y /tmp/pkg.deb && \
+ADD https://download.opensuse.org/repositories/home:/ungoogled_chromium/Debian_Sid/amd64/ungoogled-chromium_112.0.5615.165-1_amd64.deb /tmp/pkg.deb
+RUN apt update && apt install -y /tmp/pkg.deb && \
 	rm /tmp/pkg.deb
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
 ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium

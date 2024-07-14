@@ -59,14 +59,17 @@ export default class SteamBrowserApi {
 			"--disable-web-security",
 			"--reduce-security-for-testing",
 			"--no-sandbox",
-			//"--disable-setuid-sandbox",
-			//"--disable-site-isolation-for-policy",
-			//"--allow-http-background-page",
+			"--disable-dev-shm-usage",
+			"--disable-setuid-sandbox",
+			"--disable-site-isolation-for-policy",
+			"--allow-http-background-page",
 			// Optimizations
-			//"--disable-site-isolation-trials",
-			//"--wm-window-animations-disabled",
-			//"--renderer-process-limit=1",
-			//"--enable-low-end-device-mode"
+			"--disable-site-isolation-trials",
+			"--wm-window-animations-disabled",
+			"--renderer-process-limit=1",
+			"--enable-low-end-device-mode",
+			"--disable-gpu",
+			"--disable-software-rasterizer",
 		];
 
 		// Add this argument only when headless is enabled, otherwise it crashes.
