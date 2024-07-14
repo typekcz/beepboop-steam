@@ -1,5 +1,5 @@
 //@ts-check
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 import { retryPromise } from "../utils.js";
 
 export default class SteamClientApi {
