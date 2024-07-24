@@ -1,6 +1,5 @@
 //@ts-check
 
-import { VM } from "vm2";
 import { formatDuration } from "../utils.js";
 
 /**
@@ -62,17 +61,6 @@ export function createBasicCommands(chatCommandsMap){
 			command: "time",
 			handler: e => e.sendResponse(`It's ${new Date().toLocaleString()} and I'm up for ${formatDuration(process.uptime())}`),
 			help: "Shows time and bot's uptime."
-		}, {
-			command: "eval",
-			handler: e => {
-				const vm = new VM({timeout: 1000});
-				let result = vm.run(e.argument);
-				e.sendResponse("/code " + JSON.stringify(result));
-			},
-			argsHelp: "<JavaScript code>",
-			help: "Evaluates JavaScript code and writes returned result to the chat.",
-			longHelp: `Example:
-eval ["red", "green", "blue"][Math.floor(Math.random()*3)]`
 		}
 	];
 }

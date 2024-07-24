@@ -8,7 +8,7 @@
 export default function createSteamChatAudioCommands(bb){
 	return [
 		{
-			command: "play", 
+			command: "play",
 			handler: async e => {
 				if(e.argument)
 					if(/^https?:\/\//.test(e.argument))
@@ -21,16 +21,16 @@ export default function createSteamChatAudioCommands(bb){
 			argsHelp: "[sound]",
 			help: "Plays sound. Can be uploaded sound name or URL. Plays or resumes previous sound if no argument."
 		}, {
-			command: "playurl", 
+			command: "playurl",
 			handler: e => bb.steamChatAudio.playSoundUrl(e.argument),
 			argsHelp: "<URL>",
 			help: "Plays sound from URL, can also be YouTube link."
 		}, {
-			command: ["stop", "pause"], 
+			command: ["stop", "pause"],
 			handler: e => bb.steamChatAudio.stopSound(),
 			help: `Stops playing current sound. Can be resumed with "play".`
 		}, {
-			command: ["say", "tts"], 
+			command: ["say", "tts"],
 			handler: e => bb.steamChatAudio.textToSpeech(e.argument),
 			argsHelp: "<text>",
 			help: "Reads text with text to speech."

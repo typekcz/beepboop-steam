@@ -2,7 +2,6 @@
 import UserInfo from "./dto/user-info.js";
 import RoomInfo from "./dto/room-info.js";
 import ChatCommandEvent from "./chat-command-event.js";
-import { unpromisify } from "./utils.js";
 import createSteamChatAudioCommands from "./chat-commands/commands-steam-chat-audio.js";
 import { createBasicCommands } from "./chat-commands/commands-basic.js";
 import { createAdminCommands } from "./chat-commands/commands-admin.js";
@@ -19,16 +18,6 @@ import { createAdminCommands } from "./chat-commands/commands-admin.js";
  * @property {string} [help]
  * @property {string} [longHelp]
  */
-
-const help_msg = `Commands:
-play sound
-playurl url
-say text
-pause
-stop
-play
-beep
-eval`;
 
 export default class ChatHandler {
 	/** @type {ChatCommand[]} */
@@ -53,7 +42,7 @@ export default class ChatHandler {
 		}).catch(console.error);
 
 		let g_FriendsUIApp; // Fake for TS check
-		let handleMessage = (a, b, c, d) => 1;
+		let handleMessage = (/** @type {RoomInfo} */ room, /** @type {UserInfo} */ user, /** @type {any} */ text, /** @type {any} */ rawText) => {};
 		this.bb.chatFrame?.evaluate(() => {
 			g_FriendsUIApp.ChatStore.m_mapChatGroups.values().next().value.m_mapRooms.values().next().value.__proto__.CheckShouldNotify = function(msg, text, rawText){
 				handleMessage(new RoomInfo(this), new UserInfo(this.GetMember(msg.unAccountID)), text, rawText);
