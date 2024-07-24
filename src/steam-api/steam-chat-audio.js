@@ -1,5 +1,5 @@
 //@ts-check
-import ytdl from "ytdl-core";
+import ytdl from "@distube/ytdl-core";
 
 export default class SteamChatAudio {
 	/**

@@ -1,14 +1,12 @@
 FROM node:21-bookworm
 
-#RUN apt update && apt install -y chromium
-# https://software.opensuse.org//download.html?project=home%3Aungoogled_chromium&package=ungoogled-chromium
-ADD https://download.opensuse.org/repositories/home:/ungoogled_chromium/Debian_Sid/amd64/ungoogled-chromium_112.0.5615.165-1_amd64.deb /tmp/pkg.deb
+ADD https://github.com/RobRich999/Chromium_Clang/releases/download/v129.0.6614.0-r1331996-linux64-deb-avx2/chromium-browser-unstable_129.0.6614.0-1_amd64.deb /tmp/pkg.deb
 RUN apt update && apt install -y /tmp/pkg.deb && \
 	rm /tmp/pkg.deb
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
-ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium
+ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
 COPY . /beepboop
 WORKDIR /beepboop
 RUN npm install
-RUN npm install ytdl-core@latest
+RUN npm install @distube/ytdl-core@latest
 ENTRYPOINT ["npm", "start"]
