@@ -23,10 +23,14 @@ const allowedMime = [
 ];
 
 export default class WebApp {
+	/**
+	 * @param {?string} baseUrl
+	 * @param {number} port
+	 */
 	constructor(baseUrl, port){
-		if(!baseUrl.endsWith("/"))
+		if(!baseUrl?.endsWith("/"))
 			baseUrl += "/";
-		this.baseUrl = baseUrl;
+		this.baseUrl = baseUrl ?? `http://localhost:${port}/`;
 		this.port = port;
 		this.expressApp = Express();
 		this.log = [];

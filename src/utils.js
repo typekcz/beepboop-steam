@@ -30,7 +30,7 @@ export function request(url_, options = {}){
 			});
 		});
 		request.end();
-		request.on("error", (error) => {
+		request.on("error", (/**@type {Error}*/ error) => {
 			reject(error);
 		});
 	});

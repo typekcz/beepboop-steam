@@ -1,5 +1,5 @@
 //@ts-check
-import puppeteer, { executablePath } from "puppeteer";
+import puppeteer from "puppeteer";
 import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 import DealWithSteamGuard from "../deal-with-steam-guard.js";
