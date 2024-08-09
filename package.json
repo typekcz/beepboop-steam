@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"start": "node index",
-		"update-ytdl-start": "npm install ytdl-core@latest & node index"
+		"update-ytdl-start": "npm install @distube/ytdl-core@latest & node index"
 	},
 	"repository": {
 		"type": "git",

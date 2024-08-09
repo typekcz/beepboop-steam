@@ -85,8 +85,7 @@ export default class SteamChatAudio {
 				console.log("youtube detected");
 				let info = await ytdl.getInfo(url, {});
 				let format = ytdl.chooseFormat(info.formats, {
-					quality: "highestaudio",
-					filter: f => f.container === "webm"
+					quality: "highestaudio"
 				});
 				url = format.url;
 			}
