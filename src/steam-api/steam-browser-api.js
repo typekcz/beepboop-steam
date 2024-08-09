@@ -36,6 +36,7 @@ export default class SteamBrowserApi {
 	 */
 	constructor(beepboop){
 		this.bb = beepboop;
+		this.lastState = "uninitialized";
 	}
 
 	async init(){
@@ -113,7 +114,7 @@ export default class SteamBrowserApi {
 		// Wait for Steam Chat loading to finish
 		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
 
-		setInterval(unpromisify(async () => this.detectStateAndAct), 1000);
+		setInterval(unpromisify(async () => this.detectStateAndAct()), 1000);
 	}
 
 	async goToSteamChat(){
@@ -188,15 +189,23 @@ export default class SteamBrowserApi {
 		}
 	}
 
-	async detectStateAndAct(){
+	async detectState() {
 		if(!this.frame)
-			return;
+			return "uninitialized";
 
 		const readyState = await this.frame.evaluate(() => document.readyState);
 		if(readyState != "complete")
-			return;
+			return "loading";
 
-		let state = await this.frame.evaluate(SteamBrowserGuiApi.detectState, selectors);
+		return this.frame.evaluate(SteamBrowserGuiApi.detectState, selectors);
+	}
+
+	async detectStateAndAct(){
+		const state = await this.detectState();
+		const stateChanged = state !== this.lastState;
+		this.lastState = state;
+		if(stateChanged)
+			console.log(`🔘 ${state}`);
 		switch(state){
 			case "chat-disconnected":
 				console.log("Disconnect detected. Attempting reconnect.")
