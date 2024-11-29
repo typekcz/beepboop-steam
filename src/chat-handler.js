@@ -31,7 +31,7 @@ export default class ChatHandler {
 	constructor(beepboop){
 		this.bb = beepboop;
 
-		this.addCommands(...createBasicCommands(this.#chatCommandsMap));
+		this.addCommands(...createBasicCommands(this.bb, this.#chatCommandsMap));
 		this.addCommands(...createSteamChatAudioCommands(this.bb));
 		this.addCommands(...createAdminCommands(this.bb));
 	}
