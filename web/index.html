@@ -10,7 +10,9 @@
 	</head>
 	<body>
 		<div class="when-notlogged">
-			<a href="api/steam/authenticate" target="_blank"><img src="img/steamlogin.png" alt="Steam Login"></a>
+			<a href="api/steam/authenticate" target="_blank" onclick="window.open(this.href, this.target, 'popup=1,width=1010,height=785'); event.preventDefault();">
+				<img src="img/steamlogin.png" alt="Steam Login">
+			</a>
 		</div>
 		<div class="when-logged">
 			<form action="api/steam/logout" method="get" data-asyncSubmit data-session>

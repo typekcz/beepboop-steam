@@ -2,7 +2,6 @@
 import UserInfo from "./dto/user-info.js";
 import RoomInfo from "./dto/room-info.js";
 import ChatCommandEvent from "./chat-command-event.js";
-import { unpromisify } from "./utils.js";
 import createSteamChatAudioCommands from "./chat-commands/commands-steam-chat-audio.js";
 import { createBasicCommands } from "./chat-commands/commands-basic.js";
 import { createAdminCommands } from "./chat-commands/commands-admin.js";
@@ -20,16 +19,6 @@ import { createAdminCommands } from "./chat-commands/commands-admin.js";
  * @property {string} [longHelp]
  */
 
-const help_msg = `Commands:
-play sound
-playurl url
-say text
-pause
-stop
-play
-beep
-eval`;
-
 export default class ChatHandler {
 	/** @type {ChatCommand[]} */
 	#chatCommands = [];
@@ -42,12 +31,18 @@ export default class ChatHandler {
 	constructor(beepboop){
 		this.bb = beepboop;
 
+		this.addCommands(...createBasicCommands(this.bb, this.#chatCommandsMap));
+		this.addCommands(...createSteamChatAudioCommands(this.bb));
+		this.addCommands(...createAdminCommands(this.bb));
+	}
+
+	init(){
 		this.bb.chatPage?.exposeFunction("handleMessage", (room, user, text, rawText) => {
 			this.handleMessage(room, user, text, rawText).catch(console.error);
 		}).catch(console.error);
 
 		let g_FriendsUIApp; // Fake for TS check
-		let handleMessage = (a, b, c, d) => 1;
+		let handleMessage = (/** @type {RoomInfo} */ room, /** @type {UserInfo} */ user, /** @type {any} */ text, /** @type {any} */ rawText) => {};
 		this.bb.chatFrame?.evaluate(() => {
 			g_FriendsUIApp.ChatStore.m_mapChatGroups.values().next().value.m_mapRooms.values().next().value.__proto__.CheckShouldNotify = function(msg, text, rawText){
 				handleMessage(new RoomInfo(this), new UserInfo(this.GetMember(msg.unAccountID)), text, rawText);
@@ -56,10 +51,6 @@ export default class ChatHandler {
 				handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
 			}
 		}).catch(console.error);
-
-		this.addCommands(...createBasicCommands(this.#chatCommandsMap));
-		this.addCommands(...createSteamChatAudioCommands(this.bb.steamChatAudio));
-		this.addCommands(...createAdminCommands(this.bb.chatFrame, this.bb));
 	}
 
 	get frame(){
@@ -75,8 +66,9 @@ export default class ChatHandler {
 	 * @param {UserInfo} user 
 	 * @param {string} message 
 	 * @param {string} rawMessage 
+	 * @param {(response: string) => Promise<void> | null} [customResponseHandler]
 	 */
-	async handleMessage(room, user, message, rawMessage){
+	async handleMessage(room, user, message, rawMessage, customResponseHandler = null){
 		const unknownMessages = [
 			"The fuck you want?",
 			"I'm not fluent in meatbag language.",
@@ -104,11 +96,13 @@ export default class ChatHandler {
 		let command = message.substring(0, index).trim();
 		let arg = message.substring(index + 1);
 		let event = new ChatCommandEvent(this, room, user, command, message, arg, rawMessage);
+		if(customResponseHandler)
+			event.customResponseHandler = customResponseHandler;
 		try {
 			command = command.toLowerCase();
 			let chatCommand = this.#chatCommandsMap.get(command);
 			if(chatCommand){
-				unpromisify(chatCommand.handler)(event);
+				await chatCommand.handler(event);
 				event.setAsHandled();
 			}
 

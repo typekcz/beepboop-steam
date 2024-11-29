@@ -1,4 +1,8 @@
 const SteamFriendsUiApi =  {
+	isSteamChat: () => {
+		return !!g_FriendsUIApp;
+	},
+
 	define: (name, source) => {
 		window[name] = eval("("+source+")");
 	},

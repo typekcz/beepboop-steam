@@ -1,5 +1,4 @@
 //@ts-check
-import * as utils from "../utils.js";
 
 export default class MyInstantsPlugin {
 	/**
@@ -9,11 +8,13 @@ export default class MyInstantsPlugin {
 	constructor(apiGW){
 		this.apiGW = apiGW;
 
-		apiGW.steamChat.on("chatCommand", async (event) => {
-			if(event.command != "instant")
-				return;
-			await this.playInstant(event.argument);
-			event.setAsHandled();
+		apiGW.chatHandler.addCommands({
+			command: "instant",
+			help: "Play an instant from myinstants",
+			argsHelp: "<search>",
+			handler: async (e) => {
+				e.sendResponse(await this.playInstant(e.argument), false);
+			}
 		});
 
 		apiGW.webApp.expressApp.post("/api/plugins/myinstants/play", async (req, res) => {
@@ -53,16 +54,21 @@ export default class MyInstantsPlugin {
 		let url = "https://www.myinstants.com/search/?name=" + encodeURIComponent(search);
 		console.log("instant search url", url);
 
-		let response = await utils.request(url);
+		let response = await fetch(url);
+		if(response.status != 200)
+			throw new Error("Bad response status: " + response.status);
 
-		let body = response.body.toString();
-		let search_regex = /<button class="small-button" onclick="play\('([\w./\-%]*)'/g;
+		let body = await response.text();
+		let search_regex = /<button class="small-button" onclick="play\('([\w./\-%]*)'\s*,\s*'[^']+'\s*,\s*'([^']+)'/g;
 		let regex_result;
 		for(let i = 0; i < number; i++){
 			regex_result = search_regex.exec(body);
 		}
 		if(regex_result == null)
 			throw new Error("No instant found.");
-		await this.apiGW.steamChatAudio.playSoundUrl("https://www.myinstants.com" + regex_result[1]);
+		let [, instantPath, instantId] = regex_result;
+
+		await this.apiGW.steamChatAudio.playSoundUrl("https://www.myinstants.com" + instantPath);
+		return `https://www.myinstants.com/en/instant/${instantId}/`;
 	}
 }

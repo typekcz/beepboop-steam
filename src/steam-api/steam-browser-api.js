@@ -3,6 +3,8 @@ import puppeteer from "puppeteer";
 import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 import DealWithSteamGuard from "../deal-with-steam-guard.js";
+import { unpromisify } from "../utils.js";
+import timers from "node:timers/promises";
 
 const selectors = {
 	// Steam login selectors:
@@ -15,7 +17,8 @@ const selectors = {
 	loginButton: "[data-featuretarget=login] [type=submit]",
 	steamGuardInput: "[data-featuretarget=login] div:has(> input)",
 	// Steam Chat selectors:
-	loading: ".WaitingForInterFaceReadyContainer"
+	loading: ".WaitingForInterFaceReadyContainer",
+	connectionTroubleButton: ".ConnectionTroubleReconnectMessage button"
 };
 
 const steamChatUrl = "https://steamcommunity.com/chat";
@@ -33,6 +36,7 @@ export default class SteamBrowserApi {
 	 */
 	constructor(beepboop){
 		this.bb = beepboop;
+		this.lastState = "uninitialized";
 	}
 
 	async init(){
@@ -46,33 +50,42 @@ export default class SteamBrowserApi {
 		} catch(e){
 			console.error(e.message);
 		}
+		let browserArgs = [
+			"--disable-client-side-phishing-detection",
+			"--disable-sync",
+			"--use-fake-ui-for-media-stream",
+			"--use-fake-device-for-media-stream",
+			"--enable-local-file-accesses",
+			"--allow-file-access-from-files",
+			"--disable-web-security",
+			"--reduce-security-for-testing",
+			"--no-sandbox",
+			"--disable-dev-shm-usage",
+			"--disable-setuid-sandbox",
+			"--disable-site-isolation-for-policy",
+			"--allow-http-background-page",
+			// Optimizations
+			"--disable-site-isolation-trials",
+			"--wm-window-animations-disabled",
+			"--renderer-process-limit=1",
+			"--enable-low-end-device-mode",
+			"--disable-gpu",
+			"--disable-software-rasterizer",
+		];
+
+		// Add this argument only when headless is enabled, otherwise it crashes.
+		//if(this.bb.config.headless ?? true) 
+		//	browserArgs.push("--single-process");
+
 		this.browser = await puppeteer.launch({
-			headless: true,
-			args: [
-				"--disable-client-side-phishing-detection",
-				"--disable-sync",
-				"--use-fake-ui-for-media-stream",
-				"--use-fake-device-for-media-stream",
-				"--enable-local-file-accesses",
-				"--allow-file-access-from-files",
-				"--disable-web-security",
-				"--reduce-security-for-testing",
-				"--no-sandbox",
-				"--disable-setuid-sandbox",
-				"--disable-site-isolation-for-policy",
-				"--allow-http-background-page",
-				// Optimizations
-				"--disable-site-isolation-trials",
-				"--wm-window-animations-disabled",
-				"--renderer-process-limit=1",
-				"--enable-low-end-device-mode",
-				"--single-process"
-			],
-			userDataDir: "./chromium-user-data"
+			headless: this.bb.config.headless ?? true,
+			args: browserArgs,
+			userDataDir: "./chromium-user-data",
+			executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
 		});
 		this.frame = (await this.browser.pages())[0];
 		await this.frame.setRequestInterception(true);
-		this.frame.on("request", /** @type {(req: import("puppeteer/lib/cjs/puppeteer/api-docs-entry.js").HTTPRequest) => void} */
+		this.frame.on("request",
 			req => {
 				if(["image", "font"].includes(req.resourceType()))
 					req.abort();
@@ -86,7 +99,11 @@ export default class SteamBrowserApi {
 		userAgent = userAgent.replace("HeadlessChrome", "Chrome");
 		await this.frame.setUserAgent(userAgent);
 		this.frame.on("console", msg => pageLogFiltered);
-		this.frame.on("pageerror", error => console.log("Page error:", error.message) );
+		this.frame.on("pageerror", error => {
+			if(error.message.startsWith("Failed to execute 'getStats' on 'RTCPeerConnection'"))
+				return; // Ignore this message, because it's spamming the log
+			console.log("Page error:", error.message)
+		});
 		let dealWithCaptcha = new DealWithCaptcha(this.bb);
 		this.requestCaptchaSolution = (img) => dealWithCaptcha.getCaptchaSolution(img);
 		this.requestSteamGuardCode = new DealWithSteamGuard(this.bb);
@@ -96,6 +113,8 @@ export default class SteamBrowserApi {
 		await this.goToSteamChat();
 		// Wait for Steam Chat loading to finish
 		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
+
+		setInterval(unpromisify(async () => this.detectStateAndAct()), 1000);
 	}
 
 	async goToSteamChat(){
@@ -137,7 +156,7 @@ export default class SteamBrowserApi {
 					if(verifyRes === true){
 						console.log("Login: Steam Guard completed.");
 						// IDK let's just wait, this need refactor anyway
-						await this.frame.waitForTimeout(10000);
+						await timers.setTimeout(10000);
 						break;
 					} else
 						console.log("Login: Steam Guard failed. Trying again.");
@@ -167,6 +186,34 @@ export default class SteamBrowserApi {
 			} else {
 				throw new Error("Captcha solver is not set.");
 			}
+		}
+	}
+
+	async detectState() {
+		if(!this.frame)
+			return "uninitialized";
+
+		const readyState = await this.frame.evaluate(() => document.readyState);
+		if(readyState != "complete")
+			return "loading";
+
+		return this.frame.evaluate(SteamBrowserGuiApi.detectState, selectors);
+	}
+
+	async detectStateAndAct(){
+		const state = await this.detectState();
+		const stateChanged = state !== this.lastState;
+		this.lastState = state;
+		if(stateChanged)
+			console.log(`🔘 ${state}`);
+		switch(state){
+			case "chat-disconnected":
+				console.log("Disconnect detected. Attempting reconnect.")
+				await this.frame.evaluate(SteamBrowserGuiApi.reconnect, selectors);
+				break;
+			default:
+				// TODO: do the rest, move whole login extravaganza here
+				break;
 		}
 	}
 

@@ -10,6 +10,29 @@ const SteamBrowserGuiApi =  {
 			remember.click();
 	},
 
+	/** @type {(selectors: any) => "login"|"login-guard"|"chat"|"chat-disconnected"} */
+	detectState: (selectors) => {
+		if(location.pathname.startsWith("/login")){
+			// On login page
+
+			if(document.querySelector(selectors.steamGuardInput)){
+				return "login-guard";
+			} else {
+				return "login";
+			}
+		} else if(location.pathname.startsWith("/chat")){
+			// In chat
+
+			let reconnectButton = document.querySelector(selectors.connectionTroubleButton);
+			if(reconnectButton){
+				return "chat-disconnected";
+			} else {
+				return "chat";
+			}
+		}
+		return "unknown";
+	},
+
 	verifyLogin: (selectors) => {
 		return new Promise((resolve, reject) => {
 			let steamGuardCounter = 0;
@@ -59,6 +82,10 @@ const SteamBrowserGuiApi =  {
 		document.querySelector(selectors.steamGuardInput)
 			.querySelectorAll("input")
 			.forEach(i => i.value = "");
+	},
+
+	reconnect: (selectors) => {
+		document.querySelector(selectors.connectionTroubleButton)?.click();
 	}
 }
 

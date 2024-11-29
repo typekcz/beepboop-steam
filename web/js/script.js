@@ -174,3 +174,13 @@ function removeUserSound(button, type){
 	});
 	button.parentElement.parentElement.removeChild(button.parentElement);
 }
+
+function sendMessage(message) {
+	return fetch("api/messages", {
+		method: "post",
+		headers: {
+			Session: localStorage.getItem("authId")
+		},
+		body: message
+	}).then(r => r.text());
+}

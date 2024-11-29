@@ -77,7 +77,7 @@ function loadConfig(){
 }
 
 /** @type {Config} */
-let config = loadConfig();
+const config = loadConfig();
 
 try {
 	config.version = JSON.parse(fs.readFileSync("package.json", "utf8")).version;

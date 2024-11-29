@@ -23,6 +23,8 @@ export default class ChatCommandEvent {
 		this.rawMessage = rawMessage;
 		this.argument = argument;
 		this.userinfo = userInfo;
+		/** @type {(response: string) => Promise<void> | null} */
+		this.customResponseHandler = null;
 	}
 
 	/**
@@ -32,6 +34,10 @@ export default class ChatCommandEvent {
 	 */
 	async sendResponse(response, ttsText = true){
 		this.handled = true;
+
+		if(this.customResponseHandler)
+			return this.customResponseHandler(response);
+
 		if(this.roomInfo != null)
 			await this.chatHandler.sendGroupMessage(this.roomInfo.groupId, this.roomInfo.id, response);
 		else

@@ -1,5 +1,5 @@
 //@ts-check
-import ytdl from "ytdl-core";
+import ytdl from "@distube/ytdl-core";
 
 export default class SteamChatAudio {
 	/**
@@ -85,8 +85,7 @@ export default class SteamChatAudio {
 				console.log("youtube detected");
 				let info = await ytdl.getInfo(url, {});
 				let format = ytdl.chooseFormat(info.formats, {
-					quality: "highestaudio",
-					filter: f => f.container === "webm"
+					quality: "highestaudio"
 				});
 				url = format.url;
 			}
@@ -104,9 +103,9 @@ export default class SteamChatAudio {
 						try {
 							await fakeAudio.audio.play();
 						} catch(exception){
-							return reject(exception.message);
+							return reject(new Error(exception.message));
 						}
-						reject(`Error while loading audio from URL. ${fakeAudio.error.code} ${fakeAudio.error.message}`);
+						reject(new Error(`Error while loading audio from URL. ${fakeAudio.error.code} ${fakeAudio.error.message}`));
 					};
 					let canplayHandler = () => {
 						fakeAudio.audio.removeEventListener("error", errorHandler);
@@ -119,7 +118,9 @@ export default class SteamChatAudio {
 				}));
 			}, url);
 		} catch(e){
-			throw new Error(e.message.replace("Evaluation failed: ", ""));
+			if(e.message)
+				throw new Error(e.message.replace("Evaluation failed: ", ""));
+			throw e;
 		}
 	}
 

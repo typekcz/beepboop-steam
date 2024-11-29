@@ -17,10 +17,10 @@ export function wrapAdminCheckCommandHandler(handler){
 
 /**
  * 
- * @param {import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Page | import("puppeteer-core/lib/cjs/puppeteer/api-docs-entry.js").Frame} chatFrame 
+ * @param {import("../beepboop.js").default} bb
  * @returns {import("../chat-handler.js").ChatCommand[]}
  */
-export function createAdminCommands(chatFrame, bb){
+export function createAdminCommands(bb){
 	return [
 		{
 			command: "die",
@@ -28,10 +28,16 @@ export function createAdminCommands(chatFrame, bb){
 		}, {
 			command: "pupeval",
 			handler: wrapAdminCheckCommandHandler(async e => {
-				let result = await chatFrame.evaluate(
+				let result = await bb.chatFrame.evaluate(
 					/** @type {(code: string) => any} */ 
 					code => eval( `(async () => ${code})()`), e.argument
 				);
+				e.sendResponse("/code " + JSON.stringify(result));
+			})
+		}, {
+			command: "nodeeval",
+			handler: wrapAdminCheckCommandHandler(async e => {
+				let result = await eval(`(async () => ${e.argument})()`);
 				e.sendResponse("/code " + JSON.stringify(result));
 			})
 		}

@@ -8,6 +8,8 @@ import BodyParser from "body-parser";
 import fileUpload from "express-fileupload";
 import openid from "openid";
 import generateUid from "uid-safe";
+import config from "./config-loader.js";
+import UserInfo from "./dto/user-info.js";
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";
@@ -21,10 +23,14 @@ const allowedMime = [
 ];
 
 export default class WebApp {
+	/**
+	 * @param {?string} baseUrl
+	 * @param {number} port
+	 */
 	constructor(baseUrl, port){
-		if(!baseUrl.endsWith("/"))
+		if(!baseUrl?.endsWith("/"))
 			baseUrl += "/";
-		this.baseUrl = baseUrl;
+		this.baseUrl = baseUrl ?? `http://localhost:${port}/`;
 		this.port = port;
 		this.expressApp = Express();
 		this.log = [];
@@ -36,6 +42,7 @@ export default class WebApp {
 			next();
 		});
 		this.expressApp.use(BodyParser.json());
+		this.expressApp.use(BodyParser.text());
 		this.expressApp.use(fileUpload());
 		this.expressApp.use(Express.static(webDir));
 
@@ -254,6 +261,22 @@ export default class WebApp {
 			res.status(200);
 			res.end();
 		});
+
+		this.expressApp.post("/api/messages", async (req, res) => {
+			let steamid = this.sessions.get(req.get("Session"));
+			if(!steamid)
+				return res.status(401).send("Not logged in.").end();
+			if(!config.admins.includes(steamid))
+				return res.status(403).send("Forbidden.").end();
+			await beepboop.steamChat.chatHandler.handleMessage(
+				null, new UserInfo({steamid64: steamid}), req.body, req.body,
+				async (response) => {
+					res.status(200);
+					res.write(response);
+				}
+			);
+			res.end();
+		});
 	}
 
 	startSteamLoginApi(){
@@ -284,8 +307,13 @@ export default class WebApp {
 				let uid = await generateUid(18);
 				this.sessions.set(uid, result?.claimedIdentifier?.substring(steamOpenId.length + 4)); // 4 == "/id/".length
 				res.write(`<!DOCTYPE HTML><html><head>
-					<script>localStorage.setItem("authId", ${JSON.stringify(uid)});close();</script>
-				</head></html>`);
+					<script>
+						localStorage.setItem("authId", ${JSON.stringify(uid)});
+						close();
+					</script>
+				</head><body>
+					You are logged in and you can close this window.
+				</body></html>`);
 				res.end();
 			});
 		});

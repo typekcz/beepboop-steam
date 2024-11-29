@@ -1,6 +1,5 @@
 //@ts-check
 
-import { VM } from "vm2";
 import { formatDuration } from "../utils.js";
 
 /**
@@ -25,15 +24,19 @@ function shortHelp([keyword, command]){
  * @param {import("../chat-handler.js").ChatCommand} command 
  */
 function longHelp(keyword, command){
-	return `${shortHelp([keyword, command])}\n${command.longHelp}`;
+	let help = shortHelp([keyword, command]);
+	if(command.longHelp)
+		help += "\n" + command.longHelp;
+	return help;
 }
 
 /**
  * 
+ * @param {import("../beepboop.js").default} bb
  * @param {Map<string, import("../chat-handler.js").ChatCommand>} chatCommandsMap 
  * @returns {import("../chat-handler.js").ChatCommand[]}
  */
-export function createBasicCommands(chatCommandsMap){
+export function createBasicCommands(bb, chatCommandsMap){
 	return [
 		{
 			command: "help",
@@ -46,9 +49,13 @@ export function createBasicCommands(chatCommandsMap){
 					else
 						e.sendResponse(`There is no help for "${e.argument}".`);
 				} else {
-					let str = ["𝘾𝙤𝙢𝙢𝙖𝙣𝙙𝙨\n", ...([...chatCommandsMap.entries()]
-						.map(shortHelp)
-					)].join("")
+					let str = [
+						"𝘾𝙤𝙢𝙢𝙖𝙣𝙙𝙨\n", 
+						...([...chatCommandsMap.entries()].map(shortHelp)),
+						"𝙒𝙚𝙗 𝙞𝙣𝙩𝙚𝙧𝙛𝙖𝙘𝙚: ", bb.config.baseUrl,
+						"\n𝘽𝙚𝙚𝙥𝘽𝙤𝙤𝙥 v", bb.config.version
+					].join("");
+					console.log("help", str);
 					e.sendResponse(str);
 				}
 			},
@@ -62,17 +69,6 @@ export function createBasicCommands(chatCommandsMap){
 			command: "time",
 			handler: e => e.sendResponse(`It's ${new Date().toLocaleString()} and I'm up for ${formatDuration(process.uptime())}`),
 			help: "Shows time and bot's uptime."
-		}, {
-			command: "eval",
-			handler: e => {
-				const vm = new VM({timeout: 1000});
-				let result = vm.run(e.argument);
-				e.sendResponse("/code " + JSON.stringify(result));
-			},
-			argsHelp: "<JavaScript code>",
-			help: "Evaluates JavaScript code and writes returned result to the chat.",
-			longHelp: `Example:
-eval ["red", "green", "blue"][Math.floor(Math.random()*3)]`
 		}
 	];
 }

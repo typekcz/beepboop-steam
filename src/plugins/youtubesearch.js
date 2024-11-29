@@ -13,11 +13,14 @@ export default class YoutubeSearch {
 	constructor(apiGW){
 		this.apiGW = apiGW;
 
-		apiGW.steamChat.on("chatCommand", async (event) => {
-			if(event.command != "youtube")
-				return;
-			await this.findVideo(event.argument);
-			event.setAsHandled();
+		apiGW.chatHandler.addCommands({
+			command: "youtube",
+			help: "Play Youtube video",
+			longHelp: "You can specify which search result to play by appending # and a number.",
+			argsHelp: "<search>",
+			handler: async (e) => {
+				e.sendResponse(await this.findVideo(e.argument), false);
+			}
 		});
 
 		apiGW.webApp.expressApp.post("/api/plugins/youtube/find", async (req, res) => {
@@ -65,6 +68,8 @@ export default class YoutubeSearch {
 		}
 		if(regex_result == null)
 			throw new Error("No video found.");
-		await this.apiGW.steamChatAudio.playSoundUrl(VIDEO_URL + regex_result[1], true);
+		let ytUrl = VIDEO_URL + regex_result[1];
+		await this.apiGW.steamChatAudio.playSoundUrl(ytUrl, true);
+		return ytUrl;
 	}
 }

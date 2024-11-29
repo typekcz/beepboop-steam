@@ -1,9 +1,11 @@
-FROM zenika/alpine-chrome:with-node
+FROM node:21-bookworm
 
+ADD https://github.com/RobRich999/Chromium_Clang/releases/download/v129.0.6614.0-r1331996-linux64-deb-avx2/chromium-browser-unstable_129.0.6614.0-1_amd64.deb /tmp/pkg.deb
+RUN apt update && apt install -y /tmp/pkg.deb && \
+	rm /tmp/pkg.deb
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
 ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
-COPY --chown=chrome . /beepboop
+COPY . /beepboop
 WORKDIR /beepboop
-RUN npm install
-ENTRYPOINT ["tini", "--"]
-CMD ["npm", "start"]
+RUN npm install && npm install @distube/ytdl-core@latest
+ENTRYPOINT ["npm", "start"]

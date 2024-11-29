@@ -18,7 +18,7 @@ export default class DealWithSteamGuard {
 		});
 
 		beepboop.webApp.expressApp.post("/api/plugins/dealwithsteamguard", async (req, res) => {
-			if(this.steamGuardCodePromise && req.body && req.body.code){
+			if(this.steamGuardCodePromise && req.body?.code){
 				this.steamGuardCodePromise.resolve(req.body.code);
 				this.steamGuardCodePromise = null;
 			}
