@@ -107,6 +107,10 @@ export default class BeepBoop {
 		return this.steamClient?.getFriendsUiPage() || this.steamBrowser?.getFriendsUiPage();
 	}
 
+	get chatHandler(){
+		return this.steamChat.chatHandler;
+	}
+
 	async loadPlugins(){
 		if(!config.plugins)
 			return;
