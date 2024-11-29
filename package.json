@@ -15,6 +15,7 @@
 	"author": "Lukáš Kotržena",
 	"license": "MIT",
 	"dependencies": {
+		"@distube/ytdl-core": "^4.15.1",
 		"body-parser": "^1.20.0",
 		"dotenv": "^16.3.0",
 		"express": "^4.18.1",
@@ -24,7 +25,6 @@
 		"pg-promise": "^11.9.1",
 		"puppeteer": "^22.13.1",
 		"require-from-string": "^2.0.2",
-		"uid-safe": "^2.1.5",
-		"@distube/ytdl-core": "^4.13.5"
+		"uid-safe": "^2.1.5"
 	}
 }
