@@ -79,20 +79,18 @@ export default class SteamChatAudio {
 	 * @param {boolean} checkYt 
 	 */
 	async playSoundUrl(url, checkYt = true){
-		console.log("playUrl", url);
-		if(checkYt){
-			if(ytdl.validateURL(url)){
-				console.log("youtube detected");
-				let info = await ytdl.getInfo(url, {});
-				let format = ytdl.chooseFormat(info.formats, {
-					quality: "highestaudio"
-				});
-				url = format.url;
-			}
-		}
-		// Proxy
-		if(!url.startsWith(this.soundsBaseUrl))
+		console.log("Play sound", url);
+		let yt = checkYt && ytdl.validateURL(url);
+
+		if(yt) {
+			// YTDL endpoint
+			url = `${this.soundsBaseUrl}/api/ytdl/${encodeURIComponent(url)}`;
+		} else if(!url.startsWith(this.soundsBaseUrl)) {
+			// Proxy
 			url = `${this.soundsBaseUrl}/api/proxy/${encodeURIComponent(url)}`;
+		}
+
+		/** @type {{audioContext: AudioContext; audio: HTMLAudioElement;}} */
 		let fakeAudio; // Fake for TS check
 		try {
 			await this.frame.evaluate(async (url) => {
@@ -103,9 +101,9 @@ export default class SteamChatAudio {
 						try {
 							await fakeAudio.audio.play();
 						} catch(exception){
-							return reject(new Error(exception.message));
+							return reject(new Error(`${exception.message} Code ${fakeAudio.audio.error.code}: ${fakeAudio.audio.error.message}`));
 						}
-						reject(new Error(`Error while loading audio from URL. ${fakeAudio.error.code} ${fakeAudio.error.message}`));
+						reject(new Error(`Error while loading audio from URL. Code ${fakeAudio.audio.error.code}: ${fakeAudio.audio.error.message}`));
 					};
 					let canplayHandler = () => {
 						fakeAudio.audio.removeEventListener("error", errorHandler);
@@ -118,6 +116,10 @@ export default class SteamChatAudio {
 				}));
 			}, url);
 		} catch(e){
+			if(yt) {
+				let res = await fetch(url);
+				console.log(res.status, res.statusText);
+			}
 			if(e.message)
 				throw new Error(e.message.replace("Evaluation failed: ", ""));
 			throw e;
