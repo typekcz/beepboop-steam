@@ -5,6 +5,7 @@ import ChatCommandEvent from "./chat-command-event.js";
 import createSteamChatAudioCommands from "./chat-commands/commands-steam-chat-audio.js";
 import { createBasicCommands } from "./chat-commands/commands-basic.js";
 import { createAdminCommands } from "./chat-commands/commands-admin.js";
+import { randomElement } from "./utils.js";
 
 /**
  * @typedef {(e: ChatCommandEvent) => Promise<?>|void} ChatCommandHandler
@@ -69,19 +70,6 @@ export default class ChatHandler {
 	 * @param {(response: string) => Promise<void> | null} [customResponseHandler]
 	 */
 	async handleMessage(room, user, message, rawMessage, customResponseHandler = null){
-		const unknownMessages = [
-			"The fuck you want?",
-			"I'm not fluent in meatbag language.",
-			"Fuck you too."
-		];
-		const errorMessages = [
-			"Nope.",
-			"418 I'm a teapot.",
-			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉.",
-			"/me is currently unavailable.",
-			"No can do."
-		];
-
 		if(room != null && !rawMessage.startsWith("[mention="+this.bb.steamChat.getLoggedUserInfo()?.accountid+"]"))
 			return;
 
@@ -107,10 +95,10 @@ export default class ChatHandler {
 			}
 
 			if(!event.handled)
-				event.sendResponse(unknownMessages[Math.round(Math.random()*(unknownMessages.length - 1))]);
+				event.sendResponse(randomElement(this.bb.config.messages.unknownCommand));
 		} catch(e){
 			console.log("command error", e.message);
-			event.sendResponse(errorMessages[Math.round(Math.random()*(errorMessages.length - 1))] + "\n" + e.message);
+			event.sendResponse(randomElement(this.bb.config.messages.error) + "\n" + e.message);
 		}
 	}
 

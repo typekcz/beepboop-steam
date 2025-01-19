@@ -4,7 +4,7 @@ import RoomInfo from "../dto/room-info.js";
 import UserInfo from "../dto/user-info.js";
 import SteamFriendsUiApi from "./steam-friends-ui-api.js";
 import Events from "node:events";
-import { sleep, unpromisify } from "../utils.js";
+import { randomElement, sleep, unpromisify } from "../utils.js";
 
 export default class SteamChatApi extends Events.EventEmitter {
 	/**
@@ -176,14 +176,10 @@ export default class SteamChatApi extends Events.EventEmitter {
 		let groupId = await this.getGroupIdByName(group);
 		await this.frame.evaluate(SteamFriendsUiApi.joinVoiceRoom, groupId, channel);
 
-		const greetingMessages = [
-			"Hello, I am BeebBoop and I do beep and boop.",
-			"I really like cheese.",
-			"Knock, knock."
-		];
+		const greetingMessage = randomElement(this.bb.config.messages.greeting);
 		setTimeout(unpromisify(async () => {
 			try {
-				await this.bb.steamChatAudio.textToSpeech(greetingMessages[Math.round(Math.random()*(greetingMessages.length - 1))]);
+				await this.bb.steamChatAudio.textToSpeech(greetingMessage);
 			} catch(e){
 				console.error(e);
 			}

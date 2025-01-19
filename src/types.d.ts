@@ -17,4 +17,9 @@ interface Config {
 	plugins?: string[];
 	ttsUrl?: string;
 	admins?: string[]; // SteamID64
+	messages?: {
+		greeting: string[];
+		unknownCommand: string[];
+		error: string[];
+	}
 }

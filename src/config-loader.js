@@ -11,6 +11,30 @@ const helpString =
 Default config file is "config.json". 
 Required values are steam.userName, steam.password, steam.groupName, steam.channelName.`;
 
+/** @type {Partial<Config>} */
+const defaultConfig = {
+	plugins: ["myinstants", "youtubesearch"],
+	messages: {
+		greeting: [
+			"Hello, I am BeebBoop and I do beep and boop.",
+			"I really like cheese.",
+			"Knock, knock."
+		],
+		unknownCommand: [
+			"The fuck you want?",
+			"I'm not fluent in meatbag language.",
+			"Fuck you too."
+		],
+		error: [
+			"Nope.",
+			"418 I'm a teapot.",
+			"E̴͚̠̰̺͎̘ͫR̮͈͓̆͜R͕̩̩̭̙͘Ȯ͖̜̱̞̜ͮR̉.",
+			"/me is currently unavailable.",
+			"No can do."
+		]
+	}
+}
+
 function loadConfig(){
 	if(process.env.CONFIG){
 		try {
@@ -90,10 +114,12 @@ if(!config){
 	process.exit(1);
 }
 
-// Default plugins
-if(!config.plugins){
-	config.plugins = ["myinstants"];
-}
+// Defaults
+config.plugins = config.plugins ?? defaultConfig.plugins;
+config.messages = {
+	...defaultConfig.messages,
+	...config.messages
+};
 
 // Env var port or default port if missing in config
 config.port = config.port || Number(process.env.PORT) || 8081;

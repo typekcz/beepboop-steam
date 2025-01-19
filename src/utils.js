@@ -124,3 +124,13 @@ export function formatDuration(seconds) {
 	
 	return formattedTime.length > 0 ? formattedTime.join(', ') : '0 seconds';
 }
+
+/**
+ * Returns random element of an array.
+ * @template T
+ * @param {T[]} array 
+ * @returns {T}
+ */
+export function randomElement(array) {
+	return array[Math.round(Math.random()*(array.length - 1))];
+}
