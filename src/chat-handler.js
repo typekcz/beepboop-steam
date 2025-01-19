@@ -42,6 +42,7 @@ export default class ChatHandler {
 			this.handleMessage(room, user, text, rawText).catch(console.error);
 		}).catch(console.error);
 
+		/** @type {any} */
 		let g_FriendsUIApp; // Fake for TS check
 		let handleMessage = (/** @type {RoomInfo} */ room, /** @type {UserInfo} */ user, /** @type {any} */ text, /** @type {any} */ rawText) => {};
 		this.bb.chatFrame?.evaluate(() => {
@@ -133,6 +134,7 @@ export default class ChatHandler {
 	 * @param {string} text 
 	 */
 	async sendGroupMessage(group, room, text){
+		/** @type {any} */
 		let g_FriendsUIApp; // Fake for TS check
 		await this.frame.evaluate(
 			/** @type {(group: string, room: string, text: string) => void} */
@@ -168,6 +170,7 @@ export default class ChatHandler {
 	}
 
 	async sendDirectMessage(userId, text){
+		/** @type {any} */
 		let g_FriendsUIApp; // Fake for TS check
 		await this.frame.evaluate((userId, text) => {
 			g_FriendsUIApp.ChatStore.GetFriendChat(userId).SendChatMessage(text);

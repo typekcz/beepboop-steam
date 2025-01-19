@@ -44,6 +44,7 @@ export default class SteamChatApi extends Events.EventEmitter {
 		this.loggedUser = await this.frame.evaluate(SteamFriendsUiApi.getLoggedUserInfo);
 		this.myName = this.loggedUser?.name;
 
+		/** @type {any} */
 		let g_FriendsUIApp; // Fake for TS check
 		await this.frame.evaluate(() => {
 			g_FriendsUIApp.SettingsStore.FriendsSettings.bAnimatedAvatars = false;
