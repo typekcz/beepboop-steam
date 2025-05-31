@@ -40,6 +40,7 @@ export default class BeepBoop {
 				break;
 			case "web":
 				this.steamBrowser = new SteamBrowserApi(this);
+				this.steamBrowser.on("chat", () => this.onChatLoaded());
 				break;
 			default:
 				throw new Error("No mode selected.");
@@ -56,21 +57,12 @@ export default class BeepBoop {
 		console.info(`Initializing Steam ${config.mode} API.`);
 		await this.steamClient?.init();
 		await this.steamBrowser?.init()
-		
-		await this.onChatLoaded();
 
 		console.info("Initializing REST API.");
 		this.webApp.startRestApi(this);
 		this.webApp.startSteamLoginApi();
 		await this.loadPlugins();
 		console.info(`BeepBoop started in ${process.uptime()} seconds.`);
-
-		// On future reloads, reinitialize
-		this.chatPage.on("load", async () => {
-			if(await this.chatFrame.evaluate(SteamFriendsUiApi.isSteamChat)){
-				setTimeout(() => this.onChatLoaded().catch(console.error), 2000);
-			}
-		});
 	}
 
 	async onChatLoaded(){

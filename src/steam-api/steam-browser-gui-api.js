@@ -10,12 +10,15 @@ const SteamBrowserGuiApi =  {
 			remember.click();
 	},
 
-	/** @type {(selectors: any) => "login"|"login-guard"|"chat"|"chat-disconnected"} */
+	/** @type {(selectors: any) => "login"|"login-error"|"login-guard"|"chat"|"chat-disconnected"|"unknown"} */
 	detectState: (selectors) => {
 		if(location.pathname.startsWith("/login")){
 			// On login page
 
-			if(document.querySelector(selectors.steamGuardInput)){
+			const loginArea = document.querySelector(selectors.loginArea);
+			if(loginArea?.innerText?.startsWith("Error")){
+				return "login-error";
+			} else if(document.querySelector(selectors.steamGuardInput)){
 				return "login-guard";
 			} else {
 				return "login";

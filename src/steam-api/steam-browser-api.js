@@ -4,10 +4,11 @@ import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 import DealWithSteamGuard from "../deal-with-steam-guard.js";
 import { unpromisify } from "../utils.js";
-import timers from "node:timers/promises";
+import { EventEmitter } from "node:events";
 
 const selectors = {
 	// Steam login selectors:
+	loginArea: "[data-featuretarget=login]",
 	loginUsername: "[data-featuretarget=login] input[type=text]",
 	loginPassword: "[data-featuretarget=login] input[type=password]",
 	loginRememberMe: "[data-featuretarget=login] div[tabindex]",
@@ -15,7 +16,7 @@ const selectors = {
 	loginCaptchaImg: "#captchaImg",
 	loginError: "[data-featuretarget=login] form > div:last-of-type:not(:first-of-type)",
 	loginButton: "[data-featuretarget=login] [type=submit]",
-	steamGuardInput: "[data-featuretarget=login] div:has(> input)",
+	steamGuardInput: "[data-featuretarget=login] div:has(> input) .wtf",
 	// Steam Chat selectors:
 	loading: ".WaitingForInterFaceReadyContainer",
 	connectionTroubleButton: ".ConnectionTroubleReconnectMessage button"
@@ -29,14 +30,16 @@ function pageLogFiltered(msg){
 	console.log("Page log:", msg.text());
 }
 
-export default class SteamBrowserApi {
+export default class SteamBrowserApi extends EventEmitter {
 	/**
 	 * 
 	 * @param {import("../beepboop.js").default} beepboop 
 	 */
 	constructor(beepboop){
+		super();
 		this.bb = beepboop;
 		this.lastState = "uninitialized";
+		this.stateMethodRunning = false;
 	}
 
 	async init(){
@@ -111,8 +114,6 @@ export default class SteamBrowserApi {
 		this.bb.webApp.setupPageScreen(this.frame);
 
 		await this.goToSteamChat();
-		// Wait for Steam Chat loading to finish
-		await this.frame.waitForSelector(selectors.loading, {hidden: true, timeout: 10000});
 
 		setInterval(unpromisify(async () => this.detectStateAndAct()), 1000);
 	}
@@ -125,67 +126,40 @@ export default class SteamBrowserApi {
 		} catch(e){
 			console.error(e.message);
 		}
-
-		if(this.frame.url().includes("login")){
-			await this.login(this.bb.config.steam?.userName, this.bb.config.steam?.password);
-		}
 	}
 
-	async login(username, password){
+	async doLogin(){
+		const username = this.bb.config.steam?.userName
+		const password = this.bb.config.steam?.password;
+
 		if(!this.frame)
 			throw new Error("Steam chat frame not loaded.");
-		await this.frame.waitForSelector(selectors.loginButton);
+
 		await this.frame.type(selectors.loginUsername, username);
 		await this.frame.type(selectors.loginPassword, password);
 		await this.frame.evaluate(SteamBrowserGuiApi.rememberMe, selectors);
 		await this.frame.click(selectors.loginButton);
-		await this.frame.waitForNavigation({timeout: 10000}).catch(() => {});
-		// TODO: This is a mess and needs refactor
-		let verifyRes = await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
-		if(verifyRes === true){
-			console.log("Login: Success.");
-			if(!this.frame.url().startsWith(steamChatUrl))
-				await this.frame.waitForNavigation({timeout: 5000, waitUntil: "networkidle2"});
-		} else if(verifyRes === "steamguard"){
-			console.log(`Steam Guard detected! You need to provide Steam Guard code. Visit ${this.bb.config.baseUrl} to fill it out.`);
-			while(true) {
-				let code = await this.requestSteamGuardCode.getSteamGuardCode();
-				await this.frame.type(selectors.steamGuardInput, code);
-				try {
-					let verifyRes = await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
-					if(verifyRes === true){
-						console.log("Login: Steam Guard completed.");
-						// IDK let's just wait, this need refactor anyway
-						await timers.setTimeout(10000);
-						break;
-					} else
-						console.log("Login: Steam Guard failed. Trying again.");
-				} catch(e){
-					console.log("Login: Steam Guard failed. Trying again.");
-				}
-				await this.frame.evaluate(SteamBrowserGuiApi.clearSteamGuard, selectors);
-			}
-		} else if(verifyRes === "captcha"){
-			console.log("Login: Captcha detected, requesting solution.");
-			// Deal with captcha
-			if(this.requestCaptchaSolution){
-				while(true) {
-					await this.frame.evaluate(SteamBrowserGuiApi.waitForCaptchaImage, selectors);
-					let captchaElement = await this.frame.$(selectors.loginCaptchaImg);
-					let solution = await this.requestCaptchaSolution(await captchaElement?.screenshot({type: "png"}));
-					console.log("Login: Captcha solution received.");
-					await this.frame.evaluate(SteamBrowserGuiApi.fillCaptcha, solution, selectors);
-					try {
-						await this.frame.evaluate(SteamBrowserGuiApi.verifyLogin, selectors);
-						console.log("Login: Captcha solved.");
-						break;
-					} catch(e){
-						console.log("Login: Captcha solution failed. Trying again.");
-					}
-				}
-			} else {
-				throw new Error("Captcha solver is not set.");
-			}
+	}
+
+	async doLoginGuard() {
+		console.log(`Steam Guard detected! You need to provide Steam Guard code. Visit ${this.bb.config.baseUrl} to fill it out.`);
+		let code = await this.requestSteamGuardCode.getSteamGuardCode();
+		
+		await this.frame.evaluate(SteamBrowserGuiApi.clearSteamGuard, selectors);
+		await this.frame.type(selectors.steamGuardInput, code);
+	}
+
+	async doLoginCaptcha() {
+		console.log("Login: Captcha detected, requesting solution.");
+		// Deal with captcha
+		if(this.requestCaptchaSolution){
+			await this.frame.evaluate(SteamBrowserGuiApi.waitForCaptchaImage, selectors);
+			let captchaElement = await this.frame.$(selectors.loginCaptchaImg);
+			let solution = await this.requestCaptchaSolution(await captchaElement?.screenshot({type: "png"}));
+			console.log("Login: Captcha solution received.");
+			await this.frame.evaluate(SteamBrowserGuiApi.fillCaptcha, solution, selectors);
+		} else {
+			throw new Error("Captcha solver is not set.");
 		}
 	}
 
@@ -201,19 +175,39 @@ export default class SteamBrowserApi {
 	}
 
 	async detectStateAndAct(){
-		const state = await this.detectState();
-		const stateChanged = state !== this.lastState;
-		this.lastState = state;
-		if(stateChanged)
+		// Preven method from running multiple times
+		if(this.stateMethodRunning) return;
+		this.stateMethodRunning = true;
+		try {
+			try {
+				await this.frame.waitForNetworkIdle({ timeout: 5_000, concurrency: 3 });
+			} catch(e) {/* Ingore error */}
+			const state = await this.detectState();
+			const stateChanged = state !== this.lastState;
+			this.lastState = state;
+			if(!stateChanged)
+				return;
 			console.log(`🔘 ${state}`);
-		switch(state){
-			case "chat-disconnected":
-				console.log("Disconnect detected. Attempting reconnect.")
-				await this.frame.evaluate(SteamBrowserGuiApi.reconnect, selectors);
-				break;
-			default:
-				// TODO: do the rest, move whole login extravaganza here
-				break;
+			switch(state){
+				case "login":
+					await this.doLogin();
+					break;
+				case "login-guard":
+					await this.doLoginGuard();
+					break;
+				case "login-error":
+					await this.goToSteamChat();
+					break;
+				case "chat-disconnected":
+					console.log("Disconnect detected. Attempting reconnect.")
+					await this.frame.evaluate(SteamBrowserGuiApi.reconnect, selectors);
+					break;
+				default:
+					break;
+			}
+			this.emit(state);
+		} finally {
+			this.stateMethodRunning = false;
 		}
 	}
 
