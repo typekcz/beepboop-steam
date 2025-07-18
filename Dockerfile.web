@@ -1,6 +1,6 @@
 FROM node:21-bookworm
 
-ADD https://github.com/RobRich999/Chromium_Clang/releases/download/v129.0.6614.0-r1331996-linux64-deb-avx2/chromium-browser-unstable_129.0.6614.0-1_amd64.deb /tmp/pkg.deb
+ADD https://github.com/RobRich999/Chromium_Clang/releases/download/v140.0.7291.0-r1485923-linux64-deb-avx2/chromium-browser-unstable_140.0.7291.0-1_amd64.deb /tmp/pkg.deb
 RUN apt update && apt install -y /tmp/pkg.deb && \
 	rm /tmp/pkg.deb
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
