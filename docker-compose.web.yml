@@ -13,9 +13,7 @@ services:
       - STEAM_PASSWORD=${STEAM_PASSWORD}
       - MODE=web
       - DB_CONNECTION=postgres://beepboop:beepboop@db/beepboop
-    deploy:
-      restart_policy:
-        condition: any
+    restart: unless-stopped
   db:
     image: postgres:latest
     environment:
@@ -26,3 +24,4 @@ services:
       - 5432
     volumes: 
       - ./db:/var/lib/postgresql/data
+    restart: unless-stopped
