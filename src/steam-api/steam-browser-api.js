@@ -204,7 +204,7 @@ export default class SteamBrowserApi extends EventEmitter {
 					break;
 				case "chat-disconnected":
 					console.log("Disconnect detected. Attempting reconnect.")
-					await this.frame.evaluate(SteamBrowserGuiApi.reconnect, selectors);
+					await this.goToSteamChat();
 					break;
 				default:
 					break;
