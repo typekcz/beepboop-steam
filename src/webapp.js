@@ -212,7 +212,7 @@ export default class WebApp {
 		});
 
 		this.expressApp.get("/api/sounds", async (req, res) => {
-			res.json(await beepboop.soundsDbGw?.selectList()).end();
+			res.json(await beepboop.soundsDbGw?.selectList() ?? []).end();
 		});
 
 		this.expressApp.get("/api/sounds/:soundName", async (req, res) => {
