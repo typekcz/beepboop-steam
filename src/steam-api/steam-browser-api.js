@@ -24,9 +24,13 @@ const selectors = {
 
 const steamChatUrl = "https://steamcommunity.com/chat";
 
+/**
+ * @param {puppeteer.ConsoleMessage} msg 
+ * @returns 
+ */
 function pageLogFiltered(msg){
-	if(msg.text().startsWith("Mixed Content:"))
-		return;
+	if(msg.text().startsWith("Mixed Content:")) return;
+	if(msg.text().startsWith("Failed to load resource: net::ERR_FAILED")) return;
 	console.log("Page log:", msg.text());
 }
 
@@ -101,7 +105,7 @@ export default class SteamBrowserApi extends EventEmitter {
 		let userAgent = await this.frame.evaluate(() => navigator.userAgent);
 		userAgent = userAgent.replace("HeadlessChrome", "Chrome");
 		await this.frame.setUserAgent(userAgent);
-		this.frame.on("console", msg => pageLogFiltered);
+		this.frame.on("console", pageLogFiltered);
 		this.frame.on("pageerror", error => {
 			if(error.message.startsWith("Failed to execute 'getStats' on 'RTCPeerConnection'"))
 				return; // Ignore this message, because it's spamming the log
