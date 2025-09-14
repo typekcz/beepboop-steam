@@ -61,7 +61,10 @@ const SteamFriendsUiApi =  {
 		return null;
 	},
 
-	getGroupMembers: (groupId) => {
+	getGroupMembers: async (groupId) => {
+		g_FriendsUIApp.ChatStore.IncRefActiveChatRoomGroup(groupId, true);
+		await g_FriendsUIApp.ChatStore.SendActiveChatRoomGroupsToServer();
+		g_FriendsUIApp.GroupMemberStore.RegisterForGroupMemberList(() => {}, groupId);
 		g_FriendsUIApp.GroupMemberStore.PerformInitialPopulate(groupId);
 		let members = [];
 		for(let bucket of g_FriendsUIApp.GroupMemberStore.GetGroupMemberList(groupId)){
