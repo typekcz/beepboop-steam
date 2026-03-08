@@ -8,7 +8,7 @@ services:
     shm_size: '500mb'
     ports:
       - 127.0.0.1:5900:5900 # VNC LAN only
-      - 8080:8081 # Node web server
+      - ${PORT-8080}:8081 # Node web server
     volumes:
       - ./config.json:/beepboop/config.json:ro
       - ./steam/:/home/beepboop/.steam/:rw
