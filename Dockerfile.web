@@ -1,10 +1,19 @@
 FROM node:21-bookworm
 
-ADD https://github.com/RobRich999/Chromium_Clang/releases/download/v147.0.7685.0-r1584191-linux64-deb-avx2/chromium-browser-unstable_147.0.7685.0-1_amd64.deb /tmp/pkg.deb
-RUN apt update && apt install -y /tmp/pkg.deb && \
-	rm /tmp/pkg.deb
+ARG BROWSER_DEB=""
+ARG BROWSER_PATH="/usr/bin/chromium"
+
+RUN apt update && \
+	if [ -n "$BROWSER_DEB" ]; then \
+		curl -L -o /tmp/pkg.deb "$BROWSER_DEB" && \
+		apt install -y /tmp/pkg.deb && \
+		rm /tmp/pkg.deb; \
+	else \
+		apt install -y chromium; \
+	fi
+
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
-ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
+ENV PUPPETEER_EXECUTABLE_PATH ${BROWSER_PATH}
 COPY . /beepboop
 WORKDIR /beepboop
 RUN npm install

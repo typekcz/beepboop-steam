@@ -4,6 +4,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      args:
+        BROWSER_DEB: ${BROWSER_DEB-https://github.com/RobRich999/Chromium_Clang/releases/download/v147.0.7685.0-r1584191-linux64-deb-avx2/chromium-browser-unstable_147.0.7685.0-1_amd64.deb}
+        BROWSER_PATH: ${BROWSER_PATH-/usr/bin/chromium-browser}
     ports:
       - 8080:8081 # Node web server
     volumes:
