@@ -1,5 +1,5 @@
 //@ts-check
-import ytdl from "@distube/ytdl-core";
+import { ytHelper } from "../yt-helper.js";
 
 export default class SteamChatAudio {
 	/**
@@ -80,7 +80,7 @@ export default class SteamChatAudio {
 	 */
 	async playSoundUrl(url, checkYt = true){
 		console.log("Play sound", url);
-		let yt = checkYt && ytdl.validateURL(url);
+		let yt = checkYt && ytHelper.validateUrl(url);
 
 		if(yt) {
 			// YTDL endpoint

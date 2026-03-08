@@ -1,3 +1,5 @@
+import { ArgsOptions } from "ytdlp-nodejs";
+
 interface Config {
 	version?: string;
 	port: number;
@@ -17,4 +19,5 @@ interface Config {
 	plugins?: string[];
 	ttsUrl?: string;
 	admins?: string[]; // SteamID64
+	ytdlp?: ArgsOptions;
 }

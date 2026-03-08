@@ -7,5 +7,5 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
 ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
 COPY . /beepboop
 WORKDIR /beepboop
-RUN npm install && npm install @distube/ytdl-core@latest
+RUN npm install
 ENTRYPOINT ["npm", "start"]

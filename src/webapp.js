@@ -10,7 +10,7 @@ import openid from "openid";
 import generateUid from "uid-safe";
 import config from "./config-loader.js";
 import UserInfo from "./dto/user-info.js";
-import ytdl from "@distube/ytdl-core";
+import { ytHelper } from "./yt-helper.js";
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";
@@ -34,6 +34,7 @@ export default class WebApp {
 		this.baseUrl = baseUrl ?? `http://localhost:${port}/`;
 		this.port = port;
 		this.expressApp = Express();
+		/** @type {string[]} */
 		this.log = [];
 
 		this.sessions = new Map();
@@ -97,22 +98,7 @@ export default class WebApp {
 			if(!["172.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress || ""))
 				return res.status(403).send("Nope").end();
 
-			let info = await ytdl.getInfo(req.params.url);
-			info.formats = ytdl.filterFormats(info.formats, "audio");
-
-			// Keep only formats that return ok status
-			info.formats = await Promise.all(
-				info.formats.map(f => fetch(f.url, { method: "HEAD" }).then(r => r.ok ? f: null))
-			).then(a => a.filter(f => f));
-			// Choose one final format for playing
-			info.formats = [ ytdl.chooseFormat(info.formats, {}) ];
-			
-			res.status(200);
-			res.set("Access-Control-Allow-Origin", "*");
-			res.set("Content-Type", info.formats[0].mimeType);
-
-			// Download and pipe to response
-			ytdl.downloadFromInfo(info).pipe(res);
+			ytHelper.streamToResponse(req.params.url, res);
 		});
 
 		this.expressApp.listen(port);
