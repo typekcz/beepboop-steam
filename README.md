@@ -78,10 +78,13 @@ You can now also send him a direct message that doesn't require the name handle.
 
 Command | Description
 ------- | -----------
-**play** *sound* | Plays uploaded sound matching name %1.
-**playurl** *http://example.com/linktosound.mp3* | Plays passed URL, supports Youtube URLs.
+**play** *sound* | Adds uploaded sound matching name %1 to the queue (plays after the current sound).
+**playurl** *http://example.com/linktosound.mp3* | Adds passed URL to the queue, supports Youtube URLs.
 **instant** *get to da choppa* | Searches sounds on [myinstants.com](https://www.myinstants.com/) and plays first result. If you want another result append # followed by number of result you want to play.
-**youtube** *dramatic* *chipmunk* | Searches videos on YouTube and plays the first one or you can append # and number to play that specific result like with **instant** command.
+**youtube** *dramatic* *chipmunk* | Searches videos on YouTube and adds the first one to the queue or you can append # and number to queue that specific result like with **instant** command.
+**queue** (alias **q**) | Shows the current queue. Use **play** to add sounds.
+**skip** (alias **next**) | Skips the current sound and plays the next one in the queue.
+**clearqueue** (alias **cq**) | Removes all sounds from the queue. Doesn't stop the current sound.
 **stop** | Stops whatever is playing.
 **pause** | Same thing as stop.
 **play** | (Without argument) resume playing stopped/paused sound.

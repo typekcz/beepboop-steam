@@ -15,11 +15,11 @@ export default class YoutubeSearch {
 
 		apiGW.chatHandler.addCommands({
 			command: "youtube",
-			help: "Play Youtube video",
-			longHelp: "You can specify which search result to play by appending # and a number.",
+			help: "Add Youtube video to the queue",
+			longHelp: "You can specify which search result to queue by appending # and a number.",
 			argsHelp: "<search>",
 			handler: async (e) => {
-				e.sendResponse(await this.findVideo(e.argument), false);
+				e.sendResponse(await this.findVideo(e.argument, true), false);
 			}
 		});
 
@@ -50,7 +50,12 @@ export default class YoutubeSearch {
 		});
 	}
 
-	async findVideo(search){
+	/**
+	 * @param {string} search Search phrase, optionally suffixed with #N to pick result N.
+	 * @param {boolean} enqueue Add to the queue instead of playing immediately.
+	 * @returns {Promise<string>} URL of the found video.
+	 */
+	async findVideo(search, enqueue = false){
 		const searchRegEx = /^(.*?)(#(\d))?$/;
 		let reRes = searchRegEx.exec(search);
 		if(!reRes || reRes.length <= 1)
@@ -69,7 +74,10 @@ export default class YoutubeSearch {
 		if(regex_result == null)
 			throw new Error("No video found.");
 		let ytUrl = VIDEO_URL + regex_result[1];
-		await this.apiGW.steamChatAudio.playSoundUrl(ytUrl, true);
+		if(enqueue)
+			await this.apiGW.steamChatAudio.enqueueSoundUrl(ytUrl, true, search.trim() || ytUrl);
+		else
+			await this.apiGW.steamChatAudio.playSoundUrl(ytUrl, true);
 		return ytUrl;
 	}
 }
