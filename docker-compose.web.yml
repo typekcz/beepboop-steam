@@ -14,6 +14,8 @@ services:
       - MODE=web
       - DB_CONNECTION=postgres://beepboop:beepboop@db/beepboop
     restart: unless-stopped
+    depends_on:
+      - db
   db:
     image: postgres:latest
     environment:
