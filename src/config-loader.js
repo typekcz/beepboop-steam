@@ -3,6 +3,7 @@
 import fs from "fs";
 import "dotenv/config";
 import { parseArgs } from "node:util";
+///<reference path="./types.d.ts" />
 
 const helpString = 
 `Usage:

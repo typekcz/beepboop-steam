@@ -16,7 +16,7 @@ const selectors = {
 	loginCaptchaImg: "#captchaImg",
 	loginError: "[data-featuretarget=login] form > div:last-of-type:not(:first-of-type)",
 	loginButton: "[data-featuretarget=login] [type=submit]",
-	steamGuardInput: "[data-featuretarget=login] div:has(> input) .wtf",
+	steamGuardInput: "[data-featuretarget=login] input + input + input + input + input",
 	// Steam Chat selectors:
 	loading: ".WaitingForInterFaceReadyContainer",
 	loaded: "#friendslist-container:not(:has(.WaitingForInterFaceReadyContainer))",
@@ -98,7 +98,7 @@ export default class SteamBrowserApi extends EventEmitter {
 			userDataDir: "./chromium-user-data",
 			executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
 		});
-		this.frame = (await this.browser.pages())[0];
+		this.frame = await this.browser.newPage();
 		await this.frame.setRequestInterception(true);
 		this.frame.on("request",
 			req => {

@@ -86,7 +86,6 @@ Command | Description
 **pause** | Same thing as stop.
 **play** | (Without argument) resume playing stopped/paused sound.
 **beep** | Boop.
-**eval** *[3,2,1].sort()* | Safely runs JavaScript code. Don't ask me why.
 
 ## Known issues
  * On web mode, Steam Guard code is required on each login.

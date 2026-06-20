@@ -1,3 +1,5 @@
+import { ArgsOptions } from "ytdlp-nodejs";
+
 interface Config {
 	version?: string;
 	port: number;
@@ -21,5 +23,6 @@ interface Config {
 		greeting: string[];
 		unknownCommand: string[];
 		error: string[];
-	}
+	};
+	ytdlp?: ArgsOptions;
 }
