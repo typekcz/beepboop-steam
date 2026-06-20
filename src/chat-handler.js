@@ -45,13 +45,30 @@ export default class ChatHandler {
 		/** @type {any} */
 		let g_FriendsUIApp; // Fake for TS check
 		let handleMessage = (/** @type {RoomInfo} */ room, /** @type {UserInfo} */ user, /** @type {any} */ text, /** @type {any} */ rawText) => {};
+
+		// Hook to CheckShouldNotify methods to intercept chat messages
 		this.bb.chatFrame?.evaluate(() => {
-			g_FriendsUIApp.ChatStore.m_mapChatGroups.values().next().value.m_mapRooms.values().next().value.__proto__.CheckShouldNotify = function(msg, text, rawText){
-				handleMessage(new RoomInfo(this), new UserInfo(this.GetMember(msg.unAccountID)), text, rawText);
-			}
-			g_FriendsUIApp.ChatStore.FriendChatStore.GetFriendChat(g_FriendsUIApp.FriendStore.m_self.accountid).__proto__.CheckShouldNotify = function(msg, text, rawText){
-				handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
-			}
+			let int = setInterval(() => {
+				let roomProto = g_FriendsUIApp?.ChatStore?.m_mapChatGroups?.values()?.next()?.value?.m_mapRooms?.values()?.next()?.value?.__proto__;
+				if(!roomProto) return;
+				roomProto.CheckShouldNotify = function(msg, text, rawText){
+					handleMessage(new RoomInfo(this), new UserInfo(this.GetMember(msg.unAccountID)), text, rawText);
+				}
+				console.log("ChatHandler> Group messages hooked.");
+				clearInterval(int);
+			}, 200);
+		}).catch(console.error);
+
+		this.bb.chatFrame?.evaluate(() => {
+			let int = setInterval(() => {
+				let friendChatProto = g_FriendsUIApp?.ChatStore?.FriendChatStore?.GetFriendChat(g_FriendsUIApp?.FriendStore?.m_self?.accountid)?.__proto__;
+				if(!friendChatProto) return;
+				friendChatProto.CheckShouldNotify = function(msg, text, rawText){
+					handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
+				}
+				console.log("ChatHandler> Personal messages hooked.");
+				clearInterval(int);
+			}, 200);
 		}).catch(console.error);
 	}
 
