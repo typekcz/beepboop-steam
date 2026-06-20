@@ -1,345 +1,161 @@
+* {
+	box-sizing: border-box;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+input, button {
+	font-size: 1em;
+}
+
 :root {
-	--bg-color: #090909;
-	--secondary-bg-color: #131313;
-	--txt-color: #d9d9d9;
-	--main-color: #00437d;
-	--shadow-color: #000000;
-	--line-color: #909090;
-	--disabled-color: #2a3d4d;
+	--chamfer-size: .5rem;
+	--chamfer-all: polygon(
+		0 var(--chamfer-size),
+		var(--chamfer-size) 0,
+		calc(100% - var(--chamfer-size)) 0,
+		100% var(--chamfer-size),
+		100% calc(100% - var(--chamfer-size)),
+		calc(100% - var(--chamfer-size)) 100%,
+		var(--chamfer-size) 100%,
+		0 calc(100% - var(--chamfer-size))
+	);
+	--page-txt: #fff;
+	--page-bg: #000;
+	--primary-txt: #000;
+	--primary-bg: #0099d5;
+	--secondary-bg: #064d68;
 }
+
 body {
-	background-color: var(--bg-color);
-	color: var(--txt-color);
-	font-family: sans-serif;
-	margin: 10px;
-	font-size: 16px;
-}
+	color: var(--page-txt);
+	background-color: var(--page-bg);
+	font-size: 20px;
+	min-height: 100vh;
+	
+	margin: 0;
+	padding: .3em;
 
-.left {
-	float: left;
-}
+	display: flex;
+	justify-content: space-between;
 
-.right {
-	float: right;
-}
-
-.clear {
-	clear: both;
-}
-
-.b {
-	font-weight: bold;
-}
-
-.i {
-	font-style: italic;
-}
-
-.u {
-	text-decoration: underline;
-}
-
-.none {
-	display: none;
+	> * {
+		flex-grow: 1;
+	}
 }
 
 a {
-	color: var(--main-color);
+	color: var(--primary-bg);
 }
 
-hr {
-	border: 0;
-	border-top: 1px;
-	border-style: inset;
-	border-color: var(--main-color);
-	margin-top: 16px;
+.hstack, .vstack {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: .3em;
+
+	> s {
+		flex-grow: 1;
+	}
 }
 
-nav {
-	background-color: var(--main-color);
-	text-shadow: 1px 1px 1px var(--shadow-color);
-	margin: -10px;
-	margin-bottom: 10px;
-	padding: 0 15px;
-	line-height: 30px
+.fill {
+	justify-content: space-between;
+
+	> * {
+		flex-grow: 1;
+	}
 }
 
-nav a {
-	color: var(--txt-color);
-	text-decoration: none;
-	font-variant: small-caps;
-	padding: 0 5px;
+
+.hstack {
+	flex-direction: row;
 }
 
-input[type="text"], input[type="password"], textarea, select {
-	font-size: 16px;
-	font-family: sans-serif;
-	background-color: var(--secondary-bg-color);
-	border: 0;
-	border-left: 1px solid var(--main-color);
-	border-bottom: 1px solid var(--main-color);
-	padding: 5px;
-	margin: 2px;
-	color: var(--txt-color);
-	text-shadow: 1px 1px 1px var(--shadow-color);
-	background:
-		linear-gradient(225deg, transparent 5px, var(--secondary-bg-color) 5px);
+.vstack {
+	flex-direction: column;
 }
 
-input[type="text"]:disabled, input[type="password"]:disabled, textarea:disabled, select:disabled {
-	border-color: var(--disabled-color);
+iframe {
+	border: none;
+	background-color: lightgrey; /* For Firefox, where iframe is transparent */
 }
 
-select option {
-	background-color: var(--secondary-bg-color);
+input[type=text], textarea {
+	border: .2em solid var(--primary-bg);
+	font-size: 1em;
+	padding: .1em .4em;
 }
 
-input[type="submit"], input[type="button"], button, .button {
-	display: inline-block;
-	font-size: 16px;
-	background-color: var(--main-color);
-	border: 0;
-	color: var(--txt-color);
-	text-shadow: 1px 1px 1px var(--shadow-color);
-	padding: 5px 10px;
-	margin: 2px;
-	background:
-		linear-gradient(45deg, transparent 6px, var(--main-color) 6px),
-		linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
-	background-position: bottom left, bottom right;
-	background-size: 52% 100%;
-	background-repeat: no-repeat;
-	user-select: none;
+button, .btn, input[type=button], input[type=submit], input[type=reset], input[type=file]::file-selector-button,
+nav > label:has(input[type=radio]:checked) {
+	border: none;
+	color: var(--primary-txt);
+	background-color: var(--primary-bg);
+	font-size: 1em;
+	padding: .3em .6em;
+
+	&:disabled {
+		background-color: var(--secondary-bg);
+	}
 }
 
-input[type="submit"]:disabled, input[type="button"]:disabled, button:disabled {
-	background-color: var(--disabled-color);
-	background:
-		linear-gradient(45deg, transparent 6px, var(--disabled-color) 6px),
-		linear-gradient(225deg, transparent 6px, var(--disabled-color) 6px);
-	background-position: bottom left, bottom right;
-	background-size: 52% 100%;
-	background-repeat: no-repeat;
+button, .btn, input[type=button], input[type=submit], input[type=reset] {
+	&.neutral {
+		color: var(--page-txt);
+		border: .2em solid var(--primary-bg);
+		padding: .1em .4em;
+		background: none;
+	}
 }
 
-input[type="text"]+input[type="submit"] {
-	left: -11px;
-}
-
-/*  RADIO  */
-.radio input[type="radio"] + label:before {
-	content: '';
-	float: left;
-	border: 1px solid var(--line-color);
-	transform: rotate(45deg);
-	display: block;
-	width: 10px;
-	height: 10px;
-	margin-top: 4px;
-	margin-right: 5px;
-}
-
-.radio input[type="radio"] + label:hover:before {
-	border-color: var(--main-color);
-}
-
-.radio input[type="radio"]:checked + label:before {
-	background-color: var(--main-color);
-	background:
-		linear-gradient(0deg, var(--main-color) 0%, var(--main-color) 100%);
-	background-size: 50% 50%;
-	background-repeat: no-repeat;
-	background-position: center center;
-}
-
-.radio input[type="radio"] {
-	display: none;
-}
-
-/*  CHECKBOX  */
-.check input[type="checkbox"] + label:before {
-	content: '';
-	float: left;
-	border: 1px solid var(--line-color);
-	display: block;
-	width: 12px;
-	height: 12px;
-	margin-top: 4px;
-	margin-right: 5px;
-}
-
-.check input[type="checkbox"] + label:hover:before {
-	border-color: var(--main-color);
-}
-
-.check input[type="checkbox"]:checked + label:before {
-	background-color: var(--main-color);
-	background:
-		linear-gradient(left, var(--main-color) 0%, var(--main-color) 100%);
-	background-size: 10px 10px;
-	background-repeat: no-repeat;
-	background-position: center center;
-}
-
-.check input[type="checkbox"] {
-	display: none;
-}
-
-/*  TOGGLE  */
-.toggle input[type="checkbox"] + label div {
-	display: inline-block;
-	width: 30px;
-	height: 18px;
-	background-color: var(--main-color);
-	position: relative;
-	left: -60px;
-	top: 2.5px;
-	transition: all 0.2s;
-	background:
-		linear-gradient(45deg, transparent 6px, var(--main-color) 6px),
-		linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
-	background-position: bottom left, bottom right;
-	background-size: 52% 100%;
-	background-repeat: no-repeat;
-}
-
-.toggle input[type="checkbox"]:checked + label div {
-	left: -30px;
-	transition: all 0.2s;
-}
-
-.toggle input[type="checkbox"] + label mark {
-	color: var(--txt-color);
-	text-shadow: 1px 1px 1px var(--shadow-color);
-	display: inline-block;
-	width: 30px;
-	line-height: 20px;
-	text-align: center;
-	background: none;
-}
-
-.toggle input[type="checkbox"] + label span {
-	display: inline-block;
-	width: 60px;
-	background:
-		linear-gradient(45deg, transparent 6px, var(--secondary-bg-color) 6px),
-		linear-gradient(225deg, transparent 6px, var(--secondary-bg-color) 6px);
-	background-position: bottom left, bottom right;
-	background-size: 52% 100%;
-	background-repeat: no-repeat;
-}
-
-.toggle input[type="checkbox"] {
-	display: none;
-}
-
-fieldset {
-	border: 1px solid var(--main-color);
-	display: inline-block;
-	padding: 5px;
-	margin-right: 12px;
-	margin-top: 22px;
-	position: relative;
-	padding-bottom: 12px;
-}
-
-fieldset:after {
-	background: linear-gradient(225deg, var(--bg-color) 6px, var(--main-color) 5px, var(--bg-color) 8px);
-	content: '';
-	width: 10px;
-	height: 10px;
-	display: block;
-	position: absolute;
-	bottom: -1px;
-	left: -1px;
-	clear: both;
+input[type=file]::file-selector-button {
+	height: 100%;
 }
 
 legend {
-	background-color: var(--main-color);
-	text-shadow: 1px 1px 1px var(--shadow-color);
-	width: 100%;
-	float: left;
-	position: relative;
-	left: -6px;
-	top: -15px;
-	padding: 6px;
-	background: var(--main-color);
-	background: linear-gradient(225deg, transparent 6px, var(--main-color) 6px);
-	user-select: none;
+	display: block;
+	font-size: 1em;
+	height: 2em;
+	padding-block: 0;
+	line-height: 2em;
+	background-color: var(--secondary-bg);
 }
 
-meter {
-	width: 100%;
-	-webkit-appearance: none;
-	-moz-appearance: none;
-}
-
-meter::-webkit-meter-optimum-value {
-	background-color: var(--secondary-bg-color);
-}
-
-meter::-moz-meter-optimum-value {
-	background-color: var(--secondary-bg-color);
-}
-
-meter::-webkit-meter-bar{
-	background: none;
-	background-color: var(--main-color);
-}
-
-meter::-moz-meter-bar {
-	background: none;
-	background-color: var(--main-color);
-}
-
-.center-screen {
-	position:absolute;
-	top:50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-}
-
-fieldset.center-screen:after {
-	top: 6.3px;	/* Added 0.3px as workaround when height is odd */
-	right: 6.3px;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-table td, table th {
-	padding: 2px 5px;
-	border: 1px solid var(--main-color);
-}
-
-table th {
-  background-color: var(--main-color);
-}
-
-.tag {
-	display: inline-flex;
-	line-height: 30px;
-	background-color: var(--main-color);
-	border-radius: 15px;
-	padding: 0 12px;
-	margin: 2px;
-}
-
-.tag button {
-	background: none;
-	padding: 0 8px;
+fieldset {
+	display: block;
+	border: .2em solid var(--secondary-bg);
+	border-top-width: 2em;
+	padding: .5em;
 	margin: 0;
-	margin-right: -12px;
-	font-size: 12px;
 }
 
-.flex {
+nav {
 	display: flex;
+	flex-direction: column;
+	gap: .3em;
+	max-width: 10em;
+
+	> label {
+		color: var(--page-txt);
+		border: .2em solid var(--primary-bg);
+		padding: .1em .4em;
+
+		& input[type=radio] {
+			display: none;
+		}
+	}
 }
 
-#sounds .button {
-	margin: 4px;
-	padding: 10px;
+#log, #log > fieldset {
+	display: grid;
+}
+
+#log > fieldset {
+	padding: 0;
+	display: grid;
+
+	> iframe {
+		width: 100%;
+		height: 100%;
+	}
 }

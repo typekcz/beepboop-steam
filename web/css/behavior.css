@@ -1,15 +1,23 @@
-.when-logged {
+body:not(.logged) .when-logged {
+	display: none !important;
+}
+
+body.logged .when-notlogged {
+	display: none !important;
+}
+
+body:has([name=page][value=home]:not(:checked)) #home {
 	display: none;
 }
 
-.when-notlogged {
-	display: block;
+body:has([name=page][value=screen]:not(:checked)) #screen {
+	display: none;
 }
 
-.logged .when-logged {
-	display: block;
+body:has([name=page][value=log]:not(:checked)) #log {
+	display: none;
 }
 
-.logged .when-notlogged {
+#controls:empty {
 	display: none;
 }

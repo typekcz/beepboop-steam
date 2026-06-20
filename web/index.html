@@ -9,58 +9,93 @@
 		<link rel="stylesheet" type="text/css" href="css/behavior.css">
 	</head>
 	<body>
-		<div class="when-notlogged">
-			<a href="api/steam/authenticate" target="_blank" onclick="window.open(this.href, this.target, 'popup=1,width=1010,height=785'); event.preventDefault();">
-				<img src="img/steamlogin.png" alt="Steam Login">
-			</a>
-		</div>
-		<div class="when-logged">
-			<form action="api/steam/logout" method="get" data-asyncSubmit data-session>
-				<input type="submit" value="Steam Logout">
+		<nav>
+			<label><input type="radio" name="page" value="home" checked> BeepBoop</label>
+			<label><input type="radio" name="page" value="log"> Log</label>
+			<label><input type="radio" name="page" value="screen"> Screen</label>
+			<form class="hstack fill when-logged" action="api/steam/logout" method="get" data-asyncSubmit data-session>
+				<input type="submit" class="neutral" value="Steam Logout">
 			</form>
-			<div class="flex">
+			<a href="api/steam/authenticate" class="btn when-notlogged" target="_blank" style="display: grid"
+				onclick="window.open(this.href, this.target, 'popup=1,width=1010,height=785'); event.preventDefault();">
+				<img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Steam Login" style="margin: -2px">
+			</a>
+		</nav>
+
+		<div id="home" class="vstack">
+			<div class="hstack fill">
 				<fieldset>
-					<legend>Upload Sound</legend>
-					<form action="api/uploadSound" method="post" enctype="multipart/form-data" data-asyncSubmit data-session data-aftersubmit="if(res.ok){form.reset();location.reload();}">
-						<input type="text" name="name" placeholder="Sound name">
-						<input type="file" name="sound">
+					<legend>Controls</legend>
+					<div class="hstack">
+						<form action="api/play" method="post" data-asyncSubmit>
+							<input type="submit" value="▶">
+						</form>
+						<form action="api/stop" method="post" data-asyncSubmit>
+							<input type="submit" value="⏸">
+						</form>
+					</div>
+				</fieldset>
+				<fieldset>
+					<legend>Play URL</legend>
+					<form action="api/playSoundUrl" method="post" data-asyncSubmit>
+						<input type="text" name="url">
+						<input type="submit" value="Play"><br>
+						<small>Supports links to <a href="https://youtube.com" target="_blank">youtube.com</a>.</small>
+					</form>
+				</fieldset>
+			</div>
+
+			<div id="controls" class="hstack"></div>
+
+			<fieldset>
+				<legend>Sounds Library</legend>
+				<div id="sounds" class="hstack"></div>
+			</fieldset>
+
+			<div class="hstack when-logged fill">
+				<fieldset>
+					<legend>Upload Sound to the Library</legend>
+					<form class="vstack" action="api/uploadSound" method="post" enctype="multipart/form-data"
+						data-asyncSubmit data-session data-aftersubmit="if(res.ok){form.reset();listSounds();}">
+						<input type="text" name="name" required placeholder="Sound name">
+						<input type="file" name="sound" required accept="audio/*"
+							onchange="if(!this.previousElementSibling.value) this.previousElementSibling.value = this.files[0].name.replace(/\.\w+$/, '')">
 						<input type="submit">
 					</form>
 				</fieldset>
-				<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'welcome')">
-					<legend>My welcome sounds</legend>
-					<div id="welcomeSounds"></div>
-					<small>Drag sound button here.</small>
-				</fieldset>
-				<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'leave')">
-					<legend>My leave sounds</legend>
-					<div id="leaveSounds"></div>
-					<small>Drag sound button here.</small>
-				</fieldset>
+				<div class="vstack" style="flex-grow: 5">
+					<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'welcome')">
+						<legend>My Welcome Sounds</legend>
+						<div id="welcomeSounds"></div>
+						<small>Drag sound button from the library here.</small>
+					</fieldset>
+					<fieldset ondragover="allowDrop(event)" ondrop="soundDragDrop(event, 'leave')">
+						<legend>My Leave Sounds</legend>
+						<div id="leaveSounds"></div>
+						<small>Drag sound button from the library here.</small>
+					</fieldset>
+				</div>
 			</div>
 		</div>
-		<div id="controls" class="flex">
+
+		<div id="screen">
 			<fieldset>
-				<legend>Controls</legend>
-				<form action="api/play" method="post" data-asyncSubmit>
-					<input type="submit" value="▶">
-				</form>
-				<form action="api/stop" method="post" data-asyncSubmit>
-					<input type="submit" value="⏸">
-				</form>
-			</fieldset>
-			<fieldset>
-				<legend>Play URL</legend>
-				<form action="api/playSoundUrl" method="post" data-asyncSubmit>
-					<small>Supports links to <a href="https://youtube.com" target="_blank">youtube.com</a>.</small><br>
-					<input type="text" name="url">
-					<input type="submit" value="Play">
-				</form>
+				<legend>
+					Screen
+					<button onclick="this.parentElement.nextElementSibling.src += ''">Reload</button>
+				</legend>
+				<img src="screen" alt="Browser screenshot">
 			</fieldset>
 		</div>
-		<fieldset>
-			<legend>Play sound</legend>
-			<div id="sounds"></div>
-		</fieldset>
+
+		<div id="log">
+			<fieldset>
+				<legend>
+					Log
+					<button onclick="this.parentElement.nextElementSibling.src += ''">Reload</button>
+				</legend>
+				<iframe src="log" title="Server log"></iframe>
+			</fieldset>
+		</div>
 	</body>
 </html>
