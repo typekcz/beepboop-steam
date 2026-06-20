@@ -94,7 +94,6 @@ export default class SteamChatApi extends Events.EventEmitter {
 	}
 
 	async getGroupMembers(groupId){
-		// Group has to be opened for this to work!
 		return this.frame.evaluate(SteamFriendsUiApi.getGroupMembers, groupId.toString());
 	}
 
@@ -165,7 +164,7 @@ export default class SteamChatApi extends Events.EventEmitter {
 		try {
 			await this.frame.evaluate(SteamFriendsUiApi.leaveVoiceRoom);
 		} catch(e){
-			// Ignore failure
+			;// Ignore failure
 		}
 	}
 	
