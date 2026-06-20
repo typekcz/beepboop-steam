@@ -52,11 +52,13 @@ export function createBasicCommands(bb, chatCommandsMap){
 					let str = [
 						"𝘾𝙤𝙢𝙢𝙖𝙣𝙙𝙨\n", 
 						...([...chatCommandsMap.entries()].map(shortHelp)),
-						"𝙒𝙚𝙗 𝙞𝙣𝙩𝙚𝙧𝙛𝙖𝙘𝙚: ", bb.config.baseUrl,
+						"<mandatory argument> [optional argument]\n",
 						"\n𝘽𝙚𝙚𝙥𝘽𝙤𝙤𝙥 v", bb.config.version
 					].join("");
 					console.log("help", str);
 					e.sendResponse(str);
+					// Send web interface separately in case that Steam blocks it
+					e.sendResponse(`𝙒𝙚𝙗 𝙞𝙣𝙩𝙚𝙧𝙛𝙖𝙘𝙚: ${bb.config.baseUrl}`);
 				}
 			},
 			argsHelp: "[command]",
