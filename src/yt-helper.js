@@ -57,4 +57,11 @@ export const ytHelper = new class YtHelper {
 			.pipe(res)
 			.catch(() => console.error("Error while piping ytdpl stream to HTTP response."));
 	}
+
+	/**
+	 * @param {string} link 
+	 */
+	getTitle(link) {
+		return this.ytdlp.getTitleAsync(link)
+	}
 }

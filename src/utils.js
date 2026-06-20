@@ -3,6 +3,11 @@ import http from "http";
 import https from "https";
 import url from "url";
 
+/**
+ * @param {string} url_ 
+ * @param {https.RequestOptions} options 
+ * @returns 
+ */
 export function request(url_, options = {}){
 	return new Promise((resolve, reject) => {
 		let parsedUrl = url.parse(url_);
@@ -36,6 +41,10 @@ export function request(url_, options = {}){
 	});
 }
 
+/**
+ * @param {number} ms 
+ * @returns 
+ */
 export function sleep(ms){
 	return new Promise((resolve, reject) => {
 		setTimeout(resolve, ms);
@@ -68,7 +77,7 @@ export async function retryPromise(promise, intervalMs = 1000, maxRetries = Numb
 	try {
 		return await promise();
 	} catch(e){
-		let lastErrorMessage = e.message;
+		let lastErrorMessage = getErrorMessage(e);
 		if(!silent)
 			console.error(e);
 		if(maxRetries <= 0)
@@ -82,9 +91,10 @@ export async function retryPromise(promise, intervalMs = 1000, maxRetries = Numb
 				process.stdout.write("\n");
 				return res;
 			} catch(e){
+				const msg = getErrorMessage(e);
 				if(i == maxRetries-1)
 					throw e;
-				if(e.message !== lastErrorMessage){
+				if(msg !== lastErrorMessage){
 					if(!silent){
 						console.error(e);
 						console.log("Retrying");
@@ -93,7 +103,7 @@ export async function retryPromise(promise, intervalMs = 1000, maxRetries = Numb
 						console.log("Retrying");
 					}
 				}
-				lastErrorMessage = e.message;
+				lastErrorMessage = msg;
 			}
 		}
 	}
@@ -133,4 +143,27 @@ export function formatDuration(seconds) {
  */
 export function randomElement(array) {
 	return array[Math.round(Math.random()*(array.length - 1))];
+}
+
+/**
+ * @param {string} argument 
+ * @param {string} startsWith 
+ * @param {(rest: string) => any} then 
+ * @returns {boolean}
+ */
+export function whenArgumentStartWith(argument, startsWith, then) {
+	if(argument.startsWith(startsWith)) {
+		then(argument.substring(startsWith.length));
+		return true;
+	}
+	return false;
+}
+
+/**
+ * @param {unknown} e 
+ */
+export function getErrorMessage(e) {
+	if(e && typeof e === 'object' && 'message' in e && typeof(e.message) === "string")
+		return e.message;
+	return String(e);
 }

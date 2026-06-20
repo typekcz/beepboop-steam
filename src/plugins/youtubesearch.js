@@ -19,13 +19,13 @@ export default class YoutubeSearch {
 			longHelp: "You can specify which search result to play by appending # and a number.",
 			argsHelp: "<search>",
 			handler: async (e) => {
-				e.sendResponse(await this.findVideo(e.argument), false);
+				e.sendResponse(await this.findVideo(e.argument, true), false);
 			}
 		});
 
 		apiGW.webApp.expressApp.post("/api/plugins/youtube/find", async (req, res) => {
 			if(req.body?.name){
-				await this.findVideo(req.body.name);
+				await this.findVideo(req.body.name, true);
 			} else {
 				res.status(400);
 			}
@@ -50,7 +50,7 @@ export default class YoutubeSearch {
 		});
 	}
 
-	async findVideo(search){
+	async findVideo(search, queue = false){
 		const searchRegEx = /^(.*?)(#(\d))?$/;
 		let reRes = searchRegEx.exec(search);
 		if(!reRes || reRes.length <= 1)
@@ -69,7 +69,10 @@ export default class YoutubeSearch {
 		if(regex_result == null)
 			throw new Error("No video found.");
 		let ytUrl = VIDEO_URL + regex_result[1];
-		await this.apiGW.steamChatAudio.playSoundUrl(ytUrl, true);
+		if(queue)
+			await this.apiGW.steamChatAudio.queueAdd(ytUrl);
+		else
+			await this.apiGW.steamChatAudio.playSound(ytUrl);
 		return ytUrl;
 	}
 }
