@@ -19,6 +19,7 @@ const selectors = {
 	steamGuardInput: "[data-featuretarget=login] div:has(> input) .wtf",
 	// Steam Chat selectors:
 	loading: ".WaitingForInterFaceReadyContainer",
+	loaded: "#friendslist-container:not(:has(.WaitingForInterFaceReadyContainer))",
 	connectionTroubleButton: ".ConnectionTroubleReconnectMessage button"
 };
 
@@ -29,8 +30,15 @@ const steamChatUrl = "https://steamcommunity.com/chat";
  * @returns 
  */
 function pageLogFiltered(msg){
-	if(msg.text().startsWith("Mixed Content:")) return;
-	if(msg.text().startsWith("Failed to load resource: net::ERR_FAILED")) return;
+	const filters = [
+		"Mixed Content:",
+		"Failed to load resource: net::ERR_FAILED",
+		"console.groupEnd",
+		"WebSocket connection to 'ws://127.0.0.1:27060/clientsocket/' failed",
+		"[DOM] "
+	];
+	if(filters.some(filter => msg.text().startsWith(filter))) return;
+
 	console.log("Page log:", msg.text());
 }
 
@@ -132,6 +140,10 @@ export default class SteamBrowserApi extends EventEmitter {
 		}
 	}
 
+	async waitForSteamChatLoad() {
+		return this.frame.waitForSelector(selectors.loaded);
+	}
+
 	async doLogin(){
 		const username = this.bb.config.steam?.userName
 		const password = this.bb.config.steam?.password;
@@ -185,12 +197,15 @@ export default class SteamBrowserApi extends EventEmitter {
 		try {
 			try {
 				await this.frame.waitForNetworkIdle({ timeout: 5_000, concurrency: 3 });
-			} catch(e) {/* Ingore error */}
+			} catch(e) {/* Ingore error */;}
 			const state = await this.detectState();
 			const stateChanged = state !== this.lastState;
 			this.lastState = state;
 			if(!stateChanged)
 				return;
+
+			if(state === "chat") await this.waitForSteamChatLoad();
+
 			console.log(`🔘 ${state}`);
 			switch(state){
 				case "login":
