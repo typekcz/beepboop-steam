@@ -1,6 +1,9 @@
 //@ts-check
 
 export default class UserInfo {
+	/**
+	 * @param {any} user 
+	 */
 	constructor(user){
 		/** @type {string} */
 		this.name = user.display_name;

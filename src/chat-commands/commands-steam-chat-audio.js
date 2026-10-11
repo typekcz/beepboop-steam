@@ -57,10 +57,13 @@ export default function createSteamChatAudioCommands(bb){
 						e.sendResponse(`Couldn't remove queue item ${position}.`);
 				})) return;
 
-				const [, sound, position] = /^(.+?)( \d+)?$/.exec(e.argument);
+				const match = /^(.+?)( \d+)?$/.exec(e.argument);
+				if(!match) return;
+				const [, sound, position] = match;
+				/** @type {number|null} */
 				let positionNum = Number(position);
 				if(positionNum == 0) positionNum = null;
-				if(positionNum > 0) positionNum--;
+				if(positionNum && positionNum > 0) positionNum--;
 				bb.steamChatAudio.queueAdd(sound, positionNum);
 			},
 			argsHelp: `[sound|URL|"remove"|"clear"] [add/remove position]`,

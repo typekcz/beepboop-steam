@@ -6,6 +6,9 @@ import { unpromisify } from "./utils.js";
 let beepboop;
 
 export default class Main {
+	/**
+	 * @param {string[]} args 
+	 */
 	static async main(args){
 		process.on("unhandledRejection", (error, p) => {
 			console.error("Unhandled Promise Rejection", p, error);
@@ -19,13 +22,18 @@ export default class Main {
 		// Start
 		beepboop = new BeepBoop();
 		if(beepboop){
-			this.hook_stream(process.stdout, str => beepboop.webApp.appendToLog(str));
-			this.hook_stream(process.stderr, str => beepboop.webApp.appendToLog(str));
+			const logAppend = (/** @type {string} */ str) => beepboop?.webApp.appendToLog(str);
+			this.hook_stream(process.stdout, logAppend);
+			this.hook_stream(process.stderr, logAppend);
 		}
 		await beepboop.init();
 	}
 	
 	// Credit: https://gist.github.com/pguillory/729616/32aa9dd5b5881f6f2719db835424a7cb96dfdfd6
+	/**
+	 * @param {NodeJS.WriteStream} stream
+	 * @param {(...args: any[]) => any} callback
+	 */
 	static hook_stream(stream, callback) {
 		stream.write = (function(write) {
 			return function(string, encoding, fd) {

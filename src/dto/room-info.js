@@ -1,6 +1,9 @@
 //@ts-check
 
 export default class RoomInfo {
+	/**
+	 * @param {any} room 
+	 */
 	constructor(room){
 		this.name = room.name;
 		this.id = room.m_ulChatID;

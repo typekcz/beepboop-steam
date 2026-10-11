@@ -44,6 +44,9 @@ export default class MyInstantsPlugin {
 		});
 	}
 
+	/**
+	 * @param {string} search
+	 */
 	async playInstant(search){
 		const instantRegEx = /^(.*?)(#(\d))?$/;
 		let reRes = instantRegEx.exec(search);

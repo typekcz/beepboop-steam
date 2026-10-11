@@ -3,7 +3,7 @@ import puppeteer from "puppeteer";
 import DealWithCaptcha from "../deal-with-captcha.js";
 import SteamBrowserGuiApi from "./steam-browser-gui-api.js";
 import DealWithSteamGuard from "../deal-with-steam-guard.js";
-import { unpromisify } from "../utils.js";
+import { getErrorMessage, unpromisify } from "../utils.js";
 import { EventEmitter } from "node:events";
 
 const selectors = {
@@ -63,7 +63,8 @@ export default class SteamBrowserApi extends EventEmitter {
 				)`
 			);
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 		}
 		let browserArgs = [
 			"--disable-client-side-phishing-detection",
@@ -115,9 +116,10 @@ export default class SteamBrowserApi extends EventEmitter {
 		await this.frame.setUserAgent(userAgent);
 		this.frame.on("console", pageLogFiltered);
 		this.frame.on("pageerror", error => {
-			if(error.message.startsWith("Failed to execute 'getStats' on 'RTCPeerConnection'"))
+			const msg = getErrorMessage(error);
+			if(msg.startsWith("Failed to execute 'getStats' on 'RTCPeerConnection'"))
 				return; // Ignore this message, because it's spamming the log
-			console.log("Page error:", error.message)
+			console.log("Page error:", msg)
 		});
 		let dealWithCaptcha = new DealWithCaptcha(this.bb);
 		this.requestCaptchaSolution = (img) => dealWithCaptcha.getCaptchaSolution(img);
@@ -136,12 +138,13 @@ export default class SteamBrowserApi extends EventEmitter {
 		try {
 			await this.frame.goto(steamChatUrl, {waitUntil : "networkidle2"});
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 		}
 	}
 
 	async waitForSteamChatLoad() {
-		return this.frame.waitForSelector(selectors.loaded);
+		return this.frame?.waitForSelector(selectors.loaded);
 	}
 
 	async doLogin(){
@@ -159,21 +162,21 @@ export default class SteamBrowserApi extends EventEmitter {
 
 	async doLoginGuard() {
 		console.log(`Steam Guard detected! You need to provide Steam Guard code. Visit ${this.bb.config.baseUrl} to fill it out.`);
-		let code = await this.requestSteamGuardCode.getSteamGuardCode();
+		let code = await this.requestSteamGuardCode?.getSteamGuardCode();
 		
-		await this.frame.evaluate(SteamBrowserGuiApi.clearSteamGuard, selectors);
-		await this.frame.type(selectors.steamGuardInput, code);
+		await this.frame?.evaluate(SteamBrowserGuiApi.clearSteamGuard, selectors);
+		await this.frame?.type(selectors.steamGuardInput, code);
 	}
 
 	async doLoginCaptcha() {
 		console.log("Login: Captcha detected, requesting solution.");
 		// Deal with captcha
 		if(this.requestCaptchaSolution){
-			await this.frame.evaluate(SteamBrowserGuiApi.waitForCaptchaImage, selectors);
-			let captchaElement = await this.frame.$(selectors.loginCaptchaImg);
+			await this.frame?.evaluate(SteamBrowserGuiApi.waitForCaptchaImage, selectors);
+			let captchaElement = await this.frame?.$(selectors.loginCaptchaImg);
 			let solution = await this.requestCaptchaSolution(await captchaElement?.screenshot({type: "png"}));
 			console.log("Login: Captcha solution received.");
-			await this.frame.evaluate(SteamBrowserGuiApi.fillCaptcha, solution, selectors);
+			await this.frame?.evaluate(SteamBrowserGuiApi.fillCaptcha, solution, selectors);
 		} else {
 			throw new Error("Captcha solver is not set.");
 		}
@@ -196,7 +199,7 @@ export default class SteamBrowserApi extends EventEmitter {
 		this.stateMethodRunning = true;
 		try {
 			try {
-				await this.frame.waitForNetworkIdle({ timeout: 5_000, concurrency: 3 });
+				await this.frame?.waitForNetworkIdle({ timeout: 5_000, concurrency: 3 });
 			} catch(e) {/* Ingore error */;}
 			const state = await this.detectState();
 			const stateChanged = state !== this.lastState;

@@ -28,7 +28,7 @@ export function createAdminCommands(bb){
 		}, {
 			command: "pupeval",
 			handler: wrapAdminCheckCommandHandler(async e => {
-				let result = await bb.chatFrame.evaluate(
+				let result = await bb.chatFrame?.evaluate(
 					/** @type {(code: string) => any} */ 
 					code => eval( `(async () => ${code})()`), e.argument
 				);

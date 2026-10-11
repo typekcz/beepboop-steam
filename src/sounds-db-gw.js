@@ -1,5 +1,7 @@
 //@ts-check
 
+import { getErrorMessage } from "./utils.js";
+
 const SoundType = {
 	WELCOME: 1,
 	LEAVE: 2
@@ -39,7 +41,8 @@ export default class SoundsDbGw {
 				);
 				this.isInitialized = true;
 			} catch(e){
-				console.error(e.message);
+				const msg = getErrorMessage(e);
+				console.error(msg);
 			} finally {
 				this.initPromise = null;
 			}
@@ -58,17 +61,22 @@ export default class SoundsDbGw {
 			await this.db.none("INSERT INTO sound(name, data, mime) VALUES($1, $2, $3) ON CONFLICT (name) DO UPDATE SET data = EXCLUDED.data, mime = EXCLUDED.mime", [name, data, mime]);
 			return true;
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 			return false;
 		}
 	}
 
+	/**
+	 * @param {string} name
+	 */
 	async selectOne(name){
 		try {
 			await this.init();
 			return await this.db.one("SELECT data, mime FROM sound WHERE name = $1", name);
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 			return null;
 		}
 	}
@@ -78,7 +86,8 @@ export default class SoundsDbGw {
 			await this.init();
 			return (await this.db.any("SELECT name FROM sound ORDER BY name ASC")).map(row => row.name);
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 			return null;
 		}
 	}
@@ -99,7 +108,8 @@ export default class SoundsDbGw {
 			);
 			return sounds.map(s => s.name);
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 			return null;
 		}
 	}
@@ -121,29 +131,42 @@ export default class SoundsDbGw {
 			);
 			return (sound == null ? null : sound.name);
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 			return null;
 		}
 	}
 
+	/**
+	 * @param {any} steamid
+	 * @param {string} sound
+	 * @param {any} type
+	 */
 	async insertUserSound(steamid, sound, type){
 		try {
 			await this.init();
 			let res = await this.db.result("INSERT INTO user_sound(steamid, name, type) VALUES($1, $2, $3)", [steamid, sound, type]);
 			return (res.rowCount == 1);
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 			return false;
 		}
 	}
 
+	/**
+	 * @param {any} steamid
+	 * @param {string} sound
+	 * @param {any} type
+	 */
 	async deleteUserSound(steamid, sound, type){
 		try {
 			await this.init();
 			await this.db.none("DELETE FROM user_sound WHERE steamid = $1 AND name = $2 AND type = $3", [steamid, sound, type]);
 			return true;
 		} catch(e){
-			console.error(e.message);
+			const msg = getErrorMessage(e);
+			console.error(msg);
 			return false;
 		}
 	}

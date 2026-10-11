@@ -5,7 +5,7 @@ import ChatCommandEvent from "./chat-command-event.js";
 import createSteamChatAudioCommands from "./chat-commands/commands-steam-chat-audio.js";
 import { createBasicCommands } from "./chat-commands/commands-basic.js";
 import { createAdminCommands } from "./chat-commands/commands-admin.js";
-import { randomElement } from "./utils.js";
+import { getErrorMessage, randomElement } from "./utils.js";
 
 /**
  * @typedef {(e: ChatCommandEvent) => Promise<?>|void} ChatCommandHandler
@@ -38,20 +38,20 @@ export default class ChatHandler {
 	}
 
 	init(){
-		this.bb.chatPage?.exposeFunction("handleMessage", (room, user, text, rawText) => {
+		this.bb.chatPage?.exposeFunction("handleMessage", (/** @type {RoomInfo | null} */ room, /** @type {UserInfo} */ user, /** @type {string} */ text, /** @type {string} */ rawText) => {
 			this.handleMessage(room, user, text, rawText).catch(console.error);
 		}).catch(console.error);
 
 		/** @type {any} */
 		let g_FriendsUIApp; // Fake for TS check
-		let handleMessage = (/** @type {RoomInfo} */ room, /** @type {UserInfo} */ user, /** @type {any} */ text, /** @type {any} */ rawText) => {};
+		let handleMessage = (/** @type {RoomInfo?} */ room, /** @type {UserInfo} */ user, /** @type {any} */ text, /** @type {any} */ rawText) => {};
 
 		// Hook to CheckShouldNotify methods to intercept chat messages
 		this.bb.chatFrame?.evaluate(() => {
 			let int = setInterval(() => {
 				let roomProto = g_FriendsUIApp?.ChatStore?.m_mapChatGroups?.values()?.next()?.value?.m_mapRooms?.values()?.next()?.value?.__proto__;
 				if(!roomProto) return;
-				roomProto.CheckShouldNotify = function(msg, text, rawText){
+				roomProto.CheckShouldNotify = function(/** @type {{ unAccountID: any; }} */ msg, /** @type {string} */ text, /** @type {string} */ rawText){
 					handleMessage(new RoomInfo(this), new UserInfo(this.GetMember(msg.unAccountID)), text, rawText);
 				}
 				console.log("ChatHandler> Group messages hooked.");
@@ -63,7 +63,7 @@ export default class ChatHandler {
 			let int = setInterval(() => {
 				let friendChatProto = g_FriendsUIApp?.ChatStore?.FriendChatStore?.GetFriendChat(g_FriendsUIApp?.FriendStore?.m_self?.accountid)?.__proto__;
 				if(!friendChatProto) return;
-				friendChatProto.CheckShouldNotify = function(msg, text, rawText){
+				friendChatProto.CheckShouldNotify = function(/** @type {any} */ _msg, /** @type {string} */ text, /** @type {string} */ rawText){
 					handleMessage(null, new UserInfo(this.chat_partner), text, rawText);
 				}
 				console.log("ChatHandler> Personal messages hooked.");
@@ -81,11 +81,11 @@ export default class ChatHandler {
 
 	/**
 	 * 
-	 * @param {RoomInfo} room 
+	 * @param {RoomInfo?} room 
 	 * @param {UserInfo} user 
 	 * @param {string} message 
 	 * @param {string} rawMessage 
-	 * @param {(response: string) => Promise<void> | null} [customResponseHandler]
+	 * @param {((response: string) => Promise<void>) | null} [customResponseHandler]
 	 */
 	async handleMessage(room, user, message, rawMessage, customResponseHandler = null){
 		if(room != null && !rawMessage.startsWith("[mention="+this.bb.steamChat.getLoggedUserInfo()?.accountid+"]"))
@@ -115,8 +115,9 @@ export default class ChatHandler {
 			if(!event.handled)
 				event.sendResponse(randomElement(this.bb.config.messages.unknownCommand));
 		} catch(e){
-			console.log("command error", e.message);
-			event.sendResponse(randomElement(this.bb.config.messages.error) + "\n" + e.message);
+			const msg = getErrorMessage(e);
+			console.log("command error", msg);
+			event.sendResponse(randomElement(this.bb.config.messages.error) + "\n" + msg);
 		}
 	}
 
@@ -186,6 +187,10 @@ export default class ChatHandler {
 		}, group, room, text);
 	}
 
+	/**
+	 * @param {string} userId
+	 * @param {string} text
+	 */
 	async sendDirectMessage(userId, text){
 		/** @type {any} */
 		let g_FriendsUIApp; // Fake for TS check

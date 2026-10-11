@@ -9,9 +9,10 @@ export default class DealWithSteamGuard {
 	 */
 	constructor(beepboop){
 		this.beepboop = beepboop;
-		/** @type {{promise: Promise, resolve: Function, reject: Function}?} */
+		/** @type {{promise: Promise<string>, resolve: Function, reject: Function}?} */
 		this.steamGuardCodePromise = null;
 
+		// @ts-ignore
 		beepboop.webApp.expressApp.get("/api/plugins/dealwithsteamguard", async (req, res) => {
 			res.json({pending: !!this.steamGuardCodePromise});
 			res.end();
@@ -52,11 +53,15 @@ export default class DealWithSteamGuard {
 		if(this.steamGuardCodePromise){
 			return this.steamGuardCodePromise.promise;
 		}
-		let resolve, reject;
+		/** @type {(value: any) => void} */
+		let resolve;
+		/** @type {(reason?: any) => void} */
+		let reject;
 		let promise = new Promise((res, rej) => {
 			resolve = res;
 			reject = rej;
 		});
+		// @ts-ignore
 		this.steamGuardCodePromise = {resolve, reject, promise};
 
 		return this.steamGuardCodePromise.promise;

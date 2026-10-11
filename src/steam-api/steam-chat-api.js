@@ -29,8 +29,9 @@ export default class SteamChatApi extends Events.EventEmitter {
 		await this.frame.evaluate(SteamFriendsUiApi.define, "RoomInfo", RoomInfo.toString());
 
 		try {
-			await this.bb.chatPage?.exposeFunction("handleUsersChanged", (usersBefore, usersAfter) => {
-				this.voiceChannelUsersChanged(usersBefore, usersAfter);
+			await this.bb.chatPage?.exposeFunction("handleUsersChanged",
+				(/** @type {number[]} */ usersBefore, /** @type {number[]} */ usersAfter) => {
+					this.voiceChannelUsersChanged(usersBefore, usersAfter);
 			});
 		} catch(e){
 			// Ignore error when binding already exists
@@ -69,14 +70,26 @@ export default class SteamChatApi extends Events.EventEmitter {
 		return this.frame.evaluate(SteamFriendsUiApi.getUserByAccId, accId);
 	}
 
+	/**
+	 * @param {string} group
+	 * @param {string} chatRoom
+	 * @param {string} message
+	 */
 	async sendMessage(group, chatRoom, message){
 		await this?.chatHandler?.sendGroupMessage(group, chatRoom, message);
 	}
 
+	/**
+	 * @param {string} userId
+	 * @param {string} text
+	 */
 	async sendDirectMessage(userId, text){
 		await this?.chatHandler?.sendDirectMessage(userId, text);
 	}
 
+	/**
+	 * @param {string} groupName
+	 */
 	findChatRoom(groupName){
 		return this.frame.evaluate(SteamFriendsUiApi.findChatRoom, groupName);
 	}
@@ -85,14 +98,23 @@ export default class SteamChatApi extends Events.EventEmitter {
 		return this.frame.evaluate(SteamFriendsUiApi.getGroups);
 	}
 
+	/**
+	 * @param {number} groupId
+	 */
 	getVoiceChannels(groupId){
 		return this.frame.evaluate(SteamFriendsUiApi.getVoiceRooms, groupId);
 	}
 
+	/**
+	 * @param {string} name
+	 */
 	async getGroupIdByName(name){
 		return this.frame.evaluate(SteamFriendsUiApi.getGroupId, name);
 	}
 
+	/**
+	 * @param {number} groupId
+	 */
 	async getGroupMembers(groupId){
 		return this.frame.evaluate(SteamFriendsUiApi.getGroupMembers, groupId.toString());
 	}
@@ -168,9 +190,14 @@ export default class SteamChatApi extends Events.EventEmitter {
 		}
 	}
 	
+	/**
+	 * @param {string} group
+	 * @param {string} channel
+	 * @param {boolean} reconnectOnUserJoin
+	 */
 	async joinVoiceChannel(group, channel, reconnectOnUserJoin){
 		this.groupName = group;
-		if(typeof(reconnectOnUserJoin) !== "undefined")
+		if((reconnectOnUserJoin) !== undefined)
 			this.reconnectOnUserJoin = reconnectOnUserJoin;
 
 		let groupId = await this.getGroupIdByName(group);

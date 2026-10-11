@@ -6,7 +6,7 @@ export default class ChatCommandEvent {
 	/**
 	 * 
 	 * @param {import("./chat-handler.js").default} chatHandler 
-	 * @param {import("./dto/room-info.js").default} roomInfo 
+	 * @param {import("./dto/room-info.js").default?} roomInfo 
 	 * @param {import("./dto/user-info.js").default} userInfo 
 	 * @param {string} command 
 	 * @param {string} message 
@@ -23,7 +23,7 @@ export default class ChatCommandEvent {
 		this.rawMessage = rawMessage;
 		this.argument = argument;
 		this.userinfo = userInfo;
-		/** @type {(response: string) => Promise<void> | null} */
+		/** @type {((response: string) => Promise<void>) | null} */
 		this.customResponseHandler = null;
 	}
 

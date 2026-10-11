@@ -50,6 +50,11 @@ export default class YoutubeSearch {
 		});
 	}
 
+	/**
+	 * @param {string} search 
+	 * @param {boolean} queue 
+	 * @returns {Promise<string>}
+	 */
 	async findVideo(search, queue = false){
 		const searchRegEx = /^(.*?)(#(\d))?$/;
 		let reRes = searchRegEx.exec(search);

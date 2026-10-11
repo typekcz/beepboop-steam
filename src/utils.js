@@ -1,7 +1,7 @@
 //@ts-check
-import http from "http";
-import https from "https";
-import url from "url";
+import http from "node:http";
+import https from "node:https";
+import url from "node:url";
 
 /**
  * @param {string} url_ 

@@ -1,8 +1,9 @@
 //@ts-check
 /* If you are looking for configuration, create file config.json and use example configuration from README.md. */
-import fs from "fs";
+import fs from "node:fs";
 import "dotenv/config";
 import { parseArgs } from "node:util";
+import { getErrorMessage } from "./utils.js";
 ///<reference path="./types.d.ts" />
 
 const helpString = 
@@ -12,7 +13,7 @@ const helpString =
 Default config file is "config.json". 
 Required values are steam.userName, steam.password, steam.groupName, steam.channelName.`;
 
-/** @type {Partial<Config>} */
+/** @type {Partial<import("./types.js").Config>} */
 const defaultConfig = {
 	plugins: ["myinstants", "youtubesearch"],
 	messages: {
@@ -68,7 +69,8 @@ function loadConfig(){
 			}
 		});
 	} catch(e){
-		console.error(e.message);
+		const msg = getErrorMessage(e);
+		console.error(msg);
 		process.exit(1);
 	}
 
@@ -101,7 +103,7 @@ function loadConfig(){
 	process.exit(1);
 }
 
-/** @type {Config} */
+/** @type {import("./types.js").Config} */
 const config = loadConfig();
 
 try {

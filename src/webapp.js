@@ -1,9 +1,9 @@
 //@ts-check
-import http from "http";
-import https from "https";
-import url from "url";
+import http from "node:http";
+import https from "node:https";
+import url from "node:url";
 import Express from "express";
-import("express-async-errors");
+import "express-async-errors";
 import BodyParser from "body-parser";
 import fileUpload from "express-fileupload";
 import openid from "openid";
@@ -14,14 +14,14 @@ import { ytHelper } from "./yt-helper.js";
 
 const webDir = "./web";
 const steamOpenId = "https://steamcommunity.com/openid";
-const allowedMime = [
+const allowedMime = new Set([
 	"audio/webm",
 	"audio/ogg",
 	"video/ogg",
 	"application/ogg",
 	"audio/mpeg",
 	"audio/mp3"
-];
+]);
 
 export default class WebApp {
 	/**
@@ -66,7 +66,7 @@ export default class WebApp {
 		// Proxy endpoint used to add Access-Control-Allow-Origin header to sound requests.
 		this.expressApp.get("/api/proxy/:url", async (req, res) => {
 			/*                        ▼ Insert "What the hell is this?" meme */
-			if(!["172.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress || ""))
+			if(!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress || ""))
 				return res.status(403).send("Nope").end();
 
 			let parsedUrl = url.parse(req.params.url);
@@ -95,7 +95,7 @@ export default class WebApp {
 		});
 
 		this.expressApp.get("/api/ytdl/:url", async (req, res) => {
-			if(!["172.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress || ""))
+			if(!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress || ""))
 				return res.status(403).send("Nope").end();
 
 			await ytHelper.streamToResponse(req.params.url, res);
@@ -104,6 +104,9 @@ export default class WebApp {
 		this.expressApp.listen(port);
 	}
 	
+	/**
+	 * @param {import("puppeteer-core").Page} page
+	 */
 	setupPageScreen(page){
 		// Debug screenshot of page
 		page.setViewport({width: 1024, height: 900});
@@ -131,10 +134,16 @@ export default class WebApp {
 		});
 	}
 
+	/**
+	 * @param {string} text
+	 */
 	appendToLog(text){
 		this.log.push("[" + (new Date()).toLocaleString("en-GB") + "] " + text);
 	}
 
+	/**
+	 * @param {Function} func
+	 */
 	addBrowserScript(func){
 		this.browserScripts += "("+func.toString()+")();";
 	}
@@ -179,14 +188,12 @@ export default class WebApp {
 					if(!member)
 						return res.status(403).send("Not member of group.").end();
 				
-					if(req.files.sound instanceof Array)
+					if(Array.isArray(req.files.sound))
 						res.status(415).send("Only one file can be uploaded.").end();
-					else {
-						if(allowedMime.includes(req.files.sound.mimetype)){
-							await beepboop.soundsDbGw?.insert(req.body.name, req.files.sound.data, req.files.sound.mimetype);
-						} else 
-							res.status(415).send("Unsupported Media Type.").end();
-					}
+					else if(allowedMime.has(req.files.sound.mimetype)){
+						await beepboop.soundsDbGw?.insert(req.body.name, req.files.sound.data, req.files.sound.mimetype);
+					} else 
+						res.status(415).send("Unsupported Media Type.").end();
 				} else {
 					res.status(400).send("Missing data.");
 				}
@@ -233,8 +240,9 @@ export default class WebApp {
 				let steamid = this.sessions.get(req.get("Session"));
 				if(!steamid)
 					return res.status(401).send("Not logged in.").end();
+				// @ts-ignore
 				let type = beepboop.soundsDbGw?.SoundType[req.params.type.toUpperCase()];
-				if(typeof(type) === "undefined")
+				if(type === undefined)
 					return res.status(400).send("Unknown type.").end();
 				res.json(await beepboop.soundsDbGw?.selectUserSounds(steamid, type));
 				res.end();
@@ -246,8 +254,9 @@ export default class WebApp {
 				let steamid = this.sessions.get(req.get("Session"));
 				if(!steamid)
 					return res.status(401).send("Not logged in.").end();
+				// @ts-ignore
 				let type = beepboop.soundsDbGw?.SoundType[req.params.type.toUpperCase()];
-				if(typeof(type) === "undefined")
+				if(type === undefined)
 					return res.status(400).send("Unknown type.").end();
 				if(await beepboop.soundsDbGw?.insertUserSound(steamid, req.params.soundName, type))
 					res.status(201);
@@ -262,8 +271,9 @@ export default class WebApp {
 				let steamid = this.sessions.get(req.get("Session"));
 				if(!steamid)
 					return res.status(401).send("Not logged in.").end();
+				// @ts-ignore
 				let type = beepboop.soundsDbGw?.SoundType[req.params.type.toUpperCase()];
-				if(typeof(type) === "undefined")
+				if(type === undefined)
 					return res.status(400).send("Unknown type.").end();
 				beepboop.soundsDbGw?.deleteUserSound(steamid, req.params.soundName, type).catch(console.error);
 			}
@@ -275,7 +285,7 @@ export default class WebApp {
 			let steamid = this.sessions.get(req.get("Session"));
 			if(!steamid)
 				return res.status(401).send("Not logged in.").end();
-			if(!config.admins.includes(steamid))
+			if(!config.admins?.includes(steamid))
 				return res.status(403).send("Forbidden.").end();
 			await beepboop.steamChat.chatHandler.handleMessage(
 				null, new UserInfo({steamid64: steamid}), req.body, req.body,

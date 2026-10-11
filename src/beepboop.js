@@ -27,7 +27,6 @@ const startMessage =
 
 export default class BeepBoop {
 	constructor(){
-		/** @type {Config} */
 		this.config = config;
 		this.webApp = new WebApp(config.baseUrl, config.port);
 		if(config.db?.connection){
@@ -47,6 +46,7 @@ export default class BeepBoop {
 		}
 		this.steamChat = new SteamChatApi(this);
 		this.steamChatAudio = new SteamChatAudio(this, "http://localhost:" + config.port);
+		/** @type {Object[]} */
 		this.plugins = [];
 	}
 
@@ -61,7 +61,7 @@ export default class BeepBoop {
 		console.info("Initializing REST API.");
 		this.webApp.startRestApi(this);
 		this.webApp.startSteamLoginApi();
-console.info("Initializing YouTube helper.");
+		console.info("Initializing YouTube helper.");
 		await ytHelper.init();
 		await this.loadPlugins();
 		console.info(`BeepBoop started in ${process.uptime()} seconds.`);
@@ -82,7 +82,7 @@ console.info("Initializing YouTube helper.");
 
 	async stop(){
 		await this.steamChat.leaveVoiceChannel();
-		await this.steamBrowser?.browser.close();
+		await this.steamBrowser?.browser?.close();
 	}
 
 	/**
