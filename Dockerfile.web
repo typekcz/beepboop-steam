@@ -14,7 +14,10 @@ RUN apt update && \
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
 ENV PUPPETEER_EXECUTABLE_PATH ${BROWSER_PATH}
-COPY . /beepboop
+
 WORKDIR /beepboop
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
 ENTRYPOINT ["npm", "start"]
