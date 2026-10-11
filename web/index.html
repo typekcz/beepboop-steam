@@ -10,15 +10,15 @@
 	</head>
 	<body>
 		<nav>
-			<label><input type="radio" name="page" value="home" checked> BeepBoop</label>
-			<label><input type="radio" name="page" value="log"> Log</label>
-			<label><input type="radio" name="page" value="screen"> Screen</label>
+			<label><input type="radio" name="page" value="home" checked>Dashboard</label>
+			<label><input type="radio" name="page" value="log">Log</label>
+			<label><input type="radio" name="page" value="screen">Screen</label>
 			<form class="hstack fill when-logged" action="api/steam/logout" method="get" data-asyncSubmit data-session>
-				<input type="submit" class="neutral" value="Steam Logout">
+				<input type="submit" class="neutral" value="Logout" style="text-align: left">
 			</form>
 			<a href="api/steam/authenticate" class="btn when-notlogged" target="_blank" style="display: grid"
 				onclick="window.open(this.href, this.target, 'popup=1,width=1010,height=785'); event.preventDefault();">
-				<img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Steam Login" style="margin: -2px">
+				<img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Login" style="margin: -2px">
 			</a>
 		</nav>
 
@@ -38,7 +38,7 @@
 				<fieldset>
 					<legend>Play URL</legend>
 					<form action="api/playSoundUrl" method="post" data-asyncSubmit>
-						<input type="text" name="url">
+						<input type="text" name="url" placeholder="https://example.com/sound.mp3" aria-label="URL">
 						<input type="submit" value="Play"><br>
 						<small>Supports links to <a href="https://youtube.com" target="_blank">youtube.com</a>.</small>
 					</form>
@@ -57,8 +57,8 @@
 					<legend>Upload Sound to the Library</legend>
 					<form class="vstack" action="api/uploadSound" method="post" enctype="multipart/form-data"
 						data-asyncSubmit data-session data-aftersubmit="if(res.ok){form.reset();listSounds();}">
-						<input type="text" name="name" required placeholder="Sound name">
-						<input type="file" name="sound" required accept="audio/*"
+						<input type="text" name="name" required placeholder="Sound name" aria-label="Sound name">
+						<input type="file" name="sound" required accept="audio/*" aria-label="Sound file"
 							onchange="if(!this.previousElementSibling.value) this.previousElementSibling.value = this.files[0].name.replace(/\.\w+$/, '')">
 						<input type="submit">
 					</form>
@@ -82,7 +82,7 @@
 			<fieldset>
 				<legend>
 					Screen
-					<button onclick="this.parentElement.nextElementSibling.src += ''">Reload</button>
+					<button onclick="reloadScreen()">Reload</button>
 				</legend>
 				<img src="screen" alt="Browser screenshot">
 			</fieldset>
@@ -92,7 +92,7 @@
 			<fieldset>
 				<legend>
 					Log
-					<button onclick="this.parentElement.nextElementSibling.src += ''">Reload</button>
+					<button onclick="reloadLog()">Reload</button>
 				</legend>
 				<iframe src="log" title="Server log"></iframe>
 			</fieldset>

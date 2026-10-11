@@ -15,6 +15,8 @@ function unpromisify(func) {
 
 window.addEventListener("load", unpromisify(async () => {
 	let authId = localStorage.getItem("authId");
+	/** @type {Promise<any>[]} */
+	const promises = [];
 	if(authId){
 		let res = await fetch("api/steam/check", {
 			headers: {
@@ -25,31 +27,36 @@ window.addEventListener("load", unpromisify(async () => {
 			localStorage.removeItem("authId");
 		} else {
 			document.body.classList.toggle("logged", true);
-			listUserSounds("welcome");
-			listUserSounds("leave");
+			promises.push(
+				listUserSounds("welcome"),
+				listUserSounds("leave")
+			);
 		}
 	}
-	listSounds();
+	promises.push(listSounds());
+	await Promise.all(promises);
 	registerAsyncSubmitEvents();
 }));
 
-window.addEventListener("storage", (e) => {
+window.addEventListener("storage", unpromisify(async (e) => {
 	if(e.key == "authId"){
 		if(e.newValue){
 			document.body.classList.toggle("logged", true);
 			document.getElementById("welcomeSounds").innerHTML = "";
 			document.getElementById("leaveSounds").innerHTML = "";
-			listUserSounds("welcome");
-			listUserSounds("leave");
+			await Promise.all([
+				listUserSounds("welcome"),
+				listUserSounds("leave")
+			]);
 		} else {
 			document.body.classList.toggle("logged", false);
 		}
 	}
-});
+}));
 
 function registerAsyncSubmitEvents(){
 	for(let form of document.querySelectorAll("form[data-asyncSubmit]")){
-		form.removeAttribute("data-asyncSubmit");
+		delete form.dataset.asyncsubmit;
 		form.addEventListener("submit", (event) => {
 			event.preventDefault();
 			unpromisify(asyncSubmit(event));
@@ -63,7 +70,7 @@ function registerAsyncSubmitEvents(){
 async function asyncSubmit(event) {
 	let form = event.target;
 
-	let beforeScript = form.getAttribute("data-beforesubmit");
+	let beforeScript = form.dataset.beforesubmit;
 	if(beforeScript)
 		eval(beforeScript);
 
@@ -72,14 +79,14 @@ async function asyncSubmit(event) {
 	};
 	if(form.method.toUpperCase() != "GET")
 		options.body = new FormData(form);
-	if(form.getAttribute("data-session") != null)
+	if(form.dataset.session != null)
 		options.headers = {Session: localStorage.getItem("authId")};
 	let res = await fetch(form.action, options);
 	console.log(res);
 	let contentType = res.headers.get("content-type");
 	if(!res.ok){
 		let responseText = await res.text();
-		if(contentType.indexOf("text/html") !== -1 && responseText){
+		if(contentType.includes("text/html") && responseText){
 			let reres = /<pre>(.*?)<br>/.exec(responseText);
 			if(reres)
 				responseText = reres[1];
@@ -87,11 +94,11 @@ async function asyncSubmit(event) {
 		if(!responseText)
 			responseText = res.statusText;
 		alert(responseText);
-	} else if(contentType != null && contentType.indexOf("text/javascript") !== -1){
+	} else if(contentType?.includes("text/javascript")){
 		eval(await res.text());
 	}
 	
-	let afterScript = form.getAttribute("data-aftersubmit");
+	let afterScript = form.dataset.aftersubmit;
 	if(afterScript)
 		eval(afterScript);
 }
@@ -107,14 +114,14 @@ function allowDrop(event){
 function soundDragDrop(event, type){
 	event.preventDefault();
 	let sound = event.dataTransfer.getData("sound");
-	addUserSound(sound, type);
+	unpromisify(() => addUserSound(sound, type))();
 }
 
 async function listSounds(){
 	try {
 		let res = await fetch("api/sounds");
 		let sounds = await res.json();
-		if(!(sounds instanceof Array))
+		if(!(Array.isArray(sounds)))
 			throw new TypeError("Received data aren't Array.");
 		let soundsElement = document.getElementById("sounds");
 		soundsElement.innerHTML = "";
@@ -164,23 +171,23 @@ async function listUserSounds(type){
 			}
 		});
 		let sounds = await res.json();
-		for(let sound of sounds){
-			addUserSound(sound, type, false);
-		}
+		await Promise.all(sounds.map(s => addUserSound(s, type, false)));
 	} catch(e){
 		console.log(e);
 	}
 }
 
 function removeUserSound(button, type){
-	let sound = button.previousSibling.textContent;
-	fetch("api/user/sounds/"+type+"/" + sound, {
-		method: "delete",
-		headers: {
-			Session: localStorage.getItem("authId")
-		}
-	});
-	button.parentElement.parentElement.removeChild(button.parentElement);
+	unpromisify(async () => {
+		let sound = button.previousSibling.textContent;
+		await fetch("api/user/sounds/"+type+"/" + sound, {
+			method: "delete",
+			headers: {
+				Session: localStorage.getItem("authId")
+			}
+		});
+		button.parentElement.remove();
+	})();
 }
 
 function sendMessage(message) {
@@ -191,4 +198,16 @@ function sendMessage(message) {
 		},
 		body: message
 	}).then(r => r.text());
+}
+
+function reloadLog() {
+	const frame = document.getElementById("log")?.querySelector("iframe");
+	if(!frame) return;
+	frame.src = `log?t=${Date.now()}`
+}
+
+function reloadScreen() {
+	const image = document.getElementById("screen")?.querySelector("img");
+	if(!image) return;
+	image.src = `screen?t=${Date.now()}`
 }
