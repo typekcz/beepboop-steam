@@ -118,12 +118,16 @@ export default class SteamChatAudio {
 
 		if(yt) {
 			// YTDL endpoint
-			return {
-				name: await ytHelper.getTitle(sound).catch(e => "YouTube"),
+			const soundObj = {
+				name: "YouTube",
 				originalUrl: sound,
 				url: `${this.soundsBaseUrl}/api/ytdl/${encodeURIComponent(sound)}`,
 				suggestedChannel: "music"
 			};
+			ytHelper.getTitle(sound)
+				.then(name => soundObj.name = name)
+				.catch(() => {});
+			return soundObj;
 		} else if(/^https?:\/\//.test(sound)) {
 			// Proxy
 			return {

@@ -98,7 +98,7 @@ export default class WebApp {
 			if(!["172.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress || ""))
 				return res.status(403).send("Nope").end();
 
-			ytHelper.streamToResponse(req.params.url, res);
+			await ytHelper.streamToResponse(req.params.url, res);
 		});
 
 		this.expressApp.listen(port);

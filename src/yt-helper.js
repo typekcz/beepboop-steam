@@ -22,6 +22,11 @@ export const ytHelper = new class YtHelper {
 		this.ytdlpOpts = Object.assign(defaultOpts, config.ytdlp);
 	}
 
+	async init() {
+		const result = await this.ytdlp.updateYtDlpAsync();
+		console.info(`yt-dlp is ready (${result.version ?? "version unknown"}).`);
+	}
+
 	/**
 	 * @param {string} link
 	 */
@@ -36,32 +41,36 @@ export const ytHelper = new class YtHelper {
 		} else if (parsed.hostname && !validQueryDomains.has(parsed.hostname)) {
 			return false; // Not a YouTube domain
 		}
-		if (!id) {
-			return false; // No video id found
-		}
-		return true;
+		return Boolean(id);
 	}
 
 	/**
 	 * @param {string} link 
 	 * @param {import("express").Response} res 
 	 */
-	streamToResponse(link, res) {
-		this.ytdlp.stream(link, this.ytdlpOpts)
-			.filter("audioonly")
-			.on("beforeDownload", (info) => {
-				res.status(200);
-				res.set("Access-Control-Allow-Origin", "*");
-				res.set("Content-Type", info.media_type);
-			})
-			.pipe(res)
-			.catch(() => console.error("Error while piping ytdpl stream to HTTP response."));
+	async streamToResponse(link, res) {
+		const audioStream = this.ytdlp.stream(link, this.ytdlpOpts)
+			.format("bestaudio[ext=webm][abr<=128]/bestaudio[ext=webm]")
+			.getStream();
+		res.status(200);
+		res.set("Access-Control-Allow-Origin", "*");
+		res.type("audio/webm");
+		audioStream.on("error", /** @param {Error} error */ error => {
+			console.error("Error while streaming YouTube audio.", error);
+			if(!res.headersSent) res.status(502).end();
+			else res.destroy();
+		});
+		res.on("close", () => {
+			if(!res.writableEnded) audioStream.destroy();
+		});
+		audioStream.pipe(res);
 	}
 
 	/**
 	 * @param {string} link 
 	 */
 	getTitle(link) {
-		return this.ytdlp.getTitleAsync(link)
+		return this.ytdlp.execAsync(link, { print: "title", skipDownload: true })
+			.then(result => result.output.trim());
 	}
 }

@@ -10,7 +10,7 @@ import SteamClientApi from "./steam-api/steam-client-api.js";
 import { getStorage, setUpPersistence } from "./storage.js";
 import * as utils from "./utils.js";
 import WebApp from "./webapp.js";
-import SteamFriendsUiApi from "./steam-api/steam-friends-ui-api.js";
+import { ytHelper } from "./yt-helper.js";
 ///<reference path="./types.d.ts" />
 
 const paddedVer = (config?.version || "?").padEnd(13).substring(0, 13);
@@ -61,6 +61,8 @@ export default class BeepBoop {
 		console.info("Initializing REST API.");
 		this.webApp.startRestApi(this);
 		this.webApp.startSteamLoginApi();
+console.info("Initializing YouTube helper.");
+		await ytHelper.init();
 		await this.loadPlugins();
 		console.info(`BeepBoop started in ${process.uptime()} seconds.`);
 	}
