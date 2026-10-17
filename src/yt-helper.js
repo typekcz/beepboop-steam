@@ -17,7 +17,7 @@ export const ytHelper = new class YtHelper {
 	constructor() {
 		/** @type {import("ytdlp-nodejs").ArgsOptions} */
 		const defaultOpts = {
-			audioQuality: "6"
+			format: "bestaudio[ext=webm][abr<=128]/bestaudio[ext=webm]"
 		};
 		this.ytdlpOpts = Object.assign(defaultOpts, config.ytdlp);
 	}
@@ -50,7 +50,6 @@ export const ytHelper = new class YtHelper {
 	 */
 	async streamToResponse(link, res) {
 		const audioStream = this.ytdlp.stream(link, this.ytdlpOpts)
-			.format("bestaudio[ext=webm][abr<=128]/bestaudio[ext=webm]")
 			.getStream();
 		res.status(200);
 		res.set("Access-Control-Allow-Origin", "*");
