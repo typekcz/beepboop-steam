@@ -33,7 +33,12 @@ export const ytHelper = new class YtHelper {
 	validateUrl(link) {
 		// Based on ytdl-core implementation
 		// https://github.com/distubejs/ytdl-core/blame/102e7727ca652216bdb63c27f713edb68a316c07/lib/url-utils.js#L26
-		const parsed = new URL(link.trim());
+		let parsed;
+		try {
+			parsed = new URL(link.trim());
+		} catch {
+			return false;
+		}
 		let id = parsed.searchParams.get("v");
 		if (validPathDomains.test(link.trim()) && !id) {
 			const paths = parsed.pathname.split("/");
